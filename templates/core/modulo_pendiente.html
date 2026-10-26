@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}{{ modulo.titulo }} | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">MÓDULO DEL SISTEMA</div>
+
+        <h1>{{ modulo.titulo }}</h1>
+
+        <p>{{ modulo.descripcion }}</p>
+    </div>
+
+    <a href="{% url 'core:inicio' %}" class="btn-outline-inaher">
+        <i class="bi bi-arrow-left"></i>
+        Volver al inicio
+    </a>
+</div>
+
+<section class="placeholder-card">
+    <div class="placeholder-icon">
+        <i class="bi {{ modulo.icono }}"></i>
+    </div>
+
+    <h2>Módulo en preparación</h2>
+
+    <p>
+        Esta sección ya está integrada a la navegación
+        de INAHER. En las siguientes etapas incorporaremos
+        sus formularios, tablas y operaciones CRUD.
+    </p>
+
+    <a href="{% url 'pedidos:lista' %}" class="btn-inaher">
+        Ir a Pedidos
+    </a>
+</section>
+
+{% endblock %}

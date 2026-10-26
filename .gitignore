@@ -1,0 +1,21 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Base de datos local de pruebas
+db.sqlite3
+
+# Variables sensibles
+.env
+.env.*
+
+# Archivos generados
+staticfiles/
+media/
+
+# Entorno del editor
+.vscode/

@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}INAHER | Control de producción{% endblock %}</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+        crossorigin="anonymous"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <aside class="sidebar">
+            <a href="{% url 'core:inicio' %}" class="brand">
+                <span class="brand-mark">I</span>
+
+                <span class="brand-text">
+                    <strong>INAHER</strong>
+                    <small>Control de producción</small>
+                </span>
+            </a>
+
+            <div class="sidebar-section-label">GENERAL</div>
+
+            <nav class="sidebar-nav">
+                <a
+                    href="{% url 'core:inicio' %}"
+                    class="sidebar-link{% if request.resolver_match.url_name == 'inicio' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-grid-1x2"></i>
+                    <span>Inicio</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section-label">OPERACIÓN</div>
+
+            <nav class="sidebar-nav">
+                <a
+                    href="{% url 'pedidos:lista' %}"
+                    class="sidebar-link{% if request.resolver_match.namespace == 'pedidos' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>Pedidos</span>
+                </a>
+
+                <a
+                    href="{% url 'core:modulo_pendiente' 'designacion-diaria' %}"
+                    class="sidebar-link{% if request.path == '/modulos/designacion-diaria/' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-calendar2-check"></i>
+                    <span>Designación diaria</span>
+                </a>
+
+                <a
+                    href="{% url 'core:modulo_pendiente' 'eficiencia' %}"
+                    class="sidebar-link{% if request.path == '/modulos/eficiencia/' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Eficiencia</span>
+                </a>
+
+                <a
+                    href="{% url 'core:modulo_pendiente' 'estudio-de-tiempos' %}"
+                    class="sidebar-link{% if request.path == '/modulos/estudio-de-tiempos/' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-stopwatch"></i>
+                    <span>Estudio de tiempos</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section-label">ADMINISTRACIÓN</div>
+
+            <nav class="sidebar-nav">
+                <a
+                    href="{% url 'core:modulo_pendiente' 'catalogos' %}"
+                    class="sidebar-link{% if request.path == '/modulos/catalogos/' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-sliders"></i>
+                    <span>Catálogos</span>
+                </a>
+
+                <a
+                    href="{% url 'core:modulo_pendiente' 'historico-reportes' %}"
+                    class="sidebar-link{% if request.path == '/modulos/historico-reportes/' %} is-active{% endif %}"
+                >
+                    <i class="bi bi-clock-history"></i>
+                    <span>Histórico y reportes</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="sidebar-footer-dot"></span>
+                Prototipo de desarrollo
+            </div>
+        </aside>
+
+        <div class="main-area">
+            <header class="topbar">
+                <div>
+                    <div class="topbar-title">
+                        Sistema de designación diaria
+                    </div>
+
+                    <div class="topbar-caption">
+                        INAHER · Gestión de producción
+                    </div>
+                </div>
+
+                <span class="environment-tag">
+                    <span></span>
+                    DESARROLLO
+                </span>
+            </header>
+
+            <main class="main-content">
+                {% block content %}{% endblock %}
+            </main>
+
+            <footer class="app-footer">
+                INAHER · Sistema interno de producción
+            </footer>
+        </div>
+    </div>
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"
+    ></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

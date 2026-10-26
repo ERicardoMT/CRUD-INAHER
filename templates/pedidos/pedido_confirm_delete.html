@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar pedido | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">PEDIDOS / ELIMINACIÓN</div>
+        <h1>Eliminar pedido</h1>
+        <p>Confirma que deseas eliminar este registro de prueba.</p>
+    </div>
+</div>
+
+<section class="content-card delete-card">
+    <div class="delete-icon">
+        <i class="bi bi-exclamation-triangle"></i>
+    </div>
+
+    <h2>¿Deseas eliminar el pedido #{{ pedido.numero }}?</h2>
+
+    <p>
+        Estás por eliminar el registro
+        <strong>{{ pedido.numero }}</strong>.
+        Esta acción no se puede deshacer desde esta pantalla.
+    </p>
+
+    <form method="post" class="form-footer">
+        {% csrf_token %}
+
+        <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
+            Cancelar
+        </a>
+
+        <button type="submit" class="btn-delete">
+            <i class="bi bi-trash3"></i>
+            Confirmar eliminación
+        </button>
+    </form>
+</section>
+
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">ADMINISTRACIÓN</div>
+        <h1>Pedidos</h1>
+
+        <p>
+            Consulta y administra los pedidos de producción.
+        </p>
+    </div>
+
+    <a href="{% url 'pedidos:crear' %}" class="btn-inaher">
+        <i class="bi bi-plus-lg"></i>
+        Nuevo pedido
+    </a>
+</div>
+
+<section class="content-card">
+    <div class="content-card-header">
+        <div>
+            <h2>Listado de pedidos</h2>
+            <p>Registros disponibles en el prototipo local.</p>
+        </div>
+
+        <span class="record-counter">
+            {{ pedidos|length }} registros
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle inaher-table">
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Descripción</th>
+                    <th class="text-center">Cantidad</th>
+                    <th>Fecha de salida</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for pedido in pedidos %}
+                <tr>
+                    <td>
+                        <span class="order-number">
+                            #{{ pedido.numero }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="description-cell">
+                            {{ pedido.descripcion|truncatechars:75 }}
+                        </div>
+                    </td>
+
+                    <td class="text-center">
+                        {{ pedido.cantidad }}
+                    </td>
+
+                    <td>
+                        {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}
+                    </td>
+
+                    <td>
+                        {% if pedido.estado == "EN_PROCESO" %}
+                            <span class="status-pill status-progress">
+                                En proceso
+                            </span>
+                        {% elif pedido.estado == "TERMINADO" %}
+                            <span class="status-pill status-finished">
+                                Terminado
+                            </span>
+                        {% else %}
+                            <span class="status-pill status-stopped">
+                                Detenido
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="table-actions">
+                            <a
+                                href="{% url 'pedidos:detalle' pedido.pk %}"
+                                class="action-button"
+                                title="Ver detalle"
+                            >
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <a
+                                href="{% url 'pedidos:editar' pedido.pk %}"
+                                class="action-button"
+                                title="Editar pedido"
+                            >
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <a
+                                href="{% url 'pedidos:eliminar' pedido.pk %}"
+                                class="action-button action-danger"
+                                title="Eliminar pedido"
+                            >
+                                <i class="bi bi-trash3"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+
+                            <h3>Aún no hay pedidos</h3>
+
+                            <p>
+                                Registra el primer pedido de prueba
+                                para comenzar a utilizar este módulo.
+                            </p>
+
+                            <a
+                                href="{% url 'pedidos:crear' %}"
+                                class="btn-inaher"
+                            >
+                                Crear primer pedido
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}

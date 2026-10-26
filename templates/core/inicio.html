@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">PANEL DE CONTROL</div>
+        <h1>Bienvenido a INAHER</h1>
+
+        <p>
+            Administra los pedidos y accede a los módulos
+            de control de producción.
+        </p>
+    </div>
+
+    <a href="{% url 'pedidos:lista' %}" class="btn-inaher">
+        <i class="bi bi-clipboard-check"></i>
+        Gestionar pedidos
+    </a>
+</div>
+
+<section class="stats-grid">
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Pedidos registrados</span>
+            <span class="stat-icon icon-blue">
+                <i class="bi bi-clipboard-data"></i>
+            </span>
+        </div>
+
+        <strong>{{ total_pedidos }}</strong>
+        <small>Registros locales de prueba</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>En proceso</span>
+            <span class="stat-icon icon-teal">
+                <i class="bi bi-arrow-repeat"></i>
+            </span>
+        </div>
+
+        <strong>{{ pedidos_en_proceso }}</strong>
+        <small>Pedidos con estado en proceso</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Terminados</span>
+            <span class="stat-icon icon-green">
+                <i class="bi bi-check2-circle"></i>
+            </span>
+        </div>
+
+        <strong>{{ pedidos_terminados }}</strong>
+        <small>Pedidos marcados como terminados</small>
+    </article>
+
+</section>
+
+<section class="section-heading">
+    <div>
+        <div class="eyebrow">NAVEGACIÓN</div>
+        <h2>Módulos del sistema</h2>
+
+        <p>
+            Selecciona un módulo para consultar su pantalla inicial.
+        </p>
+    </div>
+</section>
+
+<section class="modules-grid">
+
+    <a href="{% url 'pedidos:lista' %}" class="module-card">
+        <div class="module-card-icon">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+
+        <div class="module-card-content">
+            <h3>Pedidos</h3>
+            <p>
+                Registra y consulta los pedidos de producción.
+            </p>
+        </div>
+
+        <span class="module-card-link">
+            Abrir módulo <i class="bi bi-arrow-right"></i>
+        </span>
+    </a>
+
+    {% for modulo in modulos %}
+    <a
+        href="{% url 'core:modulo_pendiente' modulo.slug %}"
+        class="module-card"
+    >
+        <div class="module-card-icon">
+            <i class="bi {{ modulo.icono }}"></i>
+        </div>
+
+        <div class="module-card-content">
+            <h3>{{ modulo.titulo }}</h3>
+            <p>{{ modulo.descripcion }}</p>
+        </div>
+
+        <span class="module-card-link">
+            Consultar pantalla <i class="bi bi-arrow-right"></i>
+        </span>
+    </a>
+    {% endfor %}
+
+</section>
+
+{% endblock %}

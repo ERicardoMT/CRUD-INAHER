@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Pedido {{ pedido.numero }} | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">DETALLE DEL PEDIDO</div>
+
+        <h1>Pedido #{{ pedido.numero }}</h1>
+
+        <p>Consulta la información del registro seleccionado.</p>
+    </div>
+
+    <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
+        <i class="bi bi-arrow-left"></i>
+        Volver
+    </a>
+</div>
+
+<section class="content-card detail-card">
+    <div class="detail-top">
+        <div>
+            <span class="detail-label">Número de pedido</span>
+            <h2>#{{ pedido.numero }}</h2>
+        </div>
+
+        {% if pedido.estado == "EN_PROCESO" %}
+            <span class="status-pill status-progress">En proceso</span>
+        {% elif pedido.estado == "TERMINADO" %}
+            <span class="status-pill status-finished">Terminado</span>
+        {% else %}
+            <span class="status-pill status-stopped">Detenido</span>
+        {% endif %}
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-field field-wide">
+            <span class="detail-label">Descripción</span>
+            <p>{{ pedido.descripcion|linebreaksbr }}</p>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Cantidad total</span>
+            <strong>{{ pedido.cantidad }}</strong>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Fecha de salida</span>
+            <strong>
+                {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}
+            </strong>
+        </div>
+
+        <div class="detail-field field-wide">
+            <span class="detail-label">Notas u observaciones</span>
+            <p>{{ pedido.notas|default:"Sin observaciones"|linebreaksbr }}</p>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Fecha de creación</span>
+            <strong>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</strong>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Última actualización</span>
+            <strong>{{ pedido.fecha_actualizacion|date:"d/m/Y H:i" }}</strong>
+        </div>
+    </div>
+
+    <div class="form-footer">
+        <a
+            href="{% url 'pedidos:editar' pedido.pk %}"
+            class="btn-inaher"
+        >
+            <i class="bi bi-pencil-square"></i>
+            Editar pedido
+        </a>
+
+        <a
+            href="{% url 'pedidos:eliminar' pedido.pk %}"
+            class="btn-outline-danger-custom"
+        >
+            <i class="bi bi-trash3"></i>
+            Eliminar
+        </a>
+    </div>
+</section>
+
+{% endblock %}
