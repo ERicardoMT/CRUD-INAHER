@@ -61,8 +61,8 @@
                 </a>
 
                 <a
-                    href="{% url 'core:modulo_pendiente' 'designacion-diaria' %}"
-                    class="sidebar-link{% if request.path == '/modulos/designacion-diaria/' %} is-active{% endif %}"
+                    href="{% url 'designaciones:hoy' %}"
+                    class="sidebar-link{% if request.resolver_match.namespace == 'designaciones' %} is-active{% endif %}"
                 >
                     <i class="bi bi-calendar2-check"></i>
                     <span>Designación diaria</span>
@@ -112,21 +112,21 @@
         </aside>
 
         <div class="main-area">
-            <header class="topbar">
-                <div>
-                    <div class="topbar-title">
-                        Sistema de designación diaria
-                    </div>
+            
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-                    <div class="topbar-caption">
-                        INAHER · Gestión de producción
+            <header class="topbar">
+                <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="btn-hamburger d-md-none" onclick="toggleSidebar()">
+                        <i class="bi bi-list fs-3"></i>
+                    </button>
+                    <div>
+                        <div class="topbar-title">Sistema de designación diaria</div>
+                        <div class="topbar-caption">Gestión de producción INAHER</div>
                     </div>
                 </div>
 
-                <span class="environment-tag">
-                    <span></span>
-                    DESARROLLO
-                </span>
+                <span class="environment-tag"><span></span>DESARROLLO</span>
             </header>
 
             <main class="main-content">
@@ -147,4 +147,13 @@
 
     {% block extra_js %}{% endblock %}
 </body>
+
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('is-open-mobile');
+            document.getElementById('sidebarOverlay').classList.toggle('is-visible');
+        }
+    </script>
+</body>
+
 </html>

@@ -1,0 +1,723 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Designación de HOY | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">CONTROL DIARIO DE PLANTA</div>
+        <h1>INAHER · Designación de HOY</h1>
+        <p class="text-muted mb-0">
+            Organización diaria de tareas, puestos, tiempos estándar y cumplimiento por operario.
+        </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <input
+                type="date"
+                name="fecha"
+                class="form-control form-control-sm"
+                value="{{ fecha_actual|date:'Y-m-d' }}"
+                onchange="this.form.submit()"
+                style="max-width: 165px;"
+            >
+            {% if not es_hoy %}
+            <a href="{% url 'designaciones:hoy' %}" class="btn-outline-inaher btn-sm">
+                <i class="bi bi-calendar-event"></i> Ir a HOY
+            </a>
+            {% endif %}
+        </form>
+
+        <button type="button" class="btn-inaher" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+            <i class="bi bi-plus-lg"></i> Asignar Tarea
+        </button>
+    </div>
+</div>
+
+<!-- ================= BANNER VULCANIZADO (ERNESTO) ================= -->
+<div class="vulcanizado-banner mb-4">
+    <div class="vulcanizado-header">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fs-5">🔥</span>
+            <strong>Vulcanizado del día (Ernesto) — 2 moldes</strong>
+        </div>
+        <small class="text-muted">Carga programada de prensa</small>
+    </div>
+    <form method="post" action="{% url 'designaciones:actualizar_moldes' designacion.id %}" class="vulcanizado-form">
+        {% csrf_token %}
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted">Molde 1:</span>
+                    <input
+                        type="text"
+                        name="molde_1"
+                        value="{{ designacion.molde_1 }}"
+                        class="form-control"
+                        placeholder="Ej. IVH-4 / R-4"
+                    >
+                </div>
+            </div>
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted">Molde 2:</span>
+                    <input
+                        type="text"
+                        name="molde_2"
+                        value="{{ designacion.molde_2 }}"
+                        class="form-control"
+                        placeholder="Ej. Nivelador MT-2"
+                    >
+                </div>
+            </div>
+            <div class="col-12 col-md-2">
+                <button type="submit" class="btn-inaher btn-sm w-100">
+                    <i class="bi bi-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ================= KPIS GLOBALES ================= -->
+<section class="stats-grid mb-4">
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Minutos Asignados</span>
+            <span class="stat-icon icon-blue"><i class="bi bi-clock-history"></i></span>
+        </div>
+        <strong id="kpiTotalAsignados">{{ designacion.total_minutos_asignados }} <small class="fs-6 text-muted">min</small></strong>
+        <small>Carga total de la jornada</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Minutos Hechos</span>
+            <span class="stat-icon icon-green"><i class="bi bi-check-circle"></i></span>
+        </div>
+        <strong id="kpiTotalHechos" class="text-success">{{ designacion.total_minutos_hechos }} <small class="fs-6 text-muted">min</small></strong>
+        <small>Trabajo reportado concluido (✓)</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Avance Global</span>
+            <span class="stat-icon icon-teal"><i class="bi bi-speedometer2"></i></span>
+        </div>
+        <strong id="kpiAvancePct">{{ designacion.porcentaje_avance }}%</strong>
+        <div class="progress mt-2" style="height: 6px;">
+            <div
+                id="kpiProgressBar"
+                class="progress-bar bg-success"
+                role="progressbar"
+                style="width: {{ designacion.porcentaje_avance }}%;"
+            ></div>
+        </div>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Alertas de Salida</span>
+            <span class="stat-icon icon-blue"><i class="bi bi-exclamation-triangle"></i></span>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-1">
+            {% if alertas_conteo.atrasados %}
+            <span class="badge bg-danger">{{ alertas_conteo.atrasados }} atrasados</span>
+            {% endif %}
+            {% if alertas_conteo.sale_hoy %}
+            <span class="badge bg-warning text-dark">{{ alertas_conteo.sale_hoy }} salen hoy</span>
+            {% endif %}
+            {% if not alertas_conteo.atrasados and not alertas_conteo.sale_hoy %}
+            <span class="text-success small"><i class="bi bi-check2"></i> Todo en tiempo</span>
+            {% endif %}
+        </div>
+        <small class="mt-2 d-block">Pedidos con compromiso próximo</small>
+    </article>
+</section>
+
+<!-- ================= LAYOUT PRINCIPAL (TABLA + RESUMEN OPERARIOS) ================= -->
+<div class="designacion-grid">
+
+    <!-- COLUMNA PRINCIPAL DE TAREAS -->
+    <div class="designacion-main-col">
+        <div class="content-card">
+            <div class="content-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h2>Tareas de la jornada</h2>
+                    <p class="mb-0 text-muted small">
+                        Marca la casilla <strong>✓</strong> conforme se concluyan las operaciones.
+                    </p>
+                </div>
+
+                <!-- SELECTOR DE VISTA PARA CELULAR Y FILTRO RÁPIDO -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="btn-group btn-group-sm d-md-none" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="btnVistaCards">
+                            <i class="bi bi-grid"></i> Tarjetas
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btnVistaTabla">
+                            <i class="bi bi-table"></i> Tabla
+                        </button>
+                    </div>
+
+                    <!-- Filtro por persona -->
+                    <select id="filtroOperario" class="form-select form-select-sm" style="max-width: 170px;">
+                        <option value="todos">Todos los operarios</option>
+                        {% for op in operarios %}
+                        <option value="{{ op.nombre }}">{{ op.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABLA OPERATIVA (Para PC / Laptop y vista expandida) -->
+            <div class="table-responsive d-none d-md-block" id="contenedorTablaDesktop">
+                <table class="table-inaher table-designacion align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;" class="text-center">✓</th>
+                            <th>Quién</th>
+                            <th># Pedido</th>
+                            <th style="width: 55px;" class="text-center">Paso</th>
+                            <th>Producto / Modelo</th>
+                            <th>Operación madre › detallada</th>
+                            <th>Máquina</th>
+                            <th>Detalle / Tolerancia</th>
+                            <th class="text-end">Cant.</th>
+                            <th class="text-end">Min</th>
+                            <th>Salida</th>
+                            <th>Alerta</th>
+                            <th style="width: 70px;" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaItemsBody">
+                        {% for item in items %}
+                        <tr class="item-fila {% if item.hecho %}fila-hecha{% endif %}" data-operario="{{ item.quien.nombre }}">
+                            <!-- CHECKBOX HECHO -->
+                            <td class="text-center">
+                                <button
+                                    type="button"
+                                    class="btn-check-toggle {% if item.hecho %}is-checked{% endif %}"
+                                    onclick="toggleItemHecho({{ item.id }}, this)"
+                                    title="Marcar como concluido"
+                                >
+                                    <i class="bi {% if item.hecho %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} fs-5"></i>
+                                </button>
+                            </td>
+
+                            <!-- QUIÉN -->
+                            <td>
+                                <strong class="badge-operario">{{ item.quien.nombre }}</strong>
+                            </td>
+
+                            <!-- PEDIDO -->
+                            <td>
+                                {% if item.es_stock %}
+                                <span class="badge bg-secondary">STOCK</span>
+                                {% elif item.pedido %}
+                                <a href="{% url 'pedidos:detalle' item.pedido.id %}" class="fw-semibold text-primary">
+                                    #{{ item.pedido.numero }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- PASO -->
+                            <td class="text-center">
+                                <span class="badge-paso">{{ item.paso }}</span>
+                            </td>
+
+                            <!-- PRODUCTO -->
+                            <td>
+                                <div class="cell-producto" title="{{ item.producto_texto }}">
+                                    {{ item.producto_texto }}
+                                </div>
+                            </td>
+
+                            <!-- OPERACIÓN -->
+                            <td>
+                                <div class="fw-medium text-dark">{{ item.operacion_madre.nombre }}</div>
+                                <small class="text-muted">{{ item.operacion_detallada.nombre }}</small>
+                            </td>
+
+                            <!-- MÁQUINA -->
+                            <td>
+                                {% if item.maquina %}
+                                <span class="text-muted small"><i class="bi bi-gear"></i> {{ item.maquina.nombre }}</span>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- DETALLE -->
+                            <td>
+                                <span class="text-muted small">{{ item.detalle|default:"—" }}</span>
+                            </td>
+
+                            <!-- CANTIDAD -->
+                            <td class="text-center" style="min-width: 80px;">
+                                <span class="badge-pill-num">{{ item.cantidad }} pz</span>
+                            </td>
+
+                            <!-- MINUTOS -->
+                            <td class="text-center" style="min-width: 80px;">
+                                <span class="badge-pill-num">{{ item.minutos }} min</span>
+                            </td>
+
+                            <!-- FECHA SALIDA -->
+                            <td style="min-width: 90px;">
+                                {% if item.fecha_salida %}
+                                <span class="text-secondary fw-semibold">{{ item.fecha_salida|date:"d/m/y" }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- ALERTA -->
+                            <td style="min-width: 130px;">
+                                <span class="status-badge {{ item.alerta.clase }}">
+                                    {{ item.alerta.texto }}
+                                </span>
+                            </td>
+
+                            <!-- ACCIONES -->
+                            <td class="text-end">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                    <a href="{% url 'designaciones:editar_item' item.id %}" class="btn-action-icon text-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea de la jornada?');" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action-icon text-danger border-0 bg-transparent" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="13" class="text-center py-4 text-muted">
+                                <i class="bi bi-clipboard2-plus fs-2 d-block mb-2"></i>
+                                No hay tareas asignadas para esta fecha aún. Haz clic en <strong>Asignar Tarea</strong> para comenzar.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- VISTA RESPONSIVA EN TARJETAS (Especial para celulares y tablets) -->
+            <div class="cards-operativas-mobile d-md-none p-3" id="contenedorCardsMobile">
+                {% for item in items %}
+                <div class="tarea-card-mobile mb-3 p-3 {% if item.hecho %}is-hecho{% endif %}" data-operario="{{ item.quien.nombre }}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge-operario">{{ item.quien.nombre }}</span>
+                            <span class="badge-paso">Paso {{ item.paso }}</span>
+                        </div>
+                        <span class="status-badge {{ item.alerta.clase }}">
+                            {{ item.alerta.texto }}
+                        </span>
+                    </div>
+
+                    <div class="tarea-card-title mb-1">
+                        <strong>{{ item.operacion_madre.nombre }}</strong>
+                    </div>
+                    <div class="text-muted small mb-2">
+                        {{ item.operacion_detallada.nombre }}
+                    </div>
+
+                    <div class="tarea-card-meta mb-3 p-2 bg-light rounded">
+                        <div class="row g-1 small">
+                            <div class="col-7">
+                                <strong>Pedido:</strong>
+                                {% if item.es_stock %}
+                                <span class="badge bg-secondary">STOCK</span>
+                                {% elif item.pedido %}
+                                #{{ item.pedido.numero }}
+                                {% else %}—{% endif %}
+                            </div>
+                            <div class="col-5 text-end">
+                                <strong>Cant:</strong> {{ item.cantidad }} pzas
+                            </div>
+                            <div class="col-12 text-truncate" title="{{ item.producto_texto }}">
+                                <i class="bi bi-box-seam"></i> {{ item.producto_texto }}
+                            </div>
+                            {% if item.maquina %}
+                            <div class="col-7">
+                                <i class="bi bi-gear"></i> {{ item.maquina.nombre }}
+                            </div>
+                            {% endif %}
+                            <div class="col-5 text-end">
+                                <i class="bi bi-stopwatch"></i> <strong>{{ item.minutos }} min</strong>
+                            </div>
+                            {% if item.detalle %}
+                            <div class="col-12 mt-1 text-secondary fst-italic">
+                                <i class="bi bi-info-circle"></i> {{ item.detalle }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- BOTÓN GIGANTE TÁCTIL PARA CELULAR -->
+                    <div class="d-flex align-items-center justify-content-between gap-2">
+                        <button
+                            type="button"
+                            class="btn-mobile-toggle w-100 {% if item.hecho %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                            onclick="toggleItemHecho({{ item.id }}, this)"
+                        >
+                            <i class="bi {% if item.hecho %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-1"></i>
+                            <span>{% if item.hecho %}Completado (✓){% else %}Marcar como Concluido{% endif %}</span>
+                        </button>
+
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'designaciones:editar_item' item.id %}">
+                                        <i class="bi bi-pencil me-1"></i> Editar
+                                    </a>
+                                </li>
+                                <li>
+                                    <form method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-trash me-1"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <p>No hay tareas registradas para hoy.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMNA LATERAL: RESUMEN POR PERSONA (Cols O, P, Q del Excel) -->
+    <div class="designacion-side-col">
+        <div class="content-card sticky-top-card">
+            <div class="content-card-header">
+                <h3>Resumen por persona</h3>
+                <small class="text-muted">Minutos asignados vs hechos</small>
+            </div>
+
+            <div class="p-3">
+                <div class="operarios-resumen-list">
+                    {% for op in resumen_operarios %}
+                    <div class="operario-resumen-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="operario-name">{{ op.operario.nombre }}</strong>
+                            <span class="small fw-semibold">
+                                <span class="text-success">{{ op.min_hechos }}</span> / {{ op.min_asignados }} min
+                            </span>
+                        </div>
+
+                        <div class="progress" style="height: 6px;">
+                            <div
+                                class="progress-bar {% if op.porcentaje == 100 %}bg-success{% elif op.porcentaje > 50 %}bg-info{% else %}bg-primary{% endif %}"
+                                role="progressbar"
+                                style="width: {{ op.porcentaje }}%;"
+                                title="{{ op.porcentaje }}%"
+                            ></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <small class="text-muted">{{ op.tareas_hechas }} de {{ op.tareas_total }} tareas</small>
+                            <small class="fw-semibold {% if op.porcentaje == 100 %}text-success{% else %}text-muted{% endif %}">{{ op.porcentaje }}%</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= MODAL NUEVA TAREA ================= -->
+<div class="modal fade" id="modalNuevaTarea" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle text-primary me-1"></i> Asignar tarea a la jornada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="post" action="{% url 'designaciones:agregar_item' designacion.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- QUIÉN -->
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold">Quién (Operario) *</label>
+                            {{ form_item.quien }}
+                        </div>
+
+                        <!-- PEDIDO -->
+                        <div class="col-12 col-md-5">
+                            <label class="form-label fw-semibold"># Pedido</label>
+                            {{ form_item.pedido }}
+                        </div>
+
+                        <!-- PASO -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label fw-semibold">Paso *</label>
+                            {{ form_item.paso }}
+                        </div>
+
+                        <!-- ES STOCK CHECKBOX -->
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                {{ form_item.es_stock }}
+                                <label class="form-check-label" for="{{ form_item.es_stock.id_for_label }}">
+                                    Es producción para Stock (sin pedido asociado)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- DESCRIPCIÓN MANUAL / PRODUCTO -->
+                        <div class="col-12" id="boxDescripcionManual">
+                            <label class="form-label">Producto / Modelo</label>
+                            {{ form_item.descripcion_manual }}
+                            <small class="text-muted">Si seleccionas un pedido arriba, este campo se llena solo.</small>
+                        </div>
+
+                        <!-- OPERACIÓN MADRE -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Operación madre *</label>
+                            {{ form_item.operacion_madre }}
+                        </div>
+
+                        <!-- OPERACIÓN DETALLADA -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Operación detallada *</label>
+                            {{ form_item.operacion_detallada }}
+                        </div>
+
+                        <!-- MÁQUINA -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Máquina</label>
+                            {{ form_item.maquina }}
+                        </div>
+
+                        <!-- DETALLE / TOLERANCIA -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Detalle (medida · tolerancia)</label>
+                            {{ form_item.detalle }}
+                        </div>
+
+                        <!-- CANTIDAD -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Cantidad *</label>
+                            {{ form_item.cantidad }}
+                        </div>
+
+                        <!-- MINUTOS -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Minutos calculados</label>
+                            {{ form_item.minutos }}
+                            <small class="text-muted">Se calcula automáticamente con el estándar (Cant × Min/pz).</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-inaher">
+                        <i class="bi bi-save"></i> Guardar tarea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle de tarea concluida mediante AJAX
+function toggleItemHecho(itemId, btnElem) {
+    const csrfToken = '{{ csrf_token }}';
+    fetch(`/designacion/item/toggle/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            // Actualizar vista desktop
+            const row = btnElem.closest('tr');
+            if(row) {
+                if(data.hecho) {
+                    row.classList.add('fila-hecha');
+                    btnElem.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-5"></i>';
+                    btnElem.classList.add('is-checked');
+                } else {
+                    row.classList.remove('fila-hecha');
+                    btnElem.innerHTML = '<i class="bi bi-circle text-muted fs-5"></i>';
+                    btnElem.classList.remove('is-checked');
+                }
+            }
+
+            // Actualizar vista móvil
+            const card = btnElem.closest('.tarea-card-mobile');
+            if(card) {
+                const btnMobile = card.querySelector('.btn-mobile-toggle');
+                if(data.hecho) {
+                    card.classList.add('is-hecho');
+                    btnMobile.classList.remove('btn-outline-secondary');
+                    btnMobile.classList.add('btn-success');
+                    btnMobile.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i><span>Completado (✓)</span>';
+                } else {
+                    card.classList.remove('is-hecho');
+                    btnMobile.classList.remove('btn-success');
+                    btnMobile.classList.add('btn-outline-secondary');
+                    btnMobile.innerHTML = '<i class="bi bi-circle me-1"></i><span>Marcar como Concluido</span>';
+                }
+            }
+
+            // Actualizar KPIs de cabecera
+            document.getElementById('kpiTotalHechos').innerHTML = `${data.total_hechos} <small class="fs-6 text-muted">min</small>`;
+            document.getElementById('kpiAvancePct').innerText = `${data.porcentaje_avance}%`;
+            document.getElementById('kpiProgressBar').style.width = `${data.porcentaje_avance}%`;
+        }
+    })
+    .catch(err => console.error(err));
+}
+
+// Filtro interactivo por operario
+document.getElementById('filtroOperario').addEventListener('change', function() {
+    const valor = this.value;
+    // Filtrar tabla desktop
+    document.querySelectorAll('#tablaItemsBody .item-fila').forEach(tr => {
+        if(valor === 'todos' || tr.dataset.operario === valor) {
+            tr.style.display = '';
+        } else {
+            tr.style.display = 'none';
+        }
+    });
+    // Filtrar cards mobile
+    document.querySelectorAll('#contenedorCardsMobile .tarea-card-mobile').forEach(card => {
+        if(valor === 'todos' || card.dataset.operario === valor) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// Selector de vista en celular (Tarjetas vs Tabla)
+const btnVistaCards = document.getElementById('btnVistaCards');
+const btnVistaTabla = document.getElementById('btnVistaTabla');
+const contenedorTabla = document.getElementById('contenedorTablaDesktop');
+const contenedorCards = document.getElementById('contenedorCardsMobile');
+
+if(btnVistaCards && btnVistaTabla) {
+    btnVistaCards.addEventListener('click', () => {
+        btnVistaCards.classList.add('active');
+        btnVistaTabla.classList.remove('active');
+        contenedorCards.classList.remove('d-none');
+        contenedorTabla.classList.add('d-none');
+    });
+
+    btnVistaTabla.addEventListener('click', () => {
+        btnVistaTabla.classList.add('active');
+        btnVistaCards.classList.remove('active');
+        contenedorTabla.classList.remove('d-none');
+        contenedorCards.classList.add('d-none');
+    });
+}
+
+// Cascada dinámica de Operación Madre a Operación Detallada y cálculo de Minutos
+document.addEventListener('DOMContentLoaded', function() {
+    const selectMadre = document.getElementById('id_operacion_madre');
+    const selectDetallada = document.getElementById('id_operacion_detallada');
+    const selectMaquina = document.getElementById('id_maquina');
+    const inputCantidad = document.getElementById('id_cantidad');
+    const inputMinutos = document.getElementById('id_minutos');
+    const selectPedido = document.getElementById('id_pedido');
+    const inputDesc = document.getElementById('id_descripcion_manual');
+
+    let currentMinPz = 0;
+
+    function recalcularMinutos() {
+        const cant = parseInt(inputCantidad.value) || 1;
+        if(currentMinPz > 0) {
+            inputMinutos.value = Math.round(currentMinPz * cant);
+        }
+    }
+
+    if(inputCantidad) {
+        inputCantidad.addEventListener('input', recalcularMinutos);
+    }
+
+    if(selectMadre && selectDetallada) {
+        selectMadre.addEventListener('change', function() {
+            const madreId = this.value;
+            if(!madreId) return;
+
+            fetch(`/designacion/api/operaciones-detalladas/?madre_id=${madreId}`)
+                .then(r => r.json())
+                .then(data => {
+                    selectDetallada.innerHTML = '<option value="">---------</option>';
+                    data.detalles.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.nombre;
+                        opt.dataset.minPz = d.minutos_estandar;
+                        opt.dataset.maquina = d.maquina_sugerida_id || '';
+                        selectDetallada.appendChild(opt);
+                    });
+                });
+        });
+
+        selectDetallada.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            if(opt && opt.dataset.minPz) {
+                currentMinPz = parseFloat(opt.dataset.minPz) || 0;
+                recalcularMinutos();
+            }
+            if(opt && opt.dataset.maquina && selectMaquina) {
+                selectMaquina.value = opt.dataset.maquina;
+            }
+        });
+    }
+
+    if(selectPedido) {
+        selectPedido.addEventListener('change', function() {
+            const pedidoId = this.value;
+            if(!pedidoId) return;
+            fetch(`/designacion/api/pedido-info/?pedido_id=${pedidoId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if(data.descripcion && inputDesc) {
+                        inputDesc.value = data.descripcion;
+                    }
+                    if(data.cantidad && inputCantidad) {
+                        inputCantidad.value = data.cantidad;
+                        recalcularMinutos();
+                    }
+                });
+        });
+    }
+});
+</script>
+{% endblock %}
+

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Aplicaciones del sistema INAHER
     "core",
     "pedidos",
+    "designaciones",
 ]
 
 MIDDLEWARE = [

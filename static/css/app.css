@@ -897,8 +897,37 @@ textarea.form-control {
     }
 
     .sidebar {
-        width: 100%;
-        padding-top: 16px;
+        position: fixed;
+        top: 0;
+        left: -270px;
+        width: 260px;
+        height: 100vh;
+        z-index: 1050;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    }
+
+    .sidebar.is-open-mobile {
+        left: 0;
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1040;
+    }
+    .sidebar-overlay.is-visible {
+        display: block;
+    }
+    .btn-hamburger {
+        background: none;
+        border: none;
+        color: var(--inaher-navy);
+        padding: 0;
+        cursor: pointer;
     }
 
     .brand {
@@ -984,4 +1013,230 @@ textarea.form-control {
     .app-footer {
         padding: 15px;
     }
+}
+
+/* =========================================
+   MÓDULO DE DESIGNACIÓN DIARIA (HOY)
+========================================= */
+
+.vulcanizado-banner {
+    background: #FFF8F0;
+    border: 1px solid #FFE3C2;
+    border-radius: var(--card-radius);
+    padding: 16px 20px;
+}
+
+.vulcanizado-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.designacion-grid {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.designacion-main-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.designacion-side-col {
+    width: 320px;
+    flex: 0 0 320px;
+}
+
+.sticky-top-card {
+    position: sticky;
+    top: 20px;
+}
+
+.table-designacion th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #F8FAFD;
+    padding: 10px 12px;
+}
+
+.table-designacion td {
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.cell-producto {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
+
+.badge-operario {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #EEF4FB;
+    color: var(--inaher-navy);
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge-paso {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    background: #EBF7F7;
+    color: var(--inaher-teal-dark);
+    font-weight: 700;
+    font-size: 11px;
+    border-radius: 50%;
+}
+
+.btn-check-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.btn-check-toggle:hover {
+    transform: scale(1.15);
+}
+
+.fila-hecha {
+    background-color: #F6FBF7 !important;
+}
+
+.fila-hecha td {
+    color: #6C7A89;
+}
+
+.btn-action-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.btn-action-icon:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Tarjetas Mobile */
+.tarea-card-mobile {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.tarea-card-mobile.is-hecho {
+    background: #F8FCF9;
+    border-color: #C3E6CB;
+    opacity: 0.85;
+}
+
+.btn-mobile-toggle {
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.operario-resumen-item {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+}
+
+.operario-resumen-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+@media (max-width: 992px) {
+    .designacion-grid {
+        flex-direction: column-reverse;
+    }
+
+    .designacion-side-col {
+        width: 100%;
+        flex: auto;
+    }
+}
+
+
+.table-designacion th {
+    background: #F8FAFD;
+    color: #475569;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 14px;
+    border-bottom: 2px solid var(--border);
+}
+
+.table-designacion td {
+    padding: 14px;
+    vertical-align: middle;
+    border-bottom: 1px solid #EDF2F7;
+}
+
+.btn-check-toggle {
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    cursor: pointer;
+}
+
+.badge-pill-num {
+    display: inline-block;
+    padding: 4px 9px;
+    background: #F1F5F9;
+    color: #1E293B;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.status-badge.status-detenido {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.status-badge.status-proceso {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+}
+
+.status-badge.status-terminado {
+    background: #DCFCE7;
+    color: #166534;
+    border: 1px solid #BBF7D0;
 }

@@ -93,7 +93,7 @@
 
     {% for modulo in modulos %}
     <a
-        href="{% url 'core:modulo_pendiente' modulo.slug %}"
+        href="{% if modulo.slug == 'designacion-diaria' %}{% url 'designaciones:hoy' %}{% else %}{% url 'core:modulo_pendiente' modulo.slug %}{% endif %}"
         class="module-card"
     >
         <div class="module-card-icon">

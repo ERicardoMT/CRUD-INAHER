@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Editar tarea | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">DESIGNACIÓN DIARIA</div>
+        <h1>Editar tarea de la jornada</h1>
+        <p class="text-muted mb-0">
+            Modifica la asignación de operación, puesto o cantidad.
+        </p>
+    </div>
+
+    <a href="{% url 'designaciones:hoy' %}?fecha={{ designacion.fecha|date:'Y-m-d' }}" class="btn-outline-inaher">
+        <i class="bi bi-arrow-left"></i> Volver a la designación
+    </a>
+</div>
+
+<div class="form-card">
+    <div class="content-card-header">
+        <h2>Información de la tarea</h2>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label fw-semibold">Quién (Operario) *</label>
+                {{ form.quien }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label fw-semibold"># Pedido</label>
+                {{ form.pedido }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label fw-semibold">Paso *</label>
+                {{ form.paso }}
+            </div>
+
+            <div class="form-group field-wide">
+                <div class="form-check form-switch mt-2">
+                    {{ form.es_stock }}
+                    <label class="form-check-label" for="{{ form.es_stock.id_for_label }}">
+                        Es producción para Stock
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group field-wide">
+                <label class="form-label">Producto / Modelo</label>
+                {{ form.descripcion_manual }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label fw-semibold">Operación madre *</label>
+                {{ form.operacion_madre }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label fw-semibold">Operación detallada *</label>
+                {{ form.operacion_detallada }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Máquina</label>
+                {{ form.maquina }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Detalle (medida · tolerancia)</label>
+                {{ form.detalle }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label fw-semibold">Cantidad *</label>
+                {{ form.cantidad }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label fw-semibold">Minutos</label>
+                {{ form.minutos }}
+            </div>
+
+            <div class="form-group field-wide">
+                <div class="form-check form-switch">
+                    {{ form.hecho }}
+                    <label class="form-check-label" for="{{ form.hecho.id_for_label }}">
+                        Marcar como concluido (✓)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-footer mt-4">
+            <a href="{% url 'designaciones:hoy' %}?fecha={{ designacion.fecha|date:'Y-m-d' }}" class="btn-outline-inaher">
+                Cancelar
+            </a>
+            <button type="submit" class="btn-inaher">
+                <i class="bi bi-save"></i> Guardar cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
