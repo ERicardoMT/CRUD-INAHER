@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Estudio de tiempos | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">INGENIERÍA DE PROCESOS</div>
+        <h1>INAHER · Estudio de tiempos</h1>
+        <p class="text-muted mb-0">Cronometraje de operaciones, tiempos estándar y tolerancia del ±10%.</p>
+    </div>
+
+    <button type="button" class="btn-inaher" data-bs-toggle="modal" data-bs-target="#modalNuevaMedicion">
+        <i class="bi bi-plus-lg"></i> Nueva medición
+    </button>
+</div>
+
+<!-- ================= KPIS SUPERIORES DEL EXCEL ================= -->
+<section class="stats-grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Mediciones</span>
+            <span class="stat-icon icon-blue"><i class="bi bi-stopwatch"></i></span>
+        </div>
+        <strong>{{ kpis.total }}</strong>
+        <small>Total muestras</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Esta semana</span>
+            <span class="stat-icon icon-teal"><i class="bi bi-calendar2-week"></i></span>
+        </div>
+        <strong>{{ kpis.semana }}</strong>
+        <small>Toma reciente</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Ops. medidas</span>
+            <span class="stat-icon icon-green"><i class="bi bi-diagram-3"></i></span>
+        </div>
+        <strong>{{ kpis.ops_medidas }}</strong>
+        <small>Operaciones</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Tolerancia (±10%)</span>
+            <span class="stat-icon icon-green"><i class="bi bi-check2-circle"></i></span>
+        </div>
+        <strong class="text-success">{{ kpis.pct_tolerancia }}%</strong>
+        <small>Dentro de norma</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Listas (3+ m)</span>
+            <span class="stat-icon icon-blue"><i class="bi bi-collection"></i></span>
+        </div>
+        <strong>{{ kpis.listas }}</strong>
+        <small>Consolidadas</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Nuevas</span>
+            <span class="stat-icon icon-teal"><i class="bi bi-plus-circle"></i></span>
+        </div>
+        <strong class="{% if kpis.nuevas > 0 %}text-warning{% endif %}">{{ kpis.nuevas }}</strong>
+        <small>Sin catálogo</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>Dif. Promedio</span>
+            <span class="stat-icon icon-blue"><i class="bi bi-graph-up"></i></span>
+        </div>
+        <strong>{{ kpis.dif_promedio }}%</strong>
+        <small>vs Teórico</small>
+    </article>
+</section>
+
+<!-- ================= TABLA Y CARDS ================= -->
+<section class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Registro de cronometrajes</h2>
+            <p class="mb-0 text-muted small">Muestras tomadas en piso de producción.</p>
+        </div>
+        <span class="record-counter">{{ mediciones|length }} mediciones</span>
+    </div>
+
+    <!-- VISTA TABLA (DESKTOP) -->
+    <div class="table-responsive d-none d-md-block">
+        <table class="table-inaher table-designacion align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 85px;">Fecha</th>
+                    <th>Quién midió</th>
+                    <th>Operador</th>
+                    <th>Modelo / Pieza</th>
+                    <th>Operación madre › detallada</th>
+                    <th>Máquina</th>
+                    <th class="text-center">Mat.</th>
+                    <th class="text-center">1 pza</th>
+                    <th class="text-center">Muestra</th>
+                    <th class="text-center">Total</th>
+                    <th class="text-center">Min/pz Real</th>
+                    <th class="text-center">Usa HOY</th>
+                    <th class="text-center">Tolerancia</th>
+                    <th style="width: 50px;" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in mediciones %}
+                <tr>
+                    <td><small class="text-muted">{{ m.fecha|date:"d/m/y" }}</small></td>
+                    <td><strong>{{ m.quien_midio }}</strong></td>
+                    <td><span class="badge-operario">{{ m.operador.nombre|default:"—" }}</span></td>
+                    <td><span class="fw-medium text-dark">{{ m.modelo_pieza }}</span></td>
+                    <td>
+                        <div class="small fw-semibold">{{ m.operacion_madre.nombre|default:"—" }}</div>
+                        <small class="text-muted">{{ m.operacion_detallada.nombre|default:"—" }}</small>
+                    </td>
+                    <td><small class="text-muted">{{ m.maquina.nombre|default:"—" }}</small></td>
+                    <td class="text-center"><span class="badge-pill-num">{{ m.get_material_display }}</span></td>
+                    <td class="text-center"><small class="text-muted">{{ m.tiempo_1_pieza }}</small></td>
+                    <td class="text-center"><span class="badge-pill-num">{{ m.muestra_piezas }} pz</span></td>
+                    <td class="text-center"><small class="fw-semibold">{{ m.muestra_tiempo_total }}</small></td>
+                    <td class="text-center">
+                        <strong class="text-primary">{{ m.minutos_muestra_decimal }}m</strong>
+                    </td>
+                    <td class="text-center">
+                        {% if m.min_pz_hoy == "NUEVA" %}
+                            <span class="badge bg-secondary">NUEVA</span>
+                        {% else %}
+                            <span class="fw-semibold">{{ m.min_pz_hoy }}m</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="status-badge {{ m.estatus_tolerancia.clase }}">
+                            {{ m.estatus_tolerancia.texto }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <form method="post" action="{% url 'tiempos:eliminar' m.id %}" onsubmit="return confirm('¿Eliminar medición?');" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action-icon text-danger border-0 bg-transparent">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="14" class="text-center py-4 text-muted">
+                        No hay mediciones registradas aún. Presiona <strong>Nueva medición</strong>.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- VISTA TARJETAS (RESPONSIVO CELULAR) -->
+    <div class="d-md-none p-3">
+        {% for m in mediciones %}
+        <div class="tarea-card-mobile mb-3 p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="badge-operario">{{ m.operador.nombre|default:"Sin operador" }}</span>
+                    <small class="text-muted ms-1">{{ m.fecha|date:"d/m/y" }}</small>
+                </div>
+                <span class="status-badge {{ m.estatus_tolerancia.clase }}">
+                    {{ m.estatus_tolerancia.texto }}
+                </span>
+            </div>
+
+            <div class="fw-bold text-dark mb-1">{{ m.modelo_pieza }}</div>
+            <div class="text-muted small mb-2">
+                {{ m.operacion_madre.nombre }} › {{ m.operacion_detallada.nombre }}
+            </div>
+
+            <div class="bg-light p-2 rounded small mb-2">
+                <div class="d-flex justify-content-between mb-1">
+                    <span><strong>Muestra:</strong> {{ m.muestra_piezas }} pz ({{ m.muestra_tiempo_total }})</span>
+                    <span><strong>Min/pz Real:</strong> <span class="text-primary fw-bold">{{ m.minutos_muestra_decimal }}m</span></span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span><strong>Estándar HOY:</strong> {{ m.min_pz_hoy }}</span>
+                    <span><strong>Analista:</strong> {{ m.quien_midio }}</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4 text-muted">No hay mediciones registradas.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- MODAL NUEVA MEDICIÓN -->
+<div class="modal fade" id="modalNuevaMedicion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-stopwatch text-primary me-2"></i>Nueva medición de tiempos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'tiempos:crear' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">{{ form.fecha.label_tag }}{{ form.fecha }}</div>
+                        <div class="col-6 col-md-4">{{ form.quien_midio.label_tag }}{{ form.quien_midio }}</div>
+                        <div class="col-12 col-md-5">{{ form.operador.label_tag }}{{ form.operador }}</div>
+
+                        <div class="col-12 col-md-6">{{ form.modelo_pieza.label_tag }}{{ form.modelo_pieza }}</div>
+                        <div class="col-6 col-md-3">{{ form.medida.label_tag }}{{ form.medida }}</div>
+                        <div class="col-6 col-md-3">{{ form.material.label_tag }}{{ form.material }}</div>
+
+                        <div class="col-12 col-md-6">{{ form.operacion_madre.label_tag }}{{ form.operacion_madre }}</div>
+                        <div class="col-12 col-md-6">{{ form.operacion_detallada.label_tag }}{{ form.operacion_detallada }}</div>
+
+                        <div class="col-12 col-md-6">{{ form.maquina.label_tag }}{{ form.maquina }}</div>
+                        <div class="col-12 col-md-6">{{ form.foto_url.label_tag }}{{ form.foto_url }}</div>
+
+                        <div class="col-4 col-md-4">{{ form.tiempo_1_pieza.label_tag }}{{ form.tiempo_1_pieza }}</div>
+                        <div class="col-4 col-md-4">{{ form.muestra_piezas.label_tag }}{{ form.muestra_piezas }}</div>
+                        <div class="col-4 col-md-4">{{ form.muestra_tiempo_total.label_tag }}{{ form.muestra_tiempo_total }}</div>
+
+                        <div class="col-12">{{ form.observaciones.label_tag }}{{ form.observaciones }}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-inaher"><i class="bi bi-save"></i> Guardar medición</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

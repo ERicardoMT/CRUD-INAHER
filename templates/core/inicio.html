@@ -92,8 +92,8 @@
     </a>
 
     {% for modulo in modulos %}
-    <a
-        href="{% if modulo.slug == 'designacion-diaria' %}{% url 'designaciones:hoy' %}{% else %}{% url 'core:modulo_pendiente' modulo.slug %}{% endif %}"
+    <a    
+        href="{% if modulo.slug == 'designacion-diaria' %}{% url 'designaciones:hoy' %}{% elif modulo.slug == 'estudio-de-tiempos' %}{% url 'tiempos:lista' %}{% else %}{% url 'core:modulo_pendiente' modulo.slug %}{% endif %}"
         class="module-card"
     >
         <div class="module-card-icon">

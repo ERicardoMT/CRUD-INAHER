@@ -76,13 +76,13 @@
                     <span>Eficiencia</span>
                 </a>
 
-                <a
-                    href="{% url 'core:modulo_pendiente' 'estudio-de-tiempos' %}"
-                    class="sidebar-link{% if request.path == '/modulos/estudio-de-tiempos/' %} is-active{% endif %}"
-                >
-                    <i class="bi bi-stopwatch"></i>
-                    <span>Estudio de tiempos</span>
-                </a>
+                    <a
+                        href="{% url 'tiempos:lista' %}"
+                        class="sidebar-link{% if request.resolver_match.namespace == 'tiempos' %} is-active{% endif %}"
+                    >
+                        <i class="bi bi-stopwatch"></i>
+                        <span>Estudio de tiempos</span>
+                    </a>
             </nav>
 
             <div class="sidebar-section-label">ADMINISTRACIÓN</div>
