@@ -3,142 +3,190 @@
 {% block title %}Pedidos | INAHER{% endblock %}
 
 {% block content %}
-
 <div class="page-heading">
     <div>
         <div class="eyebrow">ADMINISTRACIÓN</div>
-        <h1>Pedidos</h1>
-
-        <p>
-            Consulta y administra los pedidos de producción.
-        </p>
+        <h1>INAHER · Pedidos</h1>
+        <p class="text-muted mb-0">Control de pedidos, fechas de entrega y alertas de salida.</p>
     </div>
 
     <a href="{% url 'pedidos:crear' %}" class="btn-inaher">
-        <i class="bi bi-plus-lg"></i>
-        Nuevo pedido
+        <i class="bi bi-plus-lg"></i> Nuevo pedido
     </a>
 </div>
 
+<section class="stats-grid mb-4">
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>📋 Activos</span>
+            <span class="stat-icon icon-blue"><i class="bi bi-clipboard-check"></i></span>
+        </div>
+        <strong>{{ kpis.activos }}</strong>
+        <small>En proceso o detenidos</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>🔴 Atrasados</span>
+            <span class="stat-icon icon-blue" style="background:#FEE2E2; color:#991B1B;"><i class="bi bi-exclamation-circle"></i></span>
+        </div>
+        <strong class="text-danger">{{ kpis.atrasados }}</strong>
+        <small>Fecha vencida</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>🟠 Salen hoy</span>
+            <span class="stat-icon icon-teal" style="background:#FEF3C7; color:#92400E;"><i class="bi bi-calendar-event"></i></span>
+        </div>
+        <strong style="color:#D97706;">{{ kpis.sale_hoy }}</strong>
+        <small>Compromiso del día</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top">
+            <span>⛔ Detenidos</span>
+            <span class="stat-icon icon-blue" style="background:#F3F4F6; color:#4B5563;"><i class="bi bi-pause-circle"></i></span>
+        </div>
+        <strong>{{ kpis.detenidos }}</strong>
+        <small>Requieren atención</small>
+    </article>
+</section>
+
 <section class="content-card">
-    <div class="content-card-header">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
         <div>
             <h2>Listado de pedidos</h2>
-            <p>Registros disponibles en el prototipo local.</p>
+            <p class="mb-0 text-muted small">Priorizados según fecha de compromiso y estado.</p>
         </div>
-
-        <span class="record-counter">
-            {{ pedidos|length }} registros
-        </span>
+        <span class="record-counter">{{ pedidos|length }} registros</span>
     </div>
 
-    <div class="table-responsive">
-        <table class="table align-middle inaher-table">
+    <div class="table-responsive d-none d-md-block">
+        <table class="table-inaher table-designacion align-middle">
             <thead>
                 <tr>
-                    <th>Número</th>
-                    <th>Descripción</th>
-                    <th class="text-center">Cantidad</th>
-                    <th>Fecha de salida</th>
-                    <th>Estado</th>
-                    <th class="text-end">Acciones</th>
+                    <th style="width: 100px;"># Pedido</th>
+                    <th>Producto / Modelo</th>
+                    <th class="text-center" style="width: 80px;">Cant.</th>
+                    <th style="width: 100px;">Fecha salida</th>
+                    <th class="text-center" style="width: 75px;">Días</th>
+                    <th style="width: 120px;">Estado</th>
+                    <th style="width: 110px;">Estatus</th>
+                    <th>Notas / medidas</th>
+                    <th style="width: 90px;" class="text-end">Acciones</th>
                 </tr>
             </thead>
-
             <tbody>
                 {% for pedido in pedidos %}
                 <tr>
                     <td>
-                        <span class="order-number">
-                            #{{ pedido.numero }}
-                        </span>
+                        <strong class="text-primary">#{{ pedido.numero }}</strong>
                     </td>
-
                     <td>
-                        <div class="description-cell">
-                            {{ pedido.descripcion|truncatechars:75 }}
-                        </div>
+                        <div class="fw-medium text-dark">{{ pedido.descripcion }}</div>
                     </td>
-
                     <td class="text-center">
-                        {{ pedido.cantidad }}
+                        <span class="badge-pill-num">{{ pedido.cantidad }}</span>
                     </td>
-
                     <td>
-                        {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}
+                        {{ pedido.fecha_salida|date:"d/m/Y"|default:"—" }}
                     </td>
-
-                    <td>
-                        {% if pedido.estado == "EN_PROCESO" %}
-                            <span class="status-pill status-progress">
-                                En proceso
-                            </span>
-                        {% elif pedido.estado == "TERMINADO" %}
-                            <span class="status-pill status-finished">
-                                Terminado
+                    <td class="text-center">
+                        {% if pedido.dias_restantes is not None %}
+                            <span class="fw-semibold {% if pedido.dias_restantes < 0 %}text-danger{% elif pedido.dias_restantes == 0 %}text-warning{% else %}text-muted{% endif %}">
+                                {{ pedido.dias_restantes }}
                             </span>
                         {% else %}
-                            <span class="status-pill status-stopped">
-                                Detenido
-                            </span>
+                            <span class="text-muted">—</span>
                         {% endif %}
                     </td>
-
                     <td>
-                        <div class="table-actions">
-                            <a
-                                href="{% url 'pedidos:detalle' pedido.pk %}"
-                                class="action-button"
-                                title="Ver detalle"
-                            >
+                        <span class="status-badge {{ pedido.alerta_estado.clase }}">
+                            {{ pedido.alerta_estado.texto }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if pedido.estado == "EN_PROCESO" %}
+                            <span class="status-pill status-progress">En proceso</span>
+                        {% elif pedido.estado == "TERMINADO" %}
+                            <span class="status-pill status-finished">Terminado</span>
+                        {% else %}
+                            <span class="status-pill status-stopped">Detenido</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ pedido.notas|default:"—" }}</small>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex align-items-center justify-content-end gap-1">
+                            <a href="{% url 'pedidos:detalle' pedido.pk %}" class="btn-action-icon text-primary" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </a>
-
-                            <a
-                                href="{% url 'pedidos:editar' pedido.pk %}"
-                                class="action-button"
-                                title="Editar pedido"
-                            >
-                                <i class="bi bi-pencil-square"></i>
+                            <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-action-icon text-secondary" title="Editar">
+                                <i class="bi bi-pencil"></i>
                             </a>
-
-                            <a
-                                href="{% url 'pedidos:eliminar' pedido.pk %}"
-                                class="action-button action-danger"
-                                title="Eliminar pedido"
-                            >
-                                <i class="bi bi-trash3"></i>
+                            <a href="{% url 'pedidos:eliminar' pedido.pk %}" class="btn-action-icon text-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i>
                             </a>
                         </div>
                     </td>
                 </tr>
-
                 {% empty %}
                 <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
-                            <i class="bi bi-inbox"></i>
-
-                            <h3>Aún no hay pedidos</h3>
-
-                            <p>
-                                Registra el primer pedido de prueba
-                                para comenzar a utilizar este módulo.
-                            </p>
-
-                            <a
-                                href="{% url 'pedidos:crear' %}"
-                                class="btn-inaher"
-                            >
-                                Crear primer pedido
-                            </a>
-                        </div>
+                    <td colspan="9" class="text-center py-4 text-muted">
+                        No hay pedidos registrados actualmente.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-</section>
 
+    <div class="d-md-none p-3">
+        {% for pedido in pedidos %}
+        <div class="tarea-card-mobile mb-3 p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <strong class="text-primary fs-6">#{{ pedido.numero }}</strong>
+                    <span class="badge-pill-num ms-1">{{ pedido.cantidad }} pzas</span>
+                </div>
+                <span class="status-badge {{ pedido.alerta_estado.clase }}">
+                    {{ pedido.alerta_estado.texto }}
+                </span>
+            </div>
+
+            <div class="fw-semibold text-dark mb-2">
+                {{ pedido.descripcion }}
+            </div>
+
+            <div class="bg-light p-2 rounded mb-2 small">
+                <div class="d-flex justify-content-between mb-1">
+                    <span><strong>Salida:</strong> {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}</span>
+                    <span><strong>Días:</strong> {{ pedido.dias_restantes|default:"—" }}</span>
+                </div>
+                <div>
+                    <strong>Estatus:</strong> {{ pedido.get_estado_display }}
+                </div>
+                {% if pedido.notas %}
+                <div class="mt-1 text-muted fst-italic">
+                    <i class="bi bi-info-circle"></i> {{ pedido.notas }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'pedidos:detalle' pedido.pk %}" class="btn-outline-inaher btn-sm">
+                    <i class="bi bi-eye"></i> Ver
+                </a>
+                <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-outline-inaher btn-sm">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4 text-muted">No hay pedidos registrados.</div>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

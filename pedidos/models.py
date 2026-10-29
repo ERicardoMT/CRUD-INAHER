@@ -54,5 +54,32 @@ class Pedido(models.Model):
         verbose_name = "Pedido"
         verbose_name_plural = "Pedidos"
 
+    @property
+    def dias_restantes(self):
+        """Calcula Días = Fecha salida - HOY()"""
+        if not self.fecha_salida:
+            return None
+        from django.utils import timezone
+        return (self.fecha_salida - timezone.localdate()).days
+
+    @property
+    def alerta_estado(self):
+        """Replica la fórmula exacta de la columna Estado del Excel"""
+        if self.estado == self.Estado.TERMINADO:
+            return {"texto": "LISTO", "clase": "status-terminado"}
+        
+        dias = self.dias_restantes
+        if dias is None:
+            return {"texto": "SIN FECHA", "clase": "status-neutral"}
+        
+        if dias < 0:
+            return {"texto": "ATRASADO", "dias": dias, "clase": "status-detenido"}
+        elif dias == 0:
+            return {"texto": "SALE HOY", "dias": 0, "clase": "status-proceso"}
+        elif dias <= 2:
+            return {"texto": "URGENTE", "dias": dias, "clase": "status-proceso"}
+        else:
+            return {"texto": "EN TIEMPO", "dias": dias, "clase": "status-terminado"}
+
     def __str__(self):
         return f"Pedido {self.numero}"
