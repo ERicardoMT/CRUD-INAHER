@@ -89,8 +89,8 @@
 
             <nav class="sidebar-nav">
                 <a
-                    href="{% url 'core:modulo_pendiente' 'catalogos' %}"
-                    class="sidebar-link{% if request.path == '/modulos/catalogos/' %} is-active{% endif %}"
+                    href="{% url 'core:catalogos' %}"
+                    class="sidebar-link{% if '/catalogos/' in request.path %} is-active{% endif %}"
                 >
                     <i class="bi bi-sliders"></i>
                     <span>Catálogos</span>

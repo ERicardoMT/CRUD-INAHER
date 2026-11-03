@@ -93,7 +93,7 @@
 
     {% for modulo in modulos %}
     <a    
-        href="{% if modulo.slug == 'designacion-diaria' %}{% url 'designaciones:hoy' %}{% elif modulo.slug == 'estudio-de-tiempos' %}{% url 'tiempos:lista' %}{% else %}{% url 'core:modulo_pendiente' modulo.slug %}{% endif %}"
+        href="{% if modulo.slug == 'designacion-diaria' %}{% url 'designaciones:hoy' %}{% elif modulo.slug == 'estudio-de-tiempos' %}{% url 'tiempos:lista' %}{% elif modulo.slug == 'catalogos' %}{% url 'core:catalogos' %}{% else %}{% url 'core:modulo_pendiente' modulo.slug %}{% endif %}"
         class="module-card"
     >
         <div class="module-card-icon">
