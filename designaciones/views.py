@@ -1,5 +1,6 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.db.models import F
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -31,11 +32,22 @@ def designacion_hoy(request):
 
     designacion, _ = DesignacionDia.objects.get_or_create(fecha=fecha_actual)
 
-    items = designacion.items.select_related(
+    items_qs = designacion.items.select_related(
         "quien", "pedido", "operacion_madre", "operacion_detallada", "maquina"
-    ).all()
+    )
 
-    # Resumen por cada persona (como en columnas O, P, Q del Excel)
+    orden = request.GET.get("orden")
+    if orden == "persona":
+        items = items_qs.order_by("quien__nombre", "paso")
+    elif orden == "operacion":
+        items = items_qs.order_by("operacion_madre__nombre", "operacion_detallada__nombre", "paso")
+    elif orden == "maquina":
+        items = items_qs.order_by(F("maquina__nombre").asc(nulls_last=True), "paso")
+    elif orden == "urgencia":
+        items = items_qs.order_by(F("pedido__fecha_salida").asc(nulls_last=True), "paso")
+    else:
+        items = items_qs.order_by("orden", "id")
+
     operarios = Operario.objects.filter(activo=True)
     resumen_operarios = []
     for op in operarios:
@@ -176,3 +188,128 @@ def api_pedido_info(request):
         })
     except Pedido.DoesNotExist:
         return JsonResponse({"error": "No existe"}, status=404)
+
+@require_POST
+def vaciar_items_seleccionados(request, designacion_id):
+    """Vacía las filas de tareas seleccionadas mediante checkboxes."""
+    item_ids = request.POST.getlist("item_ids")
+    if item_ids:
+        eliminados, _ = ItemDesignacion.objects.filter(id__in=item_ids, designacion_id=designacion_id).delete()
+        messages.success(request, f"Se vaciaron {eliminados} fila(s) seleccionada(s).")
+    else:
+        messages.warning(request, "No seleccionaste ninguna fila para vaciar.")
+    fecha = request.POST.get("fecha", "")
+    return redirect(f"{reverse('designaciones:hoy')}?fecha={fecha}" if fecha else reverse('designaciones:hoy'))
+
+
+@require_POST
+def nuevo_dia(request, designacion_id):
+    """Archiva la jornada actual y prepara el siguiente día con las tareas pendientes."""
+    actual = get_object_or_404(DesignacionDia, pk=designacion_id)
+    actual.cerrada = True
+    actual.save()
+
+    siguiente_fecha = actual.fecha + timedelta(days=1)
+    if siguiente_fecha.weekday() == 6: 
+        siguiente_fecha += timedelta(days=1)
+
+    nuevo, _ = DesignacionDia.objects.get_or_create(fecha=siguiente_fecha)
+
+    pendientes = actual.items.filter(hecho=False)
+    for p in pendientes:
+        ItemDesignacion.objects.create(
+            designacion=nuevo,
+            quien=p.quien,
+            pedido=p.pedido,
+            es_stock=p.es_stock,
+            paso=p.paso,
+            descripcion_manual=p.descripcion_manual,
+            operacion_madre=p.operacion_madre,
+            operacion_detallada=p.operacion_detallada,
+            maquina=p.maquina,
+            detalle=p.detalle,
+            cantidad=p.cantidad,
+            minutos=p.minutos,
+            hecho=False
+        )
+
+    messages.success(request, f"Jornada archivada. Se inició el nuevo día: {siguiente_fecha.strftime('%d/%m/%Y')}.")
+    return redirect(f"{reverse('designaciones:hoy')}?fecha={siguiente_fecha.strftime('%Y-%m-%d')}")
+
+
+@require_POST
+def cargar_ruta(request, designacion_id):
+    """Genera automáticamente las operaciones estándar del pedido según su familia."""
+    designacion = get_object_or_404(DesignacionDia, pk=designacion_id)
+    pedido_id = request.POST.get("pedido_id")
+    operario_id = request.POST.get("operario_id")
+    familia = request.POST.get("familia", "MT")
+
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+    quien = Operario.objects.filter(pk=operario_id).first() or Operario.objects.first()
+
+    secuencia_rutas = {
+        "MT": [
+            ("Cortar en sierra cinta", "Sierra cinta universal"),
+            ("Maquinar en torno convencional", "Torno convencional"),
+            ("Barrenar en torno convencional", "Torno convencional"),
+            ("Machuelear en brazo automático", "Machuelador automático"),
+            ("Armar nivelador sencillo (tornillo y base)", "Manual (mesa)"),
+            ("Empaquetar", "Manual (mesa)"),
+        ],
+        "MKD": [
+            ("Cortar en sierra cinta", "Sierra cinta universal"),
+            ("Maquinar en torno convencional", "Torno convencional"),
+            ("Barrenar en torno convencional", "Torno convencional"),
+            ("Machuelear en brazo automático", "Machuelador automático"),
+            ("Armar nivelador sencillo (tornillo y base)", "Manual (mesa)"),
+            ("Armar PAD con nivelador", "Manual (mesa)"),
+            ("Empaquetar", "Manual (mesa)"),
+        ],
+        "ROTULA": [
+            ("Cortar en sierra cinta", "Sierra cinta universal"),
+            ("Maquinar en torno convencional", "Torno convencional"),
+            ("Barrenar en torno convencional", "Torno convencional"),
+            ("Machuelear en brazo automático", "Machuelador automático"),
+            ("Armar rotula con tornillo (limpiar y poner trabaroscas)", "Manual (mesa)"),
+            ("Armar rótula con base (con presion)", "Manual (mesa)"),
+            ("Empaquetar", "Manual (mesa)"),
+        ],
+        "VULCANIZADO": [
+            ("Cortar neopreno", "Manual (mesa)"),
+            ("Vulcanizar", "Prensa azul hidráulica"),
+            ("Rebabear en tijera o cuter", "Manual (mesa)"),
+            ("Armar nivelador sencillo (tornillo y base)", "Manual (mesa)"),
+            ("Empaquetar", "Manual (mesa)"),
+        ]
+    }
+
+    pasos = secuencia_rutas.get(familia, secuencia_rutas["MT"])
+    creadas = 0
+
+    for idx, (nombre_madre, nombre_maq) in enumerate(pasos, start=1):
+        madre = OperacionMadre.objects.filter(nombre__icontains=nombre_madre).first()
+        if not madre:
+            madre, _ = OperacionMadre.objects.get_or_create(nombre=nombre_madre)
+
+        detallada = OperacionDetallada.objects.filter(madre=madre).first()
+        if not detallada:
+            detallada = OperacionDetallada.objects.create(madre=madre, nombre=f"{nombre_madre} general")
+
+        maquina = Maquina.objects.filter(nombre__icontains=nombre_maq).first()
+
+        ItemDesignacion.objects.create(
+            designacion=designacion,
+            quien=quien,
+            pedido=pedido,
+            paso=idx,
+            operacion_madre=madre,
+            operacion_detallada=detallada,
+            maquina=maquina,
+            cantidad=pedido.cantidad,
+            minutos=int(round(float(detallada.minutos_estandar or 1) * pedido.cantidad))
+        )
+        creadas += 1
+
+    messages.success(request, f"Se cargó la ruta ({familia}) con {creadas} pasos para el Pedido #{pedido.numero}.")
+    return redirect(f"{reverse('designaciones:hoy')}?fecha={designacion.fecha.strftime('%Y-%m-%d')}")    

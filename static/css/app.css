@@ -1240,3 +1240,23 @@ textarea.form-control {
     color: #166534;
     border: 1px solid #BBF7D0;
 }
+
+.dropdown-menu {
+    border-radius: var(--control-radius);
+    border: 1px solid var(--border);
+}
+
+.dropdown-item {
+    font-size: 13px;
+    padding: 8px 16px;
+}
+
+@media print {
+    .sidebar, .topbar, .btn-inaher, .btn-outline-inaher, .designacion-side-col, .dropdown, .table-actions {
+        display: none !important;
+    }
+    .main-area, .main-content, .designacion-main-col {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+}

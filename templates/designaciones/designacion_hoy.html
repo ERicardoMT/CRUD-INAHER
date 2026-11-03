@@ -30,13 +30,74 @@
             {% endif %}
         </form>
 
+        <div class="dropdown">
+            <button class="btn btn-outline-inaher dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-grid-fill text-primary"></i> <strong>INAHER</strong>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><h6 class="dropdown-header text-uppercase small">Rutas y Limpieza</h6></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#modalCargarRuta">
+                        <i class="bi bi-diagram-3 text-primary"></i> Cargar ruta (pedido &rarr; operaciones)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="enviarVaciarItems()">
+                        <i class="bi bi-trash"></i> Vaciar fila(s) seleccionada(s)
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header text-uppercase small">Agrupación y Orden</h6></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=persona">
+                        <i class="bi bi-person"></i> Agrupar por PERSONA
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=operacion">
+                        <i class="bi bi-gear"></i> Agrupar por OPERACIÓN
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=maquina">
+                        <i class="bi bi-cpu"></i> Agrupar por MÁQUINA
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=urgencia">
+                        <i class="bi bi-exclamation-triangle text-warning"></i> Ordenar por URGENCIA
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header text-uppercase small">Vistas</h6></li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="toggleModoImpresion(true)">
+                        <i class="bi bi-printer"></i> Modo impresión (ocultar resumen)
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="toggleModoImpresion(false)">
+                        <i class="bi bi-eye"></i> Modo captura (mostrar todo)
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" action="{% url 'designaciones:nuevo_dia' designacion.id %}" onsubmit="return confirm('¿Archivar la jornada actual e iniciar el nuevo día con las tareas pendientes?');">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success fw-semibold">
+                            <i class="bi bi-calendar-plus"></i> Nuevo día (archivar y limpiar)
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+
         <button type="button" class="btn-inaher" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
             <i class="bi bi-plus-lg"></i> Asignar Tarea
         </button>
     </div>
 </div>
 
-<!-- ================= BANNER VULCANIZADO (ERNESTO) ================= -->
 <div class="vulcanizado-banner mb-4">
     <div class="vulcanizado-header">
         <div class="d-flex align-items-center gap-2">
@@ -172,240 +233,250 @@
                 </div>
             </div>
 
-            <!-- TABLA OPERATIVA (Para PC / Laptop y vista expandida) -->
-            <div class="table-responsive d-none d-md-block" id="contenedorTablaDesktop">
-                <table class="table-inaher table-designacion align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;" class="text-center">✓</th>
-                            <th>Quién</th>
-                            <th># Pedido</th>
-                            <th style="width: 55px;" class="text-center">Paso</th>
-                            <th>Producto / Modelo</th>
-                            <th>Operación madre › detallada</th>
-                            <th>Máquina</th>
-                            <th>Detalle / Tolerancia</th>
-                            <th class="text-end">Cant.</th>
-                            <th class="text-end">Min</th>
-                            <th>Salida</th>
-                            <th>Alerta</th>
-                            <th style="width: 70px;" class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaItemsBody">
-                        {% for item in items %}
-                        <tr class="item-fila {% if item.hecho %}fila-hecha{% endif %}" data-operario="{{ item.quien.nombre }}">
-                            <!-- CHECKBOX HECHO -->
-                            <td class="text-center">
-                                <button
-                                    type="button"
-                                    class="btn-check-toggle {% if item.hecho %}is-checked{% endif %}"
-                                    onclick="toggleItemHecho({{ item.id }}, this)"
-                                    title="Marcar como concluido"
-                                >
-                                    <i class="bi {% if item.hecho %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} fs-5"></i>
-                                </button>
-                            </td>
+            <!-- FORMULARIO PARA VACIAR FILAS SELECCIONADAS -->
+            <form id="formVaciarItems" method="post" action="{% url 'designaciones:vaciar_items_seleccionados' designacion.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="fecha" value="{{ fecha_actual|date:'Y-m-d' }}">
 
-                            <!-- QUIÉN -->
-                            <td>
-                                <strong class="badge-operario">{{ item.quien.nombre }}</strong>
-                            </td>
+                <!-- TABLA OPERATIVA (Para PC / Laptop) -->
+                <div class="table-responsive d-none d-md-block" id="contenedorTablaDesktop">
+                    <table class="table-inaher table-designacion align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 35px;"><input type="checkbox" id="checkAllItems" onclick="toggleSelectAllItems(this)"></th>
+                                <th style="width: 50px;" class="text-center">✓</th>
+                                <th>Quién</th>
+                                <th># Pedido</th>
+                                <th style="width: 55px;" class="text-center">Paso</th>
+                                <th>Producto / Modelo</th>
+                                <th>Operación madre &rsaquo; detallada</th>
+                                <th>Máquina</th>
+                                <th>Detalle / Tolerancia</th>
+                                <th class="text-end">Cant.</th>
+                                <th class="text-end">Min</th>
+                                <th>Salida</th>
+                                <th>Alerta</th>
+                                <th style="width: 70px;" class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaItemsBody">
+                            {% for item in items %}
+                            <tr class="item-fila {% if item.hecho %}fila-hecha{% endif %}" data-operario="{{ item.quien.nombre }}">
+                                <!-- CASILLA DE SELECCIÓN PARA VACIAR -->
+                                <td class="text-center">
+                                    <input type="checkbox" name="item_ids" value="{{ item.id }}" class="item-select-check form-check-input">
+                                </td>
 
-                            <!-- PEDIDO -->
-                            <td>
-                                {% if item.es_stock %}
-                                <span class="badge bg-secondary">STOCK</span>
-                                {% elif item.pedido %}
-                                <a href="{% url 'pedidos:detalle' item.pedido.id %}" class="fw-semibold text-primary">
+                                <!-- CHECKBOX HECHO (✓) -->
+                                <td class="text-center">
+                                    <button
+                                        type="button"
+                                        class="btn-check-toggle {% if item.hecho %}is-checked{% endif %}"
+                                        onclick="toggleItemHecho({{ item.id }}, this)"
+                                        title="Marcar como concluido"
+                                    >
+                                        <i class="bi {% if item.hecho %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} fs-5"></i>
+                                    </button>
+                                </td>
+
+                                <!-- QUIÉN -->
+                                <td>
+                                    <strong class="badge-operario">{{ item.quien.nombre }}</strong>
+                                </td>
+
+                                <!-- PEDIDO -->
+                                <td>
+                                    {% if item.es_stock %}
+                                    <span class="badge bg-secondary">STOCK</span>
+                                    {% elif item.pedido %}
+                                    <a href="{% url 'pedidos:detalle' item.pedido.id %}" class="fw-semibold text-primary">
+                                        #{{ item.pedido.numero }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- PASO -->
+                                <td class="text-center">
+                                    <span class="badge-paso">{{ item.paso }}</span>
+                                </td>
+
+                                <!-- PRODUCTO -->
+                                <td>
+                                    <div class="cell-producto" title="{{ item.producto_texto }}">
+                                        {{ item.producto_texto }}
+                                    </div>
+                                </td>
+
+                                <!-- OPERACIÓN -->
+                                <td>
+                                    <div class="fw-medium text-dark">{{ item.operacion_madre.nombre }}</div>
+                                    <small class="text-muted">{{ item.operacion_detallada.nombre }}</small>
+                                </td>
+
+                                <!-- MÁQUINA -->
+                                <td>
+                                    {% if item.maquina %}
+                                    <span class="text-muted small"><i class="bi bi-gear"></i> {{ item.maquina.nombre }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">—</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- DETALLE -->
+                                <td>
+                                    <span class="text-muted small">{{ item.detalle|default:"—" }}</span>
+                                </td>
+
+                                <!-- CANTIDAD -->
+                                <td class="text-center" style="min-width: 80px;">
+                                    <span class="badge-pill-num">{{ item.cantidad }} pz</span>
+                                </td>
+
+                                <!-- MINUTOS -->
+                                <td class="text-center" style="min-width: 80px;">
+                                    <span class="badge-pill-num">{{ item.minutos }} min</span>
+                                </td>
+
+                                <!-- FECHA SALIDA -->
+                                <td style="min-width: 90px;">
+                                    {% if item.fecha_salida %}
+                                    <span class="text-secondary fw-semibold">{{ item.fecha_salida|date:"d/m/y" }}</span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- ALERTA -->
+                                <td style="min-width: 130px;">
+                                    <span class="status-badge {{ item.alerta.clase }}">
+                                        {{ item.alerta.texto }}
+                                    </span>
+                                </td>
+
+                                <!-- ACCIONES -->
+                                <td class="text-end">
+                                    <div class="d-flex align-items-center justify-content-end gap-1">
+                                        <a href="{% url 'designaciones:editar_item' item.id %}" class="btn-action-icon text-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea de la jornada?');" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-action-icon text-danger border-0 bg-transparent" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="14" class="text-center py-4 text-muted">
+                                    <i class="bi bi-clipboard2-plus fs-2 d-block mb-2"></i>
+                                    No hay tareas asignadas para esta fecha aún. Haz clic en <strong>Asignar Tarea</strong> o <strong>INAHER &rarr; Cargar ruta</strong> para comenzar.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="cards-operativas-mobile d-md-none p-3" id="contenedorCardsMobile">
+                    {% for item in items %}
+                    <div class="tarea-card-mobile mb-3 p-3 {% if item.hecho %}is-hecho{% endif %}" data-operario="{{ item.quien.nombre }}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="checkbox" name="item_ids" value="{{ item.id }}" class="item-select-check form-check-input">
+                                <span class="badge-operario">{{ item.quien.nombre }}</span>
+                                <span class="badge-paso">Paso {{ item.paso }}</span>
+                            </div>
+                            <span class="status-badge {{ item.alerta.clase }}">
+                                {{ item.alerta.texto }}
+                            </span>
+                        </div>
+
+                        <div class="tarea-card-title mb-1">
+                            <strong>{{ item.operacion_madre.nombre }}</strong>
+                        </div>
+                        <div class="text-muted small mb-2">
+                            {{ item.operacion_detallada.nombre }}
+                        </div>
+
+                        <div class="tarea-card-meta mb-3 p-2 bg-light rounded">
+                            <div class="row g-1 small">
+                                <div class="col-7">
+                                    <strong>Pedido:</strong>
+                                    {% if item.es_stock %}
+                                    <span class="badge bg-secondary">STOCK</span>
+                                    {% elif item.pedido %}
                                     #{{ item.pedido.numero }}
-                                </a>
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- PASO -->
-                            <td class="text-center">
-                                <span class="badge-paso">{{ item.paso }}</span>
-                            </td>
-
-                            <!-- PRODUCTO -->
-                            <td>
-                                <div class="cell-producto" title="{{ item.producto_texto }}">
-                                    {{ item.producto_texto }}
+                                    {% else %}—{% endif %}
                                 </div>
-                            </td>
-
-                            <!-- OPERACIÓN -->
-                            <td>
-                                <div class="fw-medium text-dark">{{ item.operacion_madre.nombre }}</div>
-                                <small class="text-muted">{{ item.operacion_detallada.nombre }}</small>
-                            </td>
-
-                            <!-- MÁQUINA -->
-                            <td>
+                                <div class="col-5 text-end">
+                                    <strong>Cant:</strong> {{ item.cantidad }} pzas
+                                </div>
+                                <div class="col-12 text-truncate" title="{{ item.producto_texto }}">
+                                    <i class="bi bi-box-seam"></i> {{ item.producto_texto }}
+                                </div>
                                 {% if item.maquina %}
-                                <span class="text-muted small"><i class="bi bi-gear"></i> {{ item.maquina.nombre }}</span>
-                                {% else %}
-                                <span class="text-muted small">—</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- DETALLE -->
-                            <td>
-                                <span class="text-muted small">{{ item.detalle|default:"—" }}</span>
-                            </td>
-
-                            <!-- CANTIDAD -->
-                            <td class="text-center" style="min-width: 80px;">
-                                <span class="badge-pill-num">{{ item.cantidad }} pz</span>
-                            </td>
-
-                            <!-- MINUTOS -->
-                            <td class="text-center" style="min-width: 80px;">
-                                <span class="badge-pill-num">{{ item.minutos }} min</span>
-                            </td>
-
-                            <!-- FECHA SALIDA -->
-                            <td style="min-width: 90px;">
-                                {% if item.fecha_salida %}
-                                <span class="text-secondary fw-semibold">{{ item.fecha_salida|date:"d/m/y" }}</span>
-                                {% else %}
-                                <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- ALERTA -->
-                            <td style="min-width: 130px;">
-                                <span class="status-badge {{ item.alerta.clase }}">
-                                    {{ item.alerta.texto }}
-                                </span>
-                            </td>
-
-                            <!-- ACCIONES -->
-                            <td class="text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-1">
-                                    <a href="{% url 'designaciones:editar_item' item.id %}" class="btn-action-icon text-primary" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <form method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea de la jornada?');" style="display:inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn-action-icon text-danger border-0 bg-transparent" title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
+                                <div class="col-7">
+                                    <i class="bi bi-gear"></i> {{ item.maquina.nombre }}
                                 </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="13" class="text-center py-4 text-muted">
-                                <i class="bi bi-clipboard2-plus fs-2 d-block mb-2"></i>
-                                No hay tareas asignadas para esta fecha aún. Haz clic en <strong>Asignar Tarea</strong> para comenzar.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- VISTA RESPONSIVA EN TARJETAS (Especial para celulares y tablets) -->
-            <div class="cards-operativas-mobile d-md-none p-3" id="contenedorCardsMobile">
-                {% for item in items %}
-                <div class="tarea-card-mobile mb-3 p-3 {% if item.hecho %}is-hecho{% endif %}" data-operario="{{ item.quien.nombre }}">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge-operario">{{ item.quien.nombre }}</span>
-                            <span class="badge-paso">Paso {{ item.paso }}</span>
+                                {% endif %}
+                                <div class="col-5 text-end">
+                                    <i class="bi bi-stopwatch"></i> <strong>{{ item.minutos }} min</strong>
+                                </div>
+                                {% if item.detalle %}
+                                <div class="col-12 mt-1 text-secondary fst-italic">
+                                    <i class="bi bi-info-circle"></i> {{ item.detalle }}
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <span class="status-badge {{ item.alerta.clase }}">
-                            {{ item.alerta.texto }}
-                        </span>
-                    </div>
 
-                    <div class="tarea-card-title mb-1">
-                        <strong>{{ item.operacion_madre.nombre }}</strong>
-                    </div>
-                    <div class="text-muted small mb-2">
-                        {{ item.operacion_detallada.nombre }}
-                    </div>
-
-                    <div class="tarea-card-meta mb-3 p-2 bg-light rounded">
-                        <div class="row g-1 small">
-                            <div class="col-7">
-                                <strong>Pedido:</strong>
-                                {% if item.es_stock %}
-                                <span class="badge bg-secondary">STOCK</span>
-                                {% elif item.pedido %}
-                                #{{ item.pedido.numero }}
-                                {% else %}—{% endif %}
-                            </div>
-                            <div class="col-5 text-end">
-                                <strong>Cant:</strong> {{ item.cantidad }} pzas
-                            </div>
-                            <div class="col-12 text-truncate" title="{{ item.producto_texto }}">
-                                <i class="bi bi-box-seam"></i> {{ item.producto_texto }}
-                            </div>
-                            {% if item.maquina %}
-                            <div class="col-7">
-                                <i class="bi bi-gear"></i> {{ item.maquina.nombre }}
-                            </div>
-                            {% endif %}
-                            <div class="col-5 text-end">
-                                <i class="bi bi-stopwatch"></i> <strong>{{ item.minutos }} min</strong>
-                            </div>
-                            {% if item.detalle %}
-                            <div class="col-12 mt-1 text-secondary fst-italic">
-                                <i class="bi bi-info-circle"></i> {{ item.detalle }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- BOTÓN GIGANTE TÁCTIL PARA CELULAR -->
-                    <div class="d-flex align-items-center justify-content-between gap-2">
-                        <button
-                            type="button"
-                            class="btn-mobile-toggle w-100 {% if item.hecho %}btn-success{% else %}btn-outline-secondary{% endif %}"
-                            onclick="toggleItemHecho({{ item.id }}, this)"
-                        >
-                            <i class="bi {% if item.hecho %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-1"></i>
-                            <span>{% if item.hecho %}Completado (✓){% else %}Marcar como Concluido{% endif %}</span>
-                        </button>
-
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots-vertical"></i>
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <button
+                                type="button"
+                                class="btn-mobile-toggle w-100 {% if item.hecho %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                                onclick="toggleItemHecho({{ item.id }}, this)"
+                            >
+                                <i class="bi {% if item.hecho %}bi-check-circle-fill{% else %}bi-circle{% endif %} me-1"></i>
+                                <span>{% if item.hecho %}Completado (✓){% else %}Marcar como Concluido{% endif %}</span>
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'designaciones:editar_item' item.id %}">
-                                        <i class="bi bi-pencil me-1"></i> Editar
-                                    </a>
-                                </li>
-                                <li>
-                                    <form method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="bi bi-trash me-1"></i> Eliminar
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
+
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'designaciones:editar_item' item.id %}">
+                                            <i class="bi bi-pencil me-1"></i> Editar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <form method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash me-1"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted">
+                        <p>No hay tareas registradas para hoy.</p>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="text-center py-4 text-muted">
-                    <p>No hay tareas registradas para hoy.</p>
-                </div>
-                {% endfor %}
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- COLUMNA LATERAL: RESUMEN POR PERSONA (Cols O, P, Q del Excel) -->
     <div class="designacion-side-col">
         <div class="content-card sticky-top-card">
             <div class="content-card-header">
@@ -446,7 +517,6 @@
 
 </div>
 
-<!-- ================= MODAL NUEVA TAREA ================= -->
 <div class="modal fade" id="modalNuevaTarea" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -461,25 +531,18 @@
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="row g-3">
-                        <!-- QUIÉN -->
                         <div class="col-12 col-md-4">
                             <label class="form-label fw-semibold">Quién (Operario) *</label>
                             {{ form_item.quien }}
                         </div>
-
-                        <!-- PEDIDO -->
                         <div class="col-12 col-md-5">
                             <label class="form-label fw-semibold"># Pedido</label>
                             {{ form_item.pedido }}
                         </div>
-
-                        <!-- PASO -->
                         <div class="col-12 col-md-3">
                             <label class="form-label fw-semibold">Paso *</label>
                             {{ form_item.paso }}
                         </div>
-
-                        <!-- ES STOCK CHECKBOX -->
                         <div class="col-12">
                             <div class="form-check form-switch">
                                 {{ form_item.es_stock }}
@@ -488,45 +551,31 @@
                                 </label>
                             </div>
                         </div>
-
-                        <!-- DESCRIPCIÓN MANUAL / PRODUCTO -->
                         <div class="col-12" id="boxDescripcionManual">
                             <label class="form-label">Producto / Modelo</label>
                             {{ form_item.descripcion_manual }}
                             <small class="text-muted">Si seleccionas un pedido arriba, este campo se llena solo.</small>
                         </div>
-
-                        <!-- OPERACIÓN MADRE -->
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">Operación madre *</label>
                             {{ form_item.operacion_madre }}
                         </div>
-
-                        <!-- OPERACIÓN DETALLADA -->
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">Operación detallada *</label>
                             {{ form_item.operacion_detallada }}
                         </div>
-
-                        <!-- MÁQUINA -->
                         <div class="col-12 col-md-6">
                             <label class="form-label">Máquina</label>
                             {{ form_item.maquina }}
                         </div>
-
-                        <!-- DETALLE / TOLERANCIA -->
                         <div class="col-12 col-md-6">
                             <label class="form-label">Detalle (medida · tolerancia)</label>
                             {{ form_item.detalle }}
                         </div>
-
-                        <!-- CANTIDAD -->
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">Cantidad *</label>
                             {{ form_item.cantidad }}
                         </div>
-
-                        <!-- MINUTOS -->
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">Minutos calculados</label>
                             {{ form_item.minutos }}
@@ -545,11 +594,59 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalCargarRuta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-diagram-3 text-primary me-2"></i>Cargar ruta de producción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'designaciones:cargar_ruta' designacion.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Seleccionar Pedido *</label>
+                        <select name="pedido_id" class="form-select" required>
+                            <option value="">-- Elige el pedido --</option>
+                            {% for p in pedidos_activos %}
+                            <option value="{{ p.id }}">#{{ p.numero }} - {{ p.descripcion|truncatechars:40 }} ({{ p.cantidad }} pz)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Familia de producto / Ruta *</label>
+                        <select name="familia" class="form-select">
+                            <option value="MT">MT (con o sin pad) — Varilla, torno, barrenado, ensamble</option>
+                            <option value="MKD">MKD con pad — Varilla, torno, barrenado, pegado de pad</option>
+                            <option value="ROTULA">Rótula inyectada — Torno, barrenado, trabarroscas, rótula</option>
+                            <option value="VULCANIZADO">Charola vulcanizada — Neopreno, prensa, rebabeo</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Asignar inicialmente a</label>
+                        <select name="operario_id" class="form-select">
+                            {% for op in operarios %}
+                            <option value="{{ op.id }}">{{ op.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Podrás reasignar cada paso a distintos operarios después.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-inaher"><i class="bi bi-lightning-charge"></i> Cargar operaciones</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Toggle de tarea concluida mediante AJAX
 function toggleItemHecho(itemId, btnElem) {
     const csrfToken = '{{ csrf_token }}';
     fetch(`/designacion/item/toggle/${itemId}/`, {
@@ -562,7 +659,6 @@ function toggleItemHecho(itemId, btnElem) {
     .then(r => r.json())
     .then(data => {
         if(data.success) {
-            // Actualizar vista desktop
             const row = btnElem.closest('tr');
             if(row) {
                 if(data.hecho) {
@@ -576,7 +672,6 @@ function toggleItemHecho(itemId, btnElem) {
                 }
             }
 
-            // Actualizar vista móvil
             const card = btnElem.closest('.tarea-card-mobile');
             if(card) {
                 const btnMobile = card.querySelector('.btn-mobile-toggle');
@@ -593,7 +688,6 @@ function toggleItemHecho(itemId, btnElem) {
                 }
             }
 
-            // Actualizar KPIs de cabecera
             document.getElementById('kpiTotalHechos').innerHTML = `${data.total_hechos} <small class="fs-6 text-muted">min</small>`;
             document.getElementById('kpiAvancePct').innerText = `${data.porcentaje_avance}%`;
             document.getElementById('kpiProgressBar').style.width = `${data.porcentaje_avance}%`;
@@ -602,28 +696,46 @@ function toggleItemHecho(itemId, btnElem) {
     .catch(err => console.error(err));
 }
 
-// Filtro interactivo por operario
+function toggleSelectAllItems(master) {
+    document.querySelectorAll('.item-select-check').forEach(cb => cb.checked = master.checked);
+}
+
+function enviarVaciarItems() {
+    const checks = document.querySelectorAll('.item-select-check:checked');
+    if (checks.length === 0) {
+        alert("Selecciona al menos una fila marcando la casilla de la izquierda.");
+        return;
+    }
+    if (confirm(`¿Estás seguro de vaciar las ${checks.length} fila(s) seleccionada(s)?`)) {
+        document.getElementById('formVaciarItems').submit();
+    }
+}
+
+function toggleModoImpresion(activar) {
+    const sideCol = document.querySelector('.designacion-side-col');
+    const banner = document.querySelector('.vulcanizado-banner');
+    const kpis = document.querySelector('.stats-grid');
+    if (activar) {
+        if (sideCol) sideCol.classList.add('d-none');
+        if (banner) banner.classList.add('d-none');
+        if (kpis) kpis.classList.add('d-none');
+    } else {
+        if (sideCol) sideCol.classList.remove('d-none');
+        if (banner) banner.classList.remove('d-none');
+        if (kpis) kpis.classList.remove('d-none');
+    }
+}
+
 document.getElementById('filtroOperario').addEventListener('change', function() {
     const valor = this.value;
-    // Filtrar tabla desktop
     document.querySelectorAll('#tablaItemsBody .item-fila').forEach(tr => {
-        if(valor === 'todos' || tr.dataset.operario === valor) {
-            tr.style.display = '';
-        } else {
-            tr.style.display = 'none';
-        }
+        tr.style.display = (valor === 'todos' || tr.dataset.operario === valor) ? '' : 'none';
     });
-    // Filtrar cards mobile
     document.querySelectorAll('#contenedorCardsMobile .tarea-card-mobile').forEach(card => {
-        if(valor === 'todos' || card.dataset.operario === valor) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
+        card.style.display = (valor === 'todos' || card.dataset.operario === valor) ? '' : 'none';
     });
 });
 
-// Selector de vista en celular (Tarjetas vs Tabla)
 const btnVistaCards = document.getElementById('btnVistaCards');
 const btnVistaTabla = document.getElementById('btnVistaTabla');
 const contenedorTabla = document.getElementById('contenedorTablaDesktop');
@@ -645,7 +757,6 @@ if(btnVistaCards && btnVistaTabla) {
     });
 }
 
-// Cascada dinámica de Operación Madre a Operación Detallada y cálculo de Minutos
 document.addEventListener('DOMContentLoaded', function() {
     const selectMadre = document.getElementById('id_operacion_madre');
     const selectDetallada = document.getElementById('id_operacion_detallada');
@@ -720,4 +831,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

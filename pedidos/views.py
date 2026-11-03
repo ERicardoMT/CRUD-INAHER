@@ -1,4 +1,8 @@
 from django.urls import reverse_lazy
+from django.db.models import F
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.views.decorators.http import require_POST
 from django.views.generic import (
     ListView,
     DetailView,
@@ -15,6 +19,12 @@ class PedidoListView(ListView):
     model = Pedido
     template_name = "pedidos/pedido_list.html"
     context_object_name = "pedidos"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.GET.get("orden") == "fecha_salida":
+            return qs.order_by(F("fecha_salida").asc(nulls_last=True))
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -73,3 +83,14 @@ class PedidoDeleteView(DeleteView):
     template_name = "pedidos/pedido_confirm_delete.html"
     context_object_name = "pedido"
     success_url = reverse_lazy("pedidos:lista")
+
+@require_POST
+def vaciar_pedidos_seleccionados(request):
+    """Elimina en bloque los pedidos seleccionados."""
+    pedido_ids = request.POST.getlist("pedido_ids")
+    if pedido_ids:
+        eliminados, _ = Pedido.objects.filter(id__in=pedido_ids).delete()
+        messages.success(request, f"Se vaciaron {eliminados} pedido(s) seleccionado(s).")
+    else:
+        messages.warning(request, "No seleccionaste ningún pedido para vaciar.")
+    return redirect("pedidos:lista")    
