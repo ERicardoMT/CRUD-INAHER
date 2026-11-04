@@ -1,0 +1,2272 @@
+{
+ "generado": "2026-11-04",
+ "fuente": "Designacion Diaria V3 · Codigo_Pizarron_INAHER_v5.gs",
+ "familias": [
+  {
+   "familia": "Base troquelada (MT)",
+   "modelos": "MT-1, MT-2, MT-3, MTA, MTL-2, MTR-2",
+   "descripcion": "Base troquelada. El pedido dice si lleva pad (mismo renglón u otra partida). Pads: MT-1, MT-2 (= MTL-2), MT-3, MTR-2; MTA aún sin pad."
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "modelos": "MKD-2, MKD-3, MKDR-3, LTC-2, M-250",
+   "descripcion": "Siempre pad, pegado con Kola Loka. MKD-2/LTC-2/M-250: tornillo o varilla, nunca cortar cabeza, ≥5/8 se barrena. MKD-3 como MT. MKDR-3 solo varilla con rótula A3N50 interna."
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "modelos": "M-338, M-400, MF-338, MR-338, MR-400",
+   "descripcion": "Vulcanizado fuera de ruta. M/MF: tornillo o varilla, 1\" o más se barrena + planos. MR: rótula (solo varilla) con adaptador maquinado."
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "modelos": "A3N30, A3N50, A3NB40, A3NB80, R-3, R-4, DB-04, HV-3",
+   "descripcion": "Solo varilla. ≤1/2 trabarroscas directo · ≥5/8 barrenar/machuelear + opresor 5/16. Pad: A3N50, DB-04, HV-3."
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "modelos": "A3N50 FIJO, R-3 FIJO, R-4 FIJO, DB-04 FIJO, HV-3 FIJO, DMH-124",
+   "descripcion": "La palabra FIJO decide la familia. Base cerrada: se barrena. Se fija por debajo con tornillo M5 (≤1/2) o M6 (≥5/8); A3N50 FIJO: ≤1/2 cabeza o tuerca, ≥5/8 tornillo 5/16."
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "modelos": "NR-2, NR-3, NRT-3, YS-2, YS-3, YS-3 C/BARRENOS, HZ-3, HZT-3, KT-3, KTL-3, ZK-3, KX-3, MLR-3, MLR-3 C/BARRENOS, MALR, MLK-3, MLK-4, INX-3, TPE-1, TPE-3, TPE-4, CFD-4, CFD, 3P-50, LE-2",
+   "descripcion": "Todo varilla. Base en lote (stock); si no hay, se carga el maquinado (la máquina CNC se elige en HOY). Planos desde 5/8. Fijación por debajo: ≤3/4 tornillo 1/4 · 7/8-1\" tornillo 5/16 · 1/2 tuerca. NR-3, YS-3, HZ-3 (y NRT, HZT) llevan rótula. Pad: ZK-3, INX-3, KX-3, MLR-3, MLK-3, MLK-4."
+  },
+  {
+   "familia": "Soporte vulcanizado con tornillo (NS, MPC, MSF)",
+   "modelos": "NS-, SPORT, MPC-, MSF-, MLY-, MLW-, MLZ-, TM-, DN-65, MCD, MG-55",
+   "descripcion": "Chemlok y vulcanizado fuera de ruta; stock sin rebabear. Rebabear en esmeril: chico (≤2\") o grande (3\" o más). Tuerca va en el empaque."
+  },
+  {
+   "familia": "Pieza de neopreno sin herraje (CIR, MHD, THN, tapete)",
+   "modelos": "CIR, MHD, THN, TAPETE",
+   "descripcion": "Rebabear, limpiar y empacar."
+  },
+  {
+   "familia": "Antivibratorio caucho-metal (LL, REBO, SBS, SCN)",
+   "modelos": "LL, LONG, REBO, ACD-9, SCN-90, SCN, XT-45, SBS-80, SBS-120, TBQ, SR-730, SPY",
+   "descripcion": "Placa de acero vulcanizada. Rebabear con cúter o tijera. Tuerca y rondana en el empaque; ACD-9, SCN-90, TBQ, SPY sin herraje."
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "modelos": "MLC-3, MS-3, MBR-450, MBR",
+   "descripcion": "Corte láser fuera de ruta. Tornillo barrenado y machueleado (M5 ≤1/2 · M6 ≥5/8), placa avellanada, allen cónico. Planos desde 3/4. Sin hule: no se limpia."
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "modelos": "MD-880, MV-700, MXI-700, MSH-880, CET-60, CET-80, CET-100",
+   "descripcion": "Rebabear placa, cortar y carear varilla, insertar con Loctite (CET: varilla suelta)."
+  },
+  {
+   "familia": "Antivibratorio ensamblado (HST, RDM, CDC, CDR)",
+   "modelos": "HST, RDM, CDC, CDR",
+   "descripcion": "Rebabear placa si lleva, armar piezas. Nada se pinta."
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "modelos": "IVH-3, IVH-4, IVH-6, IVH-9, IVH-12",
+   "descripcion": "Rebajar ceja en torno (por modelo y material; inox se pule), rebabear, etiqueta (único con etiqueta), ensamblar placa + charola + neopreno. Tornillo set comprado hasta 7/8; de 1\" varilla cortada + planos."
+  },
+  {
+   "familia": "Producto de compra-venta (ETH, FNY, MRN…)",
+   "modelos": "ETH-, FNY-, MRN-, MRNB-, IMH, TPC, TPR, TK, CS-12, CS-16, HFF, EST-2, ESTH-2, BLT-48, BLTH-48, CHV-2, VLT-159, ANG-1, AP-151, RD-40, SIRIO, MANIVELA, ASA, VOLANTE",
+   "descripcion": "Llega terminado: contar y empaquetar. IMH lleva tuerca extra."
+  },
+  {
+   "familia": "Pieza especial (sin ruta fija)",
+   "modelos": "CBT, ESPECIAL, DISEÑO ESPECIAL",
+   "descripcion": "Sin ruta fija: cortar, maquinar, machuelear, ensamblar. Ajusta los pasos en HOY."
+  }
+ ],
+ "rutas": [
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "tornillo=no",
+   "nota": "Solo si no hay tornillo a la medida"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "tornillo=no",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza {rango} · {mat}",
+   "condicion": "tornillo=no;d>=3/4",
+   "nota": "Varilla de 3/4 · M20 o más"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar en torno CNC universal",
+   "detallada": "Barrenar MTR-2 (broca + 14.5 mm insertos)",
+   "condicion": "modelo=MTR-2",
+   "nota": "Tornillo especial: siempre, antes del machuelo"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "modelo=MTR-2",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "modelo=MTR-2",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "modelo=MTR-2",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "modelo=MTR-2",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=3/8;modelo=MT-1",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=3/8;modelo=MT-1",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=3/8;modelo=MT-1",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=3/8;modelo=MT-1",
+   "nota": "La tuerca del tornillo no cabe en la base: se barrena y machuelea el tornillo y se fija por debajo con tornillo chico"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=5/16;modelo=MT-1",
+   "nota": "La tuerca cabe en la base: se fija directo con tuerca por debajo"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=1/2;modelo=MTL-2",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=1/2;modelo=MTL-2",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=1/2;modelo=MTL-2",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=1/2;modelo=MTL-2",
+   "nota": "La tuerca del tornillo no cabe en la base: se barrena y machuelea el tornillo y se fija por debajo con tornillo chico"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=3/8;modelo=MTL-2",
+   "nota": "La tuerca cabe en la base: se fija directo con tuerca por debajo"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=MT-2,MTA,MTA-120",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=5/8;modelo=MT-2,MTA,MTA-120",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=MT-2,MTA,MTA-120",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=5/8;modelo=MT-2,MTA,MTA-120",
+   "nota": "La tuerca del tornillo no cabe en la base: se barrena y machuelea el tornillo y se fija por debajo con tornillo chico"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=1/2;modelo=MT-2,MTA,MTA-120",
+   "nota": "La tuerca cabe en la base: se fija directo con tuerca por debajo"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=7/8;modelo=MT-3",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=7/8;modelo=MT-3",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=7/8;modelo=MT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=7/8;modelo=MT-3",
+   "nota": "La tuerca del tornillo no cabe en la base: se barrena y machuelea el tornillo y se fija por debajo con tornillo chico"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=3/4;modelo=MT-3",
+   "nota": "La tuerca cabe en la base: se fija directo con tuerca por debajo"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo 1\" o más · {mat}",
+   "condicion": "d>=1",
+   "nota": "Llave española"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)",
+   "condicion": "pad;modelo=MT-1,MT-2,MTL-2,MTR-2",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)",
+   "condicion": "pad;modelo=MT-1,MT-2,MTL-2,MTR-2",
+   "nota": "Solo ensamblado, sin pegar"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad grande 3\"-4\" (MT-3, MKD-3, MKDR-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "pad;modelo=MT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)",
+   "condicion": "pad;modelo=MT-3",
+   "nota": "Solo ensamblado, sin pegar"
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "pad;modelo=MT-1,MT-2,MTL-2,MTR-2,MT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base troquelada (MT)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "tornillo=no;modelo=MKD-2,LTC-2,M-250",
+   "nota": "Solo si no hay tornillo a la medida"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "tornillo=no;modelo=MKD-2,LTC-2,M-250",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=MKD-2,LTC-2,M-250",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=5/8;modelo=MKD-2,LTC-2,M-250",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=MKD-2,LTC-2,M-250",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=5/8;modelo=MKD-2,LTC-2,M-250",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=1/2;modelo=MKD-2,LTC-2,M-250",
+   "nota": "Tornillo o varilla, la que haya"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "tornillo=no;modelo=MKD-3",
+   "nota": "Solo si no hay tornillo a la medida"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "tornillo=no;modelo=MKD-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza {rango} · {mat}",
+   "condicion": "tornillo=no;d>=3/4;modelo=MKD-3",
+   "nota": "Varilla de 3/4 · M20 o más"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "grande=si;modelo=MKD-3",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "grande=si;modelo=MKD-3",
+   "nota": "Torno convencional (o CNC)"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "grande=si;modelo=MKD-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "grande=si;modelo=MKD-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "grande=no;modelo=MKD-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar en taladro fresador",
+   "detallada": "Barrenar base MKD-3 a 1 1/4 para rótula (MKDR-3)",
+   "condicion": "modelo=MKDR-3",
+   "nota": "o torno convencional · para que salga la esfera"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "modelo=MKDR-3",
+   "nota": "Siempre de varilla"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "modelo=MKDR-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Poner varilla en rótula con trabarroscas (hasta 1/2)",
+   "condicion": "d<=1/2;modelo=MKDR-3",
+   "nota": "Varilla directa en la esfera con trabarroscas"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=MKDR-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · {mat}",
+   "condicion": "d>=5/8;modelo=MKDR-3",
+   "nota": "Barreno para el opresor 5/16"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar rótula con broca 9/32, profundidad 15 mm · {mat}",
+   "condicion": "d>=5/8;modelo=MKDR-3",
+   "nota": "o taladro fresador"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=MKDR-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear rótula 5/16 · {mat}",
+   "condicion": "d>=5/8;modelo=MKDR-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Armar rótula (opresor) con varilla",
+   "condicion": "d>=5/8;modelo=MKDR-3",
+   "nota": "Opresor allen 5/16"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar rótula con base (con presion)",
+   "detallada": "Armar rótula con base",
+   "condicion": "modelo=MKDR-3",
+   "nota": "A3N50 interno, cae en el pad"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)",
+   "condicion": "modelo=MKD-2,LTC-2,M-250",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)",
+   "condicion": "mat=fierro;modelo=MKD-2,LTC-2,M-250",
+   "nota": "Fierro: solo se ensambla"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "mat=inox;modelo=MKD-2,LTC-2,M-250",
+   "nota": "Inox: se pega con Kola Loka"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad grande 3\"-4\" (MT-3, MKD-3, MKDR-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "modelo=MKD-3,MKDR-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)",
+   "condicion": "mat=fierro;modelo=MKD-3,MKDR-3",
+   "nota": "Fierro: solo se ensambla"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "mat=inox;modelo=MKD-3,MKDR-3",
+   "nota": "Inox: se pega con Kola Loka"
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Base rechazada con pad sobrepuesto (MKD)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear charola vulcanizada con cúter (M-338, M-400, MR-338, MR-400, MF-338)",
+   "condicion": "modelo=M-338,M-400,MR-338,MR-400,MF-338",
+   "nota": "Charola vulcanizada · MF-338 pad con tijera"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar adaptador de rótula con tuerca (MR-338, MR-400)",
+   "condicion": "modelo=MR-338,MR-400",
+   "nota": "Pieza maquinada con cuerda por debajo"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "tornillo=no;modelo=M-338,M-400,MF-338",
+   "nota": "Solo si no hay tornillo a la medida"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "tornillo=no;modelo=M-338,M-400,MF-338",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza {rango} · {mat}",
+   "condicion": "tornillo=no;d>=3/4;modelo=M-338,M-400,MF-338",
+   "nota": "Varilla de 3/4 · M20 o más"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=7/8;modelo=M-338,M-400,MF-338",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=1;modelo=M-338,M-400,MF-338",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 5/16, profundidad 25 mm (para machuelo 3/8 o M10) · {mat}",
+   "condicion": "d>=1;modelo=M-338,M-400,MF-338",
+   "nota": "Fijador 3/8"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 3/8 o M10, profundidad 18 mm · {mat}",
+   "condicion": "d>=1;modelo=M-338,M-400,MF-338",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo 1\" o más · {mat}",
+   "condicion": "d>=1;modelo=M-338,M-400,MF-338",
+   "nota": "Llave española"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=1;modelo=M-338,M-400,MF-338",
+   "nota": "Fijado con tornillo 3/8"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "modelo=MR-338,MR-400",
+   "nota": "Siempre de varilla"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "modelo=MR-338,MR-400",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Poner varilla en rótula con trabarroscas (hasta 1/2)",
+   "condicion": "d<=1/2;modelo=MR-338,MR-400",
+   "nota": "Varilla directa en la esfera con trabarroscas"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=MR-338,MR-400",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · {mat}",
+   "condicion": "d>=5/8;modelo=MR-338,MR-400",
+   "nota": "Barreno para el opresor 5/16"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar rótula con broca 9/32, profundidad 15 mm · {mat}",
+   "condicion": "d>=5/8;modelo=MR-338,MR-400",
+   "nota": "o taladro fresador"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=MR-338,MR-400",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear rótula 5/16 · {mat}",
+   "condicion": "d>=5/8;modelo=MR-338,MR-400",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Armar rótula (opresor) con varilla",
+   "condicion": "d>=5/8;modelo=MR-338,MR-400",
+   "nota": "Opresor allen 5/16"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar rótula con base (con presion)",
+   "detallada": "Armar rótula con base",
+   "condicion": "modelo=MR-338,MR-400",
+   "nota": ""
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "modelo=MF-338",
+   "nota": "Charola virgen, Kola Loka"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Charola vulcanizada (M-338 / M-400)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "",
+   "nota": "Siempre de varilla"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Poner varilla en rótula con trabarroscas (hasta 1/2)",
+   "condicion": "d<=1/2",
+   "nota": "Varilla directa en la esfera con trabarroscas"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · {mat}",
+   "condicion": "d>=5/8",
+   "nota": "Barreno para el opresor 5/16"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar rótula con broca 9/32, profundidad 15 mm · {mat}",
+   "condicion": "d>=5/8",
+   "nota": "o taladro fresador"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear rótula 5/16 · {mat}",
+   "condicion": "d>=5/8",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Armar rótula (opresor) con varilla",
+   "condicion": "d>=5/8",
+   "nota": "Opresor allen 5/16"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Armar rótula con base (con presion)",
+   "detallada": "Armar rótula con base",
+   "condicion": "",
+   "nota": "Base sale limpia del molde"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)",
+   "condicion": "modelo=A3N50",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)",
+   "condicion": "modelo=A3N50",
+   "nota": "Solo ensamblado, sin pegar"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)",
+   "condicion": "modelo=DB-04,HV-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "modelo=DB-04,HV-3",
+   "nota": "Kola Loka"
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "modelo=A3N50,DB-04,HV-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada con rótula (A3N, R-4, DB-04, HV-3)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar en taladro fresador",
+   "detallada": "Barrenar base plástica fija con broca 1/4 (R-3, R-4, DB-04, HV-3, DMH-124)",
+   "condicion": "modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": "Solo broca 1/4 · o taladro de banco · la base viene cerrada"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar en taladro de banco",
+   "detallada": "Barrenar base A3N50 FIJO pasada (3/8, 1/2) o 5/16",
+   "condicion": "modelo=A3N50 FIJO",
+   "nota": "Pasada 3/8 o 1/2 (cabeza o tuerca) · 5/16 si es de 5/8 o más"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "tornillo=no",
+   "nota": "Solo si no hay tornillo a la medida"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "tornillo=no",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 11/64, profundidad 25 mm (para machuelo M5) · {mat}",
+   "condicion": "d<=1/2;modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo M5, profundidad 18 mm · {mat}",
+   "condicion": "d<=1/2;modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=5/8;modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "modelo=R-3 FIJO,R-4 FIJO,DB-04 FIJO,HV-3 FIJO,DMH-124",
+   "nota": "M5 (≤1/2) o M6 (≥5/8) · se limpia y se pega: más tardado que armar base con tornillo"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d<=1/2;modelo=A3N50 FIJO",
+   "nota": "Hay tornillo: la cabeza agarra · varilla: tuerca"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=A3N50 FIJO",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · {mat}",
+   "condicion": "d>=5/8;modelo=A3N50 FIJO",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=A3N50 FIJO",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=5/8;modelo=A3N50 FIJO",
+   "nota": "Tornillo 5/16 · se limpia y se pega"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)",
+   "condicion": "modelo=A3N50 FIJO",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)",
+   "condicion": "modelo=A3N50 FIJO",
+   "nota": "Solo ensamblado, sin pegar"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)",
+   "condicion": "modelo=DB-04 FIJO,HV-3 FIJO",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "modelo=DB-04 FIJO,HV-3 FIJO",
+   "nota": "Kola Loka"
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "modelo=A3N50 FIJO,DB-04 FIJO,HV-3 FIJO",
+   "nota": ""
+  },
+  {
+   "familia": "Base inyectada fija (FIJO, DMH-124)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Refrentar tocho 3\" y 4\" · {mat}",
+   "condicion": "stock=no;modelo=ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3,TPE-4,CFD-4,CFD",
+   "nota": "2 a 3 refrentadas por lado · elige CNC en HOY"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 1 (2\" y 1 3/8\": NR-2, YS-2, 3P-50, LE-2, TPE-1) · {mat}",
+   "condicion": "stock=no;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1",
+   "nota": "Superior y tronzado en una pasada"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Quitar chichita de tronzado (lote 1)",
+   "condicion": "stock=no;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 2 (3\" acero: ZK-3, INX-3, KX-3, TPE-3, KTL-3, KT-3, MLR-3) · {mat}",
+   "condicion": "stock=no;modelo=ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR",
+   "nota": "Barreno 1/4 + caja de tornillo + caja de pad"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 3 (MLK-3 aluminio)",
+   "condicion": "stock=no;modelo=MLK-3",
+   "nota": "+ pelada exterior"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 4 (MLK-4 aluminio)",
+   "condicion": "stock=no;modelo=MLK-4",
+   "nota": "+ pelada exterior"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 5 (NR-3, YS-3, HZ-3) · {mat}",
+   "condicion": "stock=no;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": "Solo careo + chaflán (rótula)"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 6 (4\" acero: TPE-4, CFD-4) · {mat}",
+   "condicion": "stock=no;modelo=TPE-4,CFD-4,CFD",
+   "nota": "Careo + barreno + caja de una vez"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte superior lote 5 (NR-3, YS-3, HZ-3) · {mat}",
+   "condicion": "stock=no;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte superior de nivelador maquinado · {mat}",
+   "condicion": "stock=no;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": "Ya barrenada desde la inferior"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en centro de maquinado",
+   "detallada": "Fresar y barrenar (KTL y NR)",
+   "condicion": "modelo=KT-3,NRT-3,HZT-3",
+   "nota": "Solo centro de maquinado"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar barrenos de anclaje",
+   "detallada": "Barrenos de anclaje (YS-2, YS-3, MALR, CFD-4)",
+   "condicion": "modelo=YS-2,YS-3 C/BARRENOS,MLR-3 C/BARRENOS,MALR,CFD-4,CFD",
+   "nota": "Centro de maquinado, fresadora o taladro fresador"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "",
+   "nota": "Siempre de varilla"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo hasta 3/4 · {mat}",
+   "condicion": "d>=5/8;d<=3/4",
+   "nota": "Planos desde 5/8"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo 1\" o más · {mat}",
+   "condicion": "d>=7/8",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=5/8;d<=3/4;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": "Tornillo 1/4"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;d<=3/4;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": "Tornillo 1/4"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · {mat}",
+   "condicion": "d>=7/8;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": "Tornillo 5/16"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · {mat}",
+   "condicion": "d>=7/8;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": "Tornillo 5/16"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "d>=5/8;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base maquinada 1/2 con tuerca arriba y abajo",
+   "condicion": "d<=1/2;modelo=NR-2,YS-2,3P-50,LE-2,TPE-1,ZK-3,INX-3,KX-3,TPE-3,KTL-3,KT-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4,TPE-4,CFD-4,CFD",
+   "nota": "Raro: no se barrena el tornillo"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Poner varilla en rótula con trabarroscas (hasta 1/2)",
+   "condicion": "d<=1/2;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": "Varilla directa en la esfera con trabarroscas"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "d>=5/8;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · {mat}",
+   "condicion": "d>=5/8;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": "Barreno para el opresor 5/16"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar rótula con broca 9/32, profundidad 15 mm · {mat}",
+   "condicion": "d>=5/8;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": "o taladro fresador"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear rótula 5/16 · {mat}",
+   "condicion": "d>=5/8;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Armar rótula (opresor) con varilla",
+   "condicion": "d>=5/8;modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": "Opresor allen 5/16"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Armar rótula con base (con presion)",
+   "detallada": "Armar rótula con base",
+   "condicion": "modelo=NR-3,YS-3,YS-3 C/BARRENOS,HZ-3,NRT-3,HZT-3",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad grande 3\"-4\" (MT-3, MKD-3, MKDR-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "modelo=ZK-3,INX-3,KX-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)",
+   "condicion": "modelo=ZK-3,INX-3,KX-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4",
+   "nota": "Kola Loka"
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "modelo=ZK-3,INX-3,KX-3,MLR-3,MLR-3 C/BARRENOS,MALR,MLK-3,MLK-4",
+   "nota": ""
+  },
+  {
+   "familia": "Base maquinada en barra (NR, YS, ZK, INX, TPE, CFD…)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Soporte vulcanizado con tornillo (NS, MPC, MSF)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear vulcanizado chico en esmeril (NS, SPORT, MPC y MSF hasta 40, MLY/MLW/MLZ hasta 50, TM-50, DN-65, MCD, MG-55, CIR, MHD, THN, TAPETE)",
+   "condicion": "modelo!=MPC-3,MPC-3*2,MPC-63,MPC-80,MPC-100,MSF-3,MSF-3*2,MSF-63,MSF-80,MSF-100,MLY-80,MLW-80,MLZ-80",
+   "nota": "Chico: hasta 2\""
+  },
+  {
+   "familia": "Soporte vulcanizado con tornillo (NS, MPC, MSF)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear vulcanizado grande en esmeril (MPC-3/63/80/100, MSF-3/63/80/100, MLY/MLW/MLZ-80)",
+   "condicion": "modelo=MPC-3,MPC-3*2,MPC-63,MPC-80,MPC-100,MSF-3,MSF-3*2,MSF-63,MSF-80,MSF-100,MLY-80,MLW-80,MLZ-80",
+   "nota": "Grande: 3\" o más"
+  },
+  {
+   "familia": "Soporte vulcanizado con tornillo (NS, MPC, MSF)",
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Quitar exceso de hule del tornillo",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte vulcanizado con tornillo (NS, MPC, MSF)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Soporte vulcanizado con tornillo (NS, MPC, MSF)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "Tuerca dentro del empaque"
+  },
+  {
+   "familia": "Pieza de neopreno sin herraje (CIR, MHD, THN, tapete)",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear vulcanizado chico en esmeril (NS, SPORT, MPC y MSF hasta 40, MLY/MLW/MLZ hasta 50, TM-50, DN-65, MCD, MG-55, CIR, MHD, THN, TAPETE)",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Pieza de neopreno sin herraje (CIR, MHD, THN, tapete)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Pieza de neopreno sin herraje (CIR, MHD, THN, tapete)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Antivibratorio caucho-metal (LL, REBO, SBS, SCN)",
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear vulcanizado con cúter (REBO, LL, SBS, SCN, XT-45, SR-730, TBQ, SPY, ACD-9, MD-880, MV-700, MXI-700, MSH-880, CET, RDM, HST, CDC, CDR)",
+   "condicion": "",
+   "nota": "Cúter o tijera"
+  },
+  {
+   "familia": "Antivibratorio caucho-metal (LL, REBO, SBS, SCN)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Antivibratorio caucho-metal (LL, REBO, SBS, SCN)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "Tuerca y rondana en el empaque (ACD-9, SCN-90, TBQ, SPY sin herraje)"
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "tornillo=no",
+   "nota": "Solo si no hay tornillo a la medida"
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "tornillo=no",
+   "nota": ""
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · {mat}",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 11/64, profundidad 25 mm (para machuelo M5) · {mat}",
+   "condicion": "d<=1/2",
+   "nota": ""
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo M5, profundidad 18 mm · {mat}",
+   "condicion": "d<=1/2",
+   "nota": "Allen cónico M5"
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · {mat}",
+   "condicion": "d>=5/8",
+   "nota": ""
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · {mat}",
+   "condicion": "d>=5/8",
+   "nota": "Allen cónico M6"
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Avellanar placa láser",
+   "detallada": "Avellanar placa láser con broca de centro (MLC-3, MS-3, MBR-450)",
+   "condicion": "",
+   "nota": "Esconde la cabeza del allen · taladro de banco, torno convencional o taladro fresador"
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)",
+   "condicion": "",
+   "nota": "Tornillo allen cónico · se limpia y se pega"
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo hasta 3/4 · {mat}",
+   "condicion": "d>=3/4;d<=3/4",
+   "nota": ""
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo 1\" o más · {mat}",
+   "condicion": "d>=7/8",
+   "nota": ""
+  },
+  {
+   "familia": "Placa de corte láser (MLC-3, MS-3, MBR)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "Tuerca dentro del empaque · sin hule, no se limpia"
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear vulcanizado con cúter (REBO, LL, SBS, SCN, XT-45, SR-730, TBQ, SPY, ACD-9, MD-880, MV-700, MXI-700, MSH-880, CET, RDM, HST, CDC, CDR)",
+   "condicion": "",
+   "nota": "Exceso de neopreno"
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "",
+   "nota": "Siempre de varilla"
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Insertar varilla con Loctite (MD-880, MV-700, MXI-700, MSH-880)",
+   "condicion": "modelo!=CET-60,CET-80,CET-100",
+   "nota": "CET: varilla suelta, sin Loctite"
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Antivibratorio con varilla insertada (MD-880, MV-700, CET)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "Tuercas y arandelas en el empaque"
+  },
+  {
+   "familia": "Antivibratorio ensamblado (HST, RDM, CDC, CDR)",
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear vulcanizado con cúter (REBO, LL, SBS, SCN, XT-45, SR-730, TBQ, SPY, ACD-9, MD-880, MV-700, MXI-700, MSH-880, CET, RDM, HST, CDC, CDR)",
+   "condicion": "",
+   "nota": "Si lleva"
+  },
+  {
+   "familia": "Antivibratorio ensamblado (HST, RDM, CDC, CDR)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar piezas de antivibratorio (HST, RDM, CDC, CDR)",
+   "condicion": "",
+   "nota": "Nada se pinta"
+  },
+  {
+   "familia": "Antivibratorio ensamblado (HST, RDM, CDC, CDR)",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Antivibratorio ensamblado (HST, RDM, CDC, CDR)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-3 · {mat}",
+   "condicion": "modelo=IVH-3",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-4 · {mat}",
+   "condicion": "modelo=IVH-4",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-6 · {mat}",
+   "condicion": "modelo=IVH-6",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-9 · {mat}",
+   "condicion": "modelo=IVH-9",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-12 · {mat}",
+   "condicion": "modelo=IVH-12",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebabear en esmeril",
+   "detallada": "Pulir IVH inox-304",
+   "condicion": "mat=inox",
+   "nota": "Solo IVH inox"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear IVH con cúter (IVH-3 a IVH-12)",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Armar IVH",
+   "detallada": "Poner etiqueta IVH",
+   "condicion": "",
+   "nota": "Único modelo con etiqueta"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla {rango} · {mat}",
+   "condicion": "d>=1",
+   "nota": "De 1\" se corta varilla (hasta 7/8 opresor set comprado)"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo {rango} · {mat}",
+   "condicion": "d>=1",
+   "nota": ""
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 4 planos IVH, tornillo 1\" o más · {mat}",
+   "condicion": "d>=1",
+   "nota": "IVH lleva 4 planos (los demás modelos 2)"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Armar IVH",
+   "detallada": "Armar IVH",
+   "condicion": "",
+   "nota": "Placa de apoyo + charola + neopreno"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)",
+   "condicion": "",
+   "nota": "Todo lo que lleva hule"
+  },
+  {
+   "familia": "Soporte de inercia IVH",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "Tornillo set, tuerca y arandela aparte"
+  },
+  {
+   "familia": "Producto de compra-venta (ETH, FNY, MRN…)",
+   "madre": "Empaquetar",
+   "detallada": "Contar y revisar producto de compra",
+   "condicion": "",
+   "nota": "IMH: tuerca extra"
+  },
+  {
+   "familia": "Producto de compra-venta (ETH, FNY, MRN…)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  },
+  {
+   "familia": "Pieza especial (sin ruta fija)",
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar barra para pieza especial · {mat}",
+   "condicion": "",
+   "nota": "Ajusta los pasos en HOY"
+  },
+  {
+   "familia": "Pieza especial (sin ruta fija)",
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Maquinar pieza especial (CBT) · {mat}",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Pieza especial (sin ruta fija)",
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear pieza especial · {mat}",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Pieza especial (sin ruta fija)",
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Ensamblar pieza especial con su nivelador",
+   "condicion": "",
+   "nota": ""
+  },
+  {
+   "familia": "Pieza especial (sin ruta fija)",
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido {empaque}",
+   "condicion": "",
+   "nota": "chico ≤10 kg · mediano 10-30 · grande >30 (pesos del pedido)"
+  }
+ ],
+ "madres": [
+  {
+   "madre": "Armar IVH",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Armar PAD con nivelador",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Armar rótula con base (con presion)",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Avellanar placa láser",
+   "tipos": "Taladro de banco / Torno convencional / Taladro fresador"
+  },
+  {
+   "madre": "Barrenar barrenos de anclaje",
+   "tipos": "Centro de maquinado / Fresadora / Taladro fresador"
+  },
+  {
+   "madre": "Barrenar en taladro de banco",
+   "tipos": "Taladro de banco"
+  },
+  {
+   "madre": "Barrenar en taladro fresador",
+   "tipos": "Taladro fresador"
+  },
+  {
+   "madre": "Barrenar en torno CNC universal",
+   "tipos": "Torno CNC"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "tipos": "Torno convencional / Torno CNC"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "tipos": "Sierra cinta universal / Sierra cinta"
+  },
+  {
+   "madre": "Cortar neopreno",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Empaquetar",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "tipos": "Fresadora"
+  },
+  {
+   "madre": "Limpiar con Armor All",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "tipos": "Machuelador automático / Machuelador neumático"
+  },
+  {
+   "madre": "Maquinar en centro de maquinado",
+   "tipos": "Centro de maquinado"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "tipos": "Torno CNC"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "tipos": "Torno convencional"
+  },
+  {
+   "madre": "Pintar o colocar pegamento Chemlok",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Rebabear en tijera o cuter",
+   "tipos": "Manual"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "tipos": "Torno convencional"
+  },
+  {
+   "madre": "Soldar",
+   "tipos": "Soldadora"
+  },
+  {
+   "madre": "Vulcanizar",
+   "tipos": "Prensa"
+  }
+ ],
+ "maquinas": [
+  {
+   "maquina": "Torno convencional",
+   "tipo": "Torno convencional"
+  },
+  {
+   "maquina": "Torno CNC Hermabro",
+   "tipo": "Torno CNC"
+  },
+  {
+   "maquina": "Torno CNC Universal",
+   "tipo": "Torno CNC"
+  },
+  {
+   "maquina": "Fresadora",
+   "tipo": "Fresadora"
+  },
+  {
+   "maquina": "Taladro fresador",
+   "tipo": "Taladro fresador"
+  },
+  {
+   "maquina": "Taladro de banco (alta velocidad)",
+   "tipo": "Taladro de banco"
+  },
+  {
+   "maquina": "Taladro de banco (baja velocidad)",
+   "tipo": "Taladro de banco"
+  },
+  {
+   "maquina": "Sierra cinta universal",
+   "tipo": "Sierra cinta"
+  },
+  {
+   "maquina": "Sierra cinta vertical",
+   "tipo": "Sierra cinta"
+  },
+  {
+   "maquina": "Machuelador automático",
+   "tipo": "Machuelador automático"
+  },
+  {
+   "maquina": "Machuelador neumático",
+   "tipo": "Machuelador neumático"
+  },
+  {
+   "maquina": "Prensa azul hidráulica",
+   "tipo": "Prensa"
+  },
+  {
+   "maquina": "Soldadora electrodo",
+   "tipo": "Soldadora"
+  },
+  {
+   "maquina": "Soldadora microalambre",
+   "tipo": "Soldadora"
+  },
+  {
+   "maquina": "Centro de maquinado",
+   "tipo": "Centro de maquinado"
+  },
+  {
+   "maquina": "Tarea manual",
+   "tipo": "Manual"
+  }
+ ],
+ "operaciones": [
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 5/16-3/8 · M8-M10 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 5/16-3/8 · M8-M10 · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 1/2-5/8 · M12-M16 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 1/2-5/8 · M12-M16 · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 3/4-1\" · M20-M24 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 3/4-1\" · M20-M24 · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 1 1/4-1 1/2 · M30-M36 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar varilla 1 1/4-1 1/2 · M30-M36 · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza 1/2-5/8 · M12-M16 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza 1/2-5/8 · M12-M16 · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza 3/4-1\" · M20-M24 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza 3/4-1\" · M20-M24 · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza 1 1/4-1 1/2 · M30-M36 · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar cabeza 1 1/4-1 1/2 · M30-M36 · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 5/16-3/8 · M8-M10 · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 5/16-3/8 · M8-M10 · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 1/2-5/8 · M12-M16 · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 1/2-5/8 · M12-M16 · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 3/4-1\" · M20-M24 · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 3/4-1\" · M20-M24 · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 1 1/4-1 1/2 · M30-M36 · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Carear y chaflanear tornillo 1 1/4-1 1/2 · M30-M36 · inox-304"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · fierro-galv"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca de centro · inox-304"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 11/64, profundidad 25 mm (para machuelo M5) · fierro-galv"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 11/64, profundidad 25 mm (para machuelo M5) · inox-304"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · fierro-galv"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 7/32 (5.5 mm), profundidad 25 mm (para machuelo 1/4 o M6) · inox-304"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · fierro-galv"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 9/32, profundidad 25 mm (para machuelo 5/16 o M8) · inox-304"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 5/16, profundidad 25 mm (para machuelo 3/8 o M10) · fierro-galv"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar tornillo con broca 5/16, profundidad 25 mm (para machuelo 3/8 o M10) · inox-304"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar rótula con broca 9/32, profundidad 15 mm · fierro-galv"
+  },
+  {
+   "madre": "Barrenar tornillo",
+   "detallada": "Barrenar rótula con broca 9/32, profundidad 15 mm · inox-304"
+  },
+  {
+   "madre": "Barrenar en taladro fresador",
+   "detallada": "Barrenar base MKD-3 a 1 1/4 para rótula (MKDR-3)"
+  },
+  {
+   "madre": "Barrenar en taladro fresador",
+   "detallada": "Barrenos de anclaje (YS-2, YS-3, MALR, CFD-4)"
+  },
+  {
+   "madre": "Barrenar barrenos de anclaje",
+   "detallada": "Barrenos de anclaje (YS-2, YS-3, MALR, CFD-4)"
+  },
+  {
+   "madre": "Barrenar en torno CNC universal",
+   "detallada": "Barrenar MTR-2 (broca + 14.5 mm insertos)"
+  },
+  {
+   "madre": "Barrenar en taladro fresador",
+   "detallada": "Barrenar base plástica fija con broca 1/4 (R-3, R-4, DB-04, HV-3, DMH-124)"
+  },
+  {
+   "madre": "Barrenar en taladro de banco",
+   "detallada": "Barrenar base A3N50 FIJO pasada (3/8, 1/2) o 5/16"
+  },
+  {
+   "madre": "Avellanar placa láser",
+   "detallada": "Avellanar placa láser con broca de centro (MLC-3, MS-3, MBR-450)"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo M5, profundidad 18 mm · fierro-galv"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo M5, profundidad 18 mm · inox-304"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · fierro-galv"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 1/4 o M6, profundidad 18 mm · inox-304"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · fierro-galv"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 5/16 o M8, profundidad 18 mm · inox-304"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 3/8 o M10, profundidad 18 mm · fierro-galv"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear tornillo 3/8 o M10, profundidad 18 mm · inox-304"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear rótula 5/16 · fierro-galv"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear rótula 5/16 · inox-304"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear pieza especial · fierro-galv"
+  },
+  {
+   "madre": "Machuelear en brazo",
+   "detallada": "Machuelear pieza especial · inox-304"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo hasta 3/4 · fierro-galv"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo hasta 3/4 · inox-304"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo 1\" o más · fierro-galv"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 2 planos, tornillo 1\" o más · inox-304"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 4 planos IVH, tornillo 1\" o más · fierro-galv"
+  },
+  {
+   "madre": "Hacer planos en fresadora",
+   "detallada": "Fresar 4 planos IVH, tornillo 1\" o más · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Refrentar tocho 3\" y 4\" · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Refrentar tocho 3\" y 4\" · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 1 (2\" y 1 3/8\": NR-2, YS-2, 3P-50, LE-2, TPE-1) · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 1 (2\" y 1 3/8\": NR-2, YS-2, 3P-50, LE-2, TPE-1) · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 2 (3\" acero: ZK-3, INX-3, KX-3, TPE-3, KTL-3, KT-3, MLR-3) · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 2 (3\" acero: ZK-3, INX-3, KX-3, TPE-3, KTL-3, KT-3, MLR-3) · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 3 (MLK-3 aluminio)"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 4 (MLK-4 aluminio)"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 5 (NR-3, YS-3, HZ-3) · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 5 (NR-3, YS-3, HZ-3) · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 6 (4\" acero: TPE-4, CFD-4) · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte inferior lote 6 (4\" acero: TPE-4, CFD-4) · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte superior lote 5 (NR-3, YS-3, HZ-3) · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte superior lote 5 (NR-3, YS-3, HZ-3) · inox-304"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte superior de nivelador maquinado · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno CNC",
+   "detallada": "Parte superior de nivelador maquinado · inox-304"
+  },
+  {
+   "madre": "Maquinar en centro de maquinado",
+   "detallada": "Fresar y barrenar (KTL y NR)"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Maquinar pieza especial (CBT) · fierro-galv"
+  },
+  {
+   "madre": "Maquinar en torno convencional",
+   "detallada": "Maquinar pieza especial (CBT) · inox-304"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar barra para pieza especial · fierro-galv"
+  },
+  {
+   "madre": "Cortar en sierra cinta",
+   "detallada": "Cortar barra para pieza especial · inox-304"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad chico 2\" (MT-1, MT-2, MTL-2, MTR-2, MKD-2, LTC-2, M-250, A3N50, DB-04, HV-3 y FIJOS)"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear pad grande 3\"-4\" (MT-3, MKD-3, MKDR-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear vulcanizado chico en esmeril (NS, SPORT, MPC y MSF hasta 40, MLY/MLW/MLZ hasta 50, TM-50, DN-65, MCD, MG-55, CIR, MHD, THN, TAPETE)"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "detallada": "Rebabear vulcanizado grande en esmeril (MPC-3/63/80/100, MSF-3/63/80/100, MLY/MLW/MLZ-80)"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "detallada": "Quitar chichita de tronzado (lote 1)"
+  },
+  {
+   "madre": "Rebabear en esmeril",
+   "detallada": "Pulir IVH inox-304"
+  },
+  {
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear vulcanizado con cúter (REBO, LL, SBS, SCN, XT-45, SR-730, TBQ, SPY, ACD-9, MD-880, MV-700, MXI-700, MSH-880, CET, RDM, HST, CDC, CDR)"
+  },
+  {
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear charola vulcanizada con cúter (M-338, M-400, MR-338, MR-400, MF-338)"
+  },
+  {
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Rebabear IVH con cúter (IVH-3 a IVH-12)"
+  },
+  {
+   "madre": "Rebabear en tijera o cuter",
+   "detallada": "Quitar exceso de hule del tornillo"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base con tornillo: limpiar, trabarroscas y fijar (MT, MKD, LTC-2, M-250, M-338, M-400, MF-338, maquinada, R-3, R-4, DB-04, HV-3, A3N50 FIJO, DMH-124, MLC-3, MS-3, MBR-450)"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar base maquinada 1/2 con tuerca arriba y abajo"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar adaptador de rótula con tuerca (MR-338, MR-400)"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Insertar varilla con Loctite (MD-880, MV-700, MXI-700, MSH-880)"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Armar piezas de antivibratorio (HST, RDM, CDC, CDR)"
+  },
+  {
+   "madre": "Armar nivelador sencillo (tornillo y base)",
+   "detallada": "Ensamblar pieza especial con su nivelador"
+  },
+  {
+   "madre": "Empaquetar",
+   "detallada": "Contar y revisar producto de compra"
+  },
+  {
+   "madre": "Armar rótula con base (con presion)",
+   "detallada": "Armar rótula con base"
+  },
+  {
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Poner varilla en rótula con trabarroscas (hasta 1/2)"
+  },
+  {
+   "madre": "Armar rotula con tornillo (limpiar y poner trabaroscas)",
+   "detallada": "Armar rótula (opresor) con varilla"
+  },
+  {
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD ensamblado, sin pegar (MT, MKD-2/MKD-3/MKDR-3/LTC-2 fierro, A3N50, A3N50 FIJO)"
+  },
+  {
+   "madre": "Armar PAD con nivelador",
+   "detallada": "Colocar PAD pegado con Kola Loka (MKD-2/MKD-3/MKDR-3/LTC-2 inox, DB-04, HV-3, ZK-3, INX-3, KX-3, MLR-3, MALR, MLK-3, MLK-4)"
+  },
+  {
+   "madre": "Limpiar con Armor All",
+   "detallada": "Limpiar pieza (Armor All en neopreno y pad)"
+  },
+  {
+   "madre": "Armar IVH",
+   "detallada": "Poner etiqueta IVH"
+  },
+  {
+   "madre": "Armar IVH",
+   "detallada": "Armar IVH"
+  },
+  {
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido chico"
+  },
+  {
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido mediano"
+  },
+  {
+   "madre": "Empaquetar",
+   "detallada": "Empaquetar pedido grande"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-3 · fierro-galv"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-3 · inox-304"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-4 · fierro-galv"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-4 · inox-304"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-6 · fierro-galv"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-6 · inox-304"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-9 · fierro-galv"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-9 · inox-304"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-12 · fierro-galv"
+  },
+  {
+   "madre": "Rebajar ceja de IVH",
+   "detallada": "Rebajar ceja IVH-12 · inox-304"
+  }
+ ],
+ "rangos": [
+  "5/16-3/8 · M8-M10",
+  "1/2-5/8 · M12-M16",
+  "3/4-1\" · M20-M24",
+  "1 1/4-1 1/2 · M30-M36"
+ ],
+ "materiales": [
+  "fierro-galv",
+  "inox-304"
+ ]
+}
