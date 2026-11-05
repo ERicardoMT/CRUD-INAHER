@@ -86,7 +86,7 @@ def designacion_hoy(request):
         "form_moldes": form_moldes,
         "operarios": operarios,
         "operaciones_madre": OperacionMadre.objects.filter(activa=True),
-        "pedidos_activos": Pedido.objects.exclude(estado=Pedido.Estado.TERMINADO),
+        "pedidos_activos": Pedido.objects.exclude(estado__in=Pedido.ESTADOS_CERRADOS),
     }
 
     return render(request, "designaciones/designacion_hoy.html", contexto)

@@ -72,5 +72,5 @@ class ItemDesignacionForm(forms.ModelForm):
         self.fields["maquina"].queryset = Maquina.objects.filter(activa=True)
         self.fields["operacion_madre"].queryset = OperacionMadre.objects.filter(activa=True)
         self.fields["operacion_detallada"].queryset = OperacionDetallada.objects.filter(activa=True)
-        self.fields["pedido"].queryset = Pedido.objects.exclude(estado=Pedido.Estado.TERMINADO)
+        self.fields["pedido"].queryset = Pedido.objects.exclude(estado__in=Pedido.ESTADOS_CERRADOS)
 

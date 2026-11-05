@@ -14,6 +14,7 @@ class PedidoForm(forms.ModelForm):
             "cantidad",
             "fecha_salida",
             "estado",
+            "detenido_por",
             "notas",
         ]
 
@@ -43,6 +44,11 @@ class PedidoForm(forms.ModelForm):
 
             "estado": forms.Select(attrs={
                 "class": "form-select",
+            }),
+
+            "detenido_por": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Solo si está detenido, ej. Base MT-2 · llega 12 nov",
             }),
 
             "notas": forms.Textarea(attrs={

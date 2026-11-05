@@ -7,6 +7,10 @@ class Pedido(models.Model):
         DETENIDO = "DETENIDO", "Detenido"
         EN_PROCESO = "EN_PROCESO", "En proceso"
         TERMINADO = "TERMINADO", "Terminado"
+        ENTREGADO = "ENTREGADO", "Entregado"
+
+    # Estados que ya no cuentan como pedido abierto
+    ESTADOS_CERRADOS = ["TERMINADO", "ENTREGADO"]
 
     numero = models.CharField(
         max_length=30,
@@ -34,6 +38,14 @@ class Pedido(models.Model):
         choices=Estado.choices,
         default=Estado.EN_PROCESO,
         verbose_name="Estado del pedido",
+    )
+
+    detenido_por = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        verbose_name="Detenido por",
+        help_text="Motivo de la detención, ej. 'Base MT-2 · llega 12 nov'",
     )
 
     notas = models.TextField(
@@ -65,6 +77,8 @@ class Pedido(models.Model):
     @property
     def alerta_estado(self):
         """Replica la fórmula exacta de la columna Estado del Excel"""
+        if self.estado == self.Estado.ENTREGADO:
+            return {"texto": "ENTREGADO", "clase": "status-terminado"}
         if self.estado == self.Estado.TERMINADO:
             return {"texto": "LISTO", "clase": "status-terminado"}
         
@@ -73,7 +87,7 @@ class Pedido(models.Model):
             return {"texto": "SIN FECHA", "clase": "status-neutral"}
         
         if dias < 0:
-            return {"texto": "ATRASADO", "dias": dias, "clase": "status-detenido"}
+            return {"texto": f"ATRASADO {abs(dias)} d", "dias": dias, "clase": "status-detenido"}
         elif dias == 0:
             return {"texto": "SALE HOY", "dias": 0, "clase": "status-proceso"}
         elif dias <= 2:

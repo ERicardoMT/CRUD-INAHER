@@ -3,24 +3,31 @@
 {% block title %}Pedidos | INAHER{% endblock %}
 
 {% block content %}
-<div class="page-heading">
+<div class="page-heading pedidos-heading">
     <div>
         <div class="eyebrow">ADMINISTRACIÓN</div>
         <h1>INAHER · Pedidos</h1>
-        <p class="text-muted mb-0">Control de pedidos, fechas de entrega y alertas de salida.</p>
+        <p class="text-muted mb-0">
+            {{ kpis.abiertos }} abierto{{ kpis.abiertos|pluralize }} · ordenados por fecha de salida · lo urgente arriba
+        </p>
     </div>
 
-    <div class="d-flex align-items-center gap-2">
+    <div class="pedidos-toolbar">
+        <form method="get" class="pedidos-search" role="search">
+            <i class="bi bi-search"></i>
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <input type="search" name="q" value="{{ q }}" placeholder="# pedido, cliente, modelo..." aria-label="Buscar pedidos">
+        </form>
+
+        <button type="button" class="btn btn-outline-inaher" disabled title="Próximamente">
+            Importar de Mercado Libre
+        </button>
+
         <div class="dropdown">
             <button class="btn btn-outline-inaher dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown">
                 <i class="bi bi-grid-fill text-primary"></i> <strong>INAHER</strong>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="?orden=fecha_salida">
-                        <i class="bi bi-sort-numeric-down text-primary"></i> Ordenar por fecha de salida
-                    </a>
-                </li>
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="enviarVaciarPedidos()">
                         <i class="bi bi-trash"></i> Vaciar fila(s) seleccionada(s)
@@ -35,134 +42,154 @@
     </div>
 </div>
 
-<section class="stats-grid mb-4">
+<section class="stats-grid stats-grid-pedidos mb-4">
     <article class="stat-card">
-        <div class="stat-card-top">
-            <span>📋 Activos</span>
-            <span class="stat-icon icon-blue"><i class="bi bi-clipboard-check"></i></span>
-        </div>
-        <strong>{{ kpis.activos }}</strong>
-        <small>En proceso o detenidos</small>
+        <div class="stat-card-top"><span>Abiertos</span></div>
+        <strong>{{ kpis.abiertos }}</strong>
+        <small>{{ kpis.piezas }} pzas en total</small>
     </article>
 
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>🔴 Atrasados</span>
-            <span class="stat-icon icon-blue" style="background:#FEE2E2; color:#991B1B;"><i class="bi bi-exclamation-circle"></i></span>
-        </div>
+    <article class="stat-card{% if kpis.atrasados %} stat-card-alert{% endif %}">
+        <div class="stat-card-top"><span class="text-danger">Atrasados</span></div>
         <strong class="text-danger">{{ kpis.atrasados }}</strong>
-        <small>Fecha vencida</small>
+        <small>
+            {% if kpis.atrasados_numeros %}
+                {{ kpis.atrasados_numeros|join:" · " }}{% if kpis.atrasados_extra %} · +{{ kpis.atrasados_extra }}{% endif %}
+            {% else %}
+                Ninguno vencido
+            {% endif %}
+        </small>
     </article>
 
     <article class="stat-card">
-        <div class="stat-card-top">
-            <span>🟠 Salen hoy</span>
-            <span class="stat-icon icon-teal" style="background:#FEF3C7; color:#92400E;"><i class="bi bi-calendar-event"></i></span>
-        </div>
-        <strong style="color:#D97706;">{{ kpis.sale_hoy }}</strong>
-        <small>Compromiso del día</small>
+        <div class="stat-card-top"><span>Salen hoy / 2 días</span></div>
+        <strong style="color:#D97706;">{{ kpis.sale_hoy }} / {{ kpis.sale_2_dias }}</strong>
+        <small>urgentes</small>
     </article>
 
     <article class="stat-card">
-        <div class="stat-card-top">
-            <span>⛔ Detenidos</span>
-            <span class="stat-icon icon-blue" style="background:#F3F4F6; color:#4B5563;"><i class="bi bi-pause-circle"></i></span>
-        </div>
-        <strong>{{ kpis.detenidos }}</strong>
-        <small>Requieren atención</small>
+        <div class="stat-card-top"><span>Horas restantes</span></div>
+        <strong>{{ kpis.horas_restantes }} h</strong>
+        <small>de {{ kpis.horas_totales }} h totales · {{ kpis.avance }}% avance</small>
+    </article>
+
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Detenidos</span></div>
+        <strong class="text-danger">{{ kpis.detenidos }}</strong>
+        <small>{{ kpis.horas_detenidas }} h en espera</small>
     </article>
 </section>
 
-<section class="content-card">
-    <div class="content-card-header d-flex justify-content-between align-items-center">
-        <div>
-            <h2>Listado de pedidos</h2>
-            <p class="mb-0 text-muted small">Priorizados según fecha de compromiso y estado.</p>
+<section class="content-card pedidos-card">
+    <div class="pedidos-card-header">
+        <nav class="pedidos-tabs">
+            {% for t in tabs %}
+            <a href="?tab={{ t.key }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{% if t.key == tab %}active{% endif %}">
+                {{ t.label }}{% if t.key == "abiertos" or t.key == "detenidos" %} ({{ t.count }}){% endif %}
+            </a>
+            {% endfor %}
+        </nav>
+
+        <div class="d-flex align-items-center gap-2">
+            {% if tab == "abiertos" %}
+            <div class="dropdown">
+                <button class="btn-chip dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Estatus:
+                    <strong>{% for val, label in estatus_opciones %}{% if val == estatus %}{{ label }}{% endif %}{% endfor %}</strong>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for val, label in estatus_opciones %}
+                    <li>
+                        <a class="dropdown-item{% if val == estatus %} active{% endif %}" href="?tab={{ tab }}&estatus={{ val }}{% if q %}&q={{ q|urlencode }}{% endif %}">{{ label|capfirst }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="dropdown">
+                <button class="btn-chip dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                    Columnas
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow-sm p-2" id="menuColumnas">
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="cant" checked> Cant.</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="fecha" checked> Fecha salida</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="estado" checked> Estado</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="estatus" checked> Estatus</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="mintotal" checked> Min total</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="minrest" checked> Min restante</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="avance" checked> % avance</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="detenido" checked> Detenido por</label>
+                    <label class="dropdown-item d-flex gap-2"><input type="checkbox" class="form-check-input" data-col="notas"> Notas / medidas</label>
+                </div>
+            </div>
         </div>
-        <span class="record-counter">{{ pedidos|length }} registros</span>
     </div>
 
     <form id="formVaciarPedidos" method="post" action="{% url 'pedidos:vaciar_seleccionados' %}">
         {% csrf_token %}
 
-        <div class="table-responsive d-none d-md-block">
-            <table class="table-inaher table-designacion align-middle">
+        <div class="table-responsive pedidos-table-wrap d-none d-md-block">
+            <table class="tabla-pedidos" id="tablaPedidos">
                 <thead>
                     <tr>
-                        <th style="width: 35px;"><input type="checkbox" onclick="toggleSelectAllPedidos(this)"></th>
-                        <th style="width: 100px;"># Pedido</th>
-                        <th>Producto / Modelo</th>
-                        <th class="text-center" style="width: 80px;">Cant.</th>
-                        <th style="width: 100px;">Fecha salida</th>
-                        <th class="text-center" style="width: 75px;">Días</th>
-                        <th style="width: 120px;">Estado</th>
-                        <th style="width: 110px;">Estatus</th>
-                        <th>Notas / medidas</th>
-                        <th style="width: 90px;" class="text-end">Acciones</th>
+                        <th class="col-check"><input type="checkbox" class="form-check-input" onclick="toggleSelectAllPedidos(this)"></th>
+                        <th class="cap"># Pedido</th>
+                        <th class="cap">Producto / Modelo</th>
+                        <th class="cap" data-col="cant">Cant</th>
+                        <th class="cap" data-col="fecha">Fecha salida</th>
+                        <th class="calc" data-col="estado">Estado</th>
+                        <th class="cap" data-col="estatus">Estatus</th>
+                        <th class="calc" data-col="mintotal">Min total</th>
+                        <th class="calc" data-col="minrest">Min restante</th>
+                        <th class="calc" data-col="avance">% avance</th>
+                        <th class="cap" data-col="detenido">Detenido por</th>
+                        <th class="cap" data-col="notas">Notas / medidas</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for pedido in pedidos %}
                     <tr>
-                        <td class="text-center">
+                        <td class="col-check">
                             <input type="checkbox" name="pedido_ids" value="{{ pedido.id }}" class="pedido-select-check form-check-input">
                         </td>
-                        <td>
-                            <strong class="text-primary">#{{ pedido.numero }}</strong>
+                        <td class="cap">
+                            <a href="{% url 'pedidos:detalle' pedido.pk %}" class="pedido-link" title="Ver / editar pedido">{{ pedido.numero }}</a>
                         </td>
-                        <td>
-                            <div class="fw-medium text-dark">{{ pedido.descripcion }}</div>
+                        <td class="cap producto">{{ pedido.descripcion }}</td>
+                        <td class="cap" data-col="cant">{{ pedido.cantidad }}</td>
+                        <td class="cap mono" data-col="fecha">{{ pedido.fecha_salida|date:"d M"|lower|default:"—" }}</td>
+                        <td class="calc" data-col="estado">
+                            <span class="alerta-pill {{ pedido.alerta_estado.clase }}">{{ pedido.alerta_estado.texto }}</span>
                         </td>
-                        <td class="text-center">
-                            <span class="badge-pill-num">{{ pedido.cantidad }}</span>
-                        </td>
-                        <td>
-                            {{ pedido.fecha_salida|date:"d/m/Y"|default:"—" }}
-                        </td>
-                        <td class="text-center">
-                            {% if pedido.dias_restantes is not None %}
-                                <span class="fw-semibold {% if pedido.dias_restantes < 0 %}text-danger{% elif pedido.dias_restantes == 0 %}text-warning{% else %}text-muted{% endif %}">
-                                    {{ pedido.dias_restantes }}
-                                </span>
+                        <td class="cap estatus-texto" data-col="estatus">{{ pedido.get_estado_display|upper }}</td>
+                        <td class="calc mono" data-col="mintotal">{{ pedido.min_total }}</td>
+                        <td class="calc mono" data-col="minrest">{{ pedido.min_restante }}</td>
+                        <td class="calc" data-col="avance">
+                            {% if pedido.avance is None %}
+                                <span class="ruta-pill">Ruta sin cargar</span>
                             {% else %}
-                                <span class="text-muted">—</span>
+                                <div class="avance">
+                                    <div class="avance-bar">
+                                        <span class="{% if pedido.avance >= 70 %}alto{% elif pedido.avance > 0 %}medio{% endif %}" style="width: {{ pedido.avance }}%;"></span>
+                                    </div>
+                                    <span class="mono">{{ pedido.avance }}%</span>
+                                </div>
                             {% endif %}
                         </td>
-                        <td>
-                            <span class="status-badge {{ pedido.alerta_estado.clase }}">
-                                {{ pedido.alerta_estado.texto }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if pedido.estado == "EN_PROCESO" %}
-                                <span class="status-pill status-progress">En proceso</span>
-                            {% elif pedido.estado == "TERMINADO" %}
-                                <span class="status-pill status-finished">Terminado</span>
+                        <td class="cap" data-col="detenido">
+                            {% if pedido.detenido_por %}
+                                <span class="detenido-pill">{{ pedido.detenido_por }}</span>
                             {% else %}
-                                <span class="status-pill status-stopped">Detenido</span>
+                                <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <small class="text-muted">{{ pedido.notas|default:"—" }}</small>
-                        </td>
-                        <td class="text-end">
-                            <div class="d-flex align-items-center justify-content-end gap-1">
-                                <a href="{% url 'pedidos:detalle' pedido.pk %}" class="btn-action-icon text-primary" title="Ver">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-action-icon text-secondary" title="Editar">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="{% url 'pedidos:eliminar' pedido.pk %}" class="btn-action-icon text-danger" title="Eliminar">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </div>
-                        </td>
+                        <td class="cap" data-col="notas"><small class="text-muted">{{ pedido.notas|default:"–" }}</small></td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="text-center py-4 text-muted">
-                            No hay pedidos registrados actualmente.
+                        <td colspan="12" class="text-center py-4 text-muted">
+                            {% if q %}No hay pedidos que coincidan con "{{ q }}".{% else %}No hay pedidos en esta pestaña.{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -176,52 +203,78 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div class="d-flex align-items-center gap-2">
                         <input type="checkbox" name="pedido_ids" value="{{ pedido.id }}" class="pedido-select-check form-check-input">
-                        <strong class="text-primary fs-6">#{{ pedido.numero }}</strong>
+                        <a href="{% url 'pedidos:detalle' pedido.pk %}" class="pedido-link fs-6">{{ pedido.numero }}</a>
                         <span class="badge-pill-num ms-1">{{ pedido.cantidad }} pzas</span>
                     </div>
-                    <span class="status-badge {{ pedido.alerta_estado.clase }}">
-                        {{ pedido.alerta_estado.texto }}
-                    </span>
+                    <span class="alerta-pill {{ pedido.alerta_estado.clase }}">{{ pedido.alerta_estado.texto }}</span>
                 </div>
 
-                <div class="fw-semibold text-dark mb-2">
-                    {{ pedido.descripcion }}
-                </div>
+                <div class="fw-semibold text-dark mb-2">{{ pedido.descripcion }}</div>
 
-                <div class="bg-light p-2 rounded mb-2 small">
+                <div class="bg-light p-2 rounded small">
                     <div class="d-flex justify-content-between mb-1">
-                        <span><strong>Salida:</strong> {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}</span>
-                        <span><strong>Días:</strong> {{ pedido.dias_restantes|default:"—" }}</span>
+                        <span><strong>Salida:</strong> {{ pedido.fecha_salida|date:"d M"|lower|default:"Sin fecha" }}</span>
+                        <span><strong>Estatus:</strong> {{ pedido.get_estado_display }}</span>
                     </div>
-                    <div>
-                        <strong>Estatus:</strong> {{ pedido.get_estado_display }}
-                    </div>
-                    {% if pedido.notas %}
-                    <div class="mt-1 text-muted fst-italic">
-                        <i class="bi bi-info-circle"></i> {{ pedido.notas }}
-                    </div>
+                    {% if pedido.avance is None %}
+                        <span class="ruta-pill">Ruta sin cargar</span>
+                    {% else %}
+                        <div class="avance">
+                            <div class="avance-bar">
+                                <span class="{% if pedido.avance >= 70 %}alto{% elif pedido.avance > 0 %}medio{% endif %}" style="width: {{ pedido.avance }}%;"></span>
+                            </div>
+                            <span class="mono">{{ pedido.avance }}% · faltan {{ pedido.min_restante }} min</span>
+                        </div>
                     {% endif %}
-                </div>
-
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{% url 'pedidos:detalle' pedido.pk %}" class="btn-outline-inaher btn-sm">
-                        <i class="bi bi-eye"></i> Ver
-                    </a>
-                    <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-outline-inaher btn-sm">
-                        <i class="bi bi-pencil"></i> Editar
-                    </a>
+                    {% if pedido.detenido_por %}
+                        <div class="mt-2"><span class="detenido-pill">{{ pedido.detenido_por }}</span></div>
+                    {% endif %}
                 </div>
             </div>
             {% empty %}
-            <div class="text-center py-4 text-muted">No hay pedidos registrados.</div>
+            <div class="text-center py-4 text-muted">No hay pedidos en esta pestaña.</div>
             {% endfor %}
         </div>
     </form>
+
+    <div class="pedidos-leyenda">
+        <span><i class="leyenda-box cap"></i> Captura</span>
+        <span><i class="leyenda-box calc"></i> Calculado por el sistema (ruta × cantidad × min estándar)</span>
+        <span>Min restante = tareas sin ✓ en designación</span>
+    </div>
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// ===== Mostrar / ocultar columnas (se recuerda en este navegador) =====
+(function () {
+    const KEY = "pedidos_columnas_ocultas";
+    let ocultas;
+    try { ocultas = JSON.parse(localStorage.getItem(KEY)); } catch (e) { ocultas = null; }
+    if (!Array.isArray(ocultas)) ocultas = ["notas"];
+
+    function aplicar() {
+        document.querySelectorAll("#tablaPedidos [data-col]").forEach(el => {
+            el.classList.toggle("d-none", ocultas.includes(el.dataset.col));
+        });
+        document.querySelectorAll("#menuColumnas input[data-col]").forEach(cb => {
+            cb.checked = !ocultas.includes(cb.dataset.col);
+        });
+    }
+
+    document.querySelectorAll("#menuColumnas input[data-col]").forEach(cb => {
+        cb.addEventListener("change", () => {
+            const col = cb.dataset.col;
+            ocultas = cb.checked ? ocultas.filter(c => c !== col) : [...ocultas, col];
+            try { localStorage.setItem(KEY, JSON.stringify(ocultas)); } catch (e) {}
+            aplicar();
+        });
+    });
+
+    aplicar();
+})();
+
 function toggleSelectAllPedidos(master) {
     document.querySelectorAll('.pedido-select-check').forEach(cb => cb.checked = master.checked);
 }
