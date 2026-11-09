@@ -14,6 +14,7 @@ from designaciones.models import (
     Operario,
 )
 
+from .forms import PedidoForm, PartidaFormSet
 from .models import MovimientoPedido, PartidaPedido, Pedido
 
 
@@ -305,3 +306,174 @@ class ReglasEstatusTests(TestCase):
         self.assertEqual(tareas.filter(operacion_madre__nombre="Empaquetar").count(), 1)
         self.assertEqual(tareas.filter(partida=self.p1).count(), 5)
         self.assertEqual(tareas.filter(partida=self.p2).count(), 5)
+class CorreccionesFichaPedidoTests(TestCase):
+
+    def setUp(self):
+        self.hoy = timezone.localdate()
+
+        self.operario = Operario.objects.create(
+            nombre="Operario de prueba"
+        )
+
+        self.madre = OperacionMadre.objects.create(
+            nombre="Corte"
+        )
+
+        self.detallada = OperacionDetallada.objects.create(
+            madre=self.madre,
+            nombre="Cortar varilla",
+        )
+
+        self.dia = DesignacionDia.objects.create(
+            fecha=self.hoy
+        )
+
+        self.pedido = Pedido.objects.create(
+            numero="SAE-TEST-01",
+            fecha_salida=self.hoy + timedelta(days=5),
+        )
+
+        self.partida = PartidaPedido.objects.create(
+            pedido=self.pedido,
+            cantidad=10,
+            descripcion="REBO 400",
+        )
+
+        self.pedido.actualizar_resumen()
+
+        self.tarea = ItemDesignacion.objects.create(
+            designacion=self.dia,
+            quien=self.operario,
+            pedido=self.pedido,
+            partida=self.partida,
+            paso=1,
+            operacion_madre=self.madre,
+            operacion_detallada=self.detallada,
+            cantidad=10,
+            minutos=30,
+            hecho=True,
+        )
+
+    def datos_partida(self, **extra):
+        datos = {
+            "partidas-TOTAL_FORMS": "1",
+            "partidas-INITIAL_FORMS": "1",
+            "partidas-MIN_NUM_FORMS": "1",
+            "partidas-MAX_NUM_FORMS": "1000",
+            "partidas-0-id": str(self.partida.pk),
+            "partidas-0-cantidad": str(self.partida.cantidad),
+            "partidas-0-descripcion": self.partida.descripcion,
+        }
+
+        datos.update(extra)
+        return datos
+
+    def test_numero_sae_bloqueado_al_editar(self):
+        form = PedidoForm(instance=self.pedido)
+        self.assertTrue(form.fields["numero"].disabled)
+
+    def test_no_permite_eliminar_partida_con_tarea_completada(self):
+        datos = self.datos_partida(
+            **{"partidas-0-DELETE": "on"}
+        )
+
+        formset = PartidaFormSet(
+            data=datos,
+            instance=self.pedido,
+            prefix="partidas",
+        )
+
+        self.assertFalse(formset.is_valid())
+        self.assertIn(
+            "no se pueden eliminar",
+            str(formset.non_form_errors()).lower(),
+        )
+
+    def test_permite_cambiar_cantidad_de_partida_con_avance(self):
+        datos = self.datos_partida(
+            **{"partidas-0-cantidad": "12"}
+        )
+
+        formset = PartidaFormSet(
+            data=datos,
+            instance=self.pedido,
+            prefix="partidas",
+        )
+
+        self.assertTrue(formset.is_valid(), formset.errors)
+        self.assertTrue(formset.forms[0].tiene_avance)
+
+    def test_ficha_muestra_tareas_de_designacion_solo_consulta(self):
+        respuesta = self.client.get(
+            reverse("pedidos:detalle", args=[self.pedido.pk])
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Tareas en Designación")
+        self.assertContains(respuesta, "Cortar varilla")
+        self.assertContains(respuesta, "Completada")
+
+class PedidoFichaPaginaTests(TestCase):
+
+    def crear_pedido(self, numero):
+        pedido = Pedido.objects.create(
+            numero=numero,
+            fecha_salida=timezone.localdate() + timedelta(days=3),
+            notas="Cliente solicita entrega prioritaria.",
+        )
+
+        PartidaPedido.objects.create(
+            pedido=pedido,
+            cantidad=4,
+            descripcion="REBO 400",
+        )
+
+        PartidaPedido.objects.create(
+            pedido=pedido,
+            cantidad=6,
+            descripcion="SCN-90 inox",
+        )
+
+        pedido.actualizar_resumen()
+        return pedido
+
+    def test_ficha_muestra_distribucion_de_dos_columnas(self):
+        pedido = self.crear_pedido("FICHA-01")
+
+        respuesta = self.client.get(
+            reverse("pedidos:detalle", args=[pedido.pk])
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+
+        for texto in (
+            "pedido-ficha-grid",
+            "Partidas",
+            "Tareas en Designación",
+            "Seguimiento",
+            "Entregas",
+            "Notas y fotos",
+            "Bitácora",
+            "REBO 400",
+            "SCN-90 inox",
+        ):
+            self.assertContains(respuesta, texto)
+
+    def test_listado_tiene_navegacion_desde_el_renglon(self):
+        pedido = self.crear_pedido("FICHA-02")
+
+        respuesta = self.client.get(
+            reverse("pedidos:lista")
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+
+        self.assertContains(
+            respuesta,
+            f'data-pedido-url="{reverse("pedidos:detalle", args=[pedido.pk])}"',
+        )
+
+        self.assertContains(
+            respuesta,
+            "Abrir pedido",
+        )

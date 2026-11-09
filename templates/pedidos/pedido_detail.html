@@ -4,157 +4,463 @@
 
 {% block content %}
 
-<div class="page-heading">
-    <div>
-        <div class="eyebrow">DETALLE DEL PEDIDO</div>
+<div class="pedido-ficha-page">
 
-        <h1>Pedido #{{ pedido.numero }}</h1>
-
-        <p>Consulta la información del registro seleccionado.</p>
-    </div>
-
-    <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
-        <i class="bi bi-arrow-left"></i>
-        Volver
-    </a>
-</div>
-
-{% if pedido.archivado %}
-<div class="archivado-aviso">
-    <i class="bi bi-archive"></i>
-    <div>
-        <strong>Pedido en el Histórico{% if pedido.archivado_sin_terminar %} · archivado sin terminar{% endif %}</strong>
-        <span>Archivado el {{ pedido.archivado_en|date:"d/m/Y H:i" }}. No aparece en Activos ni en la carga de planta.</span>
-    </div>
-</div>
-{% endif %}
-
-<section class="content-card detail-card">
-    <div class="detail-top">
+    {% if pedido.archivado %}
+    <div class="archivado-aviso">
+        <i class="bi bi-archive"></i>
         <div>
-            <span class="detail-label">Número de pedido</span>
-            <h2>#{{ pedido.numero }}</h2>
-        </div>
-
-        <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
-            <span class="status-badge {{ pedido.alerta_estado.clase }}">{{ pedido.alerta_estado.texto }}</span>
-            <span class="status-pill {{ pedido.estatus_clase }}">{{ pedido.get_estado_display }}</span>
-            {% if pedido.detenido %}
-                <span class="status-pill status-stopped" title="{% if pedido.detenido_manual %}Puesto a mano{% else %}Automático: tarea bloqueada por material{% endif %}">⛔ Detenido{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}{% if pedido.detenido_fecha_esperada %} · llega {{ pedido.detenido_fecha_esperada|date:"d M"|lower }}{% endif %}</span>
-            {% endif %}
-            {% if pedido.entrega_parcial %}
-                <span class="entrega-tag"><i class="bi bi-truck"></i> Entregado {{ pedido.cantidad_entregada }} de {{ pedido.cantidad }}</span>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="detail-grid">
-        <div class="detail-field">
-            <span class="detail-label">Cliente</span>
-            <strong>{{ pedido.cliente|default:"Sin cliente" }}</strong>
-        </div>
-
-        <div class="detail-field">
-            <span class="detail-label">Cantidad total</span>
-            <strong>{{ pedido.cantidad }} pzas</strong>
-        </div>
-
-        <div class="detail-field field-wide">
-            <span class="detail-label">Partidas</span>
-            {% for partida in pedido.partidas.all %}
-                <p class="mb-1"><strong>{{ partida.cantidad }}</strong> · {{ partida.descripcion }}</p>
-            {% empty %}
-                <p>Sin partidas</p>
-            {% endfor %}
-        </div>
-
-        <div class="detail-field">
-            <span class="detail-label">Fecha de captura</span>
-            <strong>{{ pedido.fecha_captura|date:"d/m/Y" }}</strong>
-        </div>
-
-        <div class="detail-field">
-            <span class="detail-label">Fecha de salida</span>
             <strong>
-                {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}
+                Pedido en el Histórico
+                {% if pedido.archivado_sin_terminar %}· archivado sin terminar{% endif %}
             </strong>
+            <span>
+                Archivado el {{ pedido.archivado_en|date:"d/m/Y H:i" }}.
+                No aparece en Activos ni en la carga de planta.
+            </span>
         </div>
+    </div>
+    {% endif %}
 
-        <div class="detail-field">
-            <span class="detail-label">Fecha de terminado</span>
-            <strong>{{ pedido.fecha_terminado|date:"d/m/Y"|default:"—" }}</strong>
-        </div>
+    <!-- CABECERA DEL PEDIDO -->
+    <header class="pedido-ficha-header">
 
-        <div class="detail-field">
-            <span class="detail-label">Fecha de entrega</span>
-            <strong>{{ pedido.fecha_entrega|date:"d/m/Y"|default:"—" }}</strong>
-            {% if pedido.entregas.all %}
-            <div class="small text-muted mt-1">
-                {% for e in pedido.entregas.all %}{{ e.fecha|date:"d/m" }}: {{ e.cantidad }} pzas{% if not forloop.last %} · {% endif %}{% endfor %}
+        <div class="pedido-ficha-heading-main">
+
+            <div class="pedido-ficha-eyebrow">
+                PEDIDOS / {{ pedido.numero }}
             </div>
+
+            <div class="pedido-ficha-titulo-linea">
+                <h1>Pedido {{ pedido.numero }}</h1>
+
+                <div class="pedido-ficha-estados">
+                    <span class="status-badge {{ pedido.alerta_estado.clase }}">
+                        {{ pedido.alerta_estado.texto }}
+                        {% if pedido.dias_restantes is not None %}
+                            {% if pedido.dias_restantes < 0 %}
+                                · {{ pedido.dias_restantes }} días
+                            {% elif pedido.dias_restantes == 0 %}
+                                · hoy
+                            {% endif %}
+                        {% endif %}
+                    </span>
+
+                    {% if pedido.detenido %}
+                    <span class="pedido-detenido-badge">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        DETENIDO · {{ pedido.detenido_por|default:"Requiere atención" }}
+                        {% if pedido.detenido_fecha_esperada %}
+                            · {{ pedido.detenido_fecha_esperada|date:"d M"|lower }}
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="pedido-ficha-meta">
+                {{ pedido.cliente|default:"Sin cliente" }}
+                · capturado {{ pedido.fecha_captura|date:"d M Y" }}
+                · sale {{ pedido.fecha_salida|date:"d M Y"|default:"Sin fecha" }}
+            </div>
+
+            <form
+                method="post"
+                action="{% url 'pedidos:cambiar_estado' pedido.pk %}"
+                class="pedido-ficha-estado-form"
+            >
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+                <label for="estadoPedido">Estado</label>
+
+                <select
+                    id="estadoPedido"
+                    name="estado"
+                    class="form-select form-select-sm"
+                    onchange="this.form.submit()"
+                >
+                    {% for valor, nombre in estados %}
+                    <option value="{{ valor }}"{% if valor == pedido.estado %} selected{% endif %}>
+                        {{ nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="pedido-ficha-acciones">
+
+            <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+
+            <a
+                href="{% url 'pedidos:imprimir_ficha' pedido.pk %}"
+                target="_blank"
+                rel="noopener"
+                class="btn-outline-inaher"
+            >
+                <i class="bi bi-printer"></i> Imprimir ficha
+            </a>
+
+            <form
+                method="post"
+                action="{% if pedido.archivado %}{% url 'pedidos:desarchivar' %}{% else %}{% url 'pedidos:archivar' %}{% endif %}"
+            >
+                {% csrf_token %}
+                <input type="hidden" name="pedido_ids" value="{{ pedido.pk }}">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+                <button type="submit" class="btn-outline-inaher">
+                    {% if pedido.archivado %}
+                        <i class="bi bi-box-arrow-up"></i> Desarchivar
+                    {% else %}
+                        <i class="bi bi-archive"></i> Archivar
+                    {% endif %}
+                </button>
+            </form>
+
+            <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-outline-inaher">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+
+            {% if pedido.estado != "ENTREGADO" %}
+            <a
+                href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}"
+                class="btn-inaher"
+            >
+                <i class="bi bi-box-seam"></i> Registrar entrega
+            </a>
             {% endif %}
+
+            <a
+                href="{% url 'pedidos:eliminar' pedido.pk %}?next={{ request.get_full_path|urlencode }}"
+                class="pedido-ficha-eliminar"
+            >
+                <i class="bi bi-trash3"></i> Eliminar
+            </a>
+
+        </div>
+    </header>
+
+    <!-- CONTENIDO EN DOS COLUMNAS -->
+    <div class="pedido-ficha-grid">
+
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="pedido-ficha-columna">
+
+            <section class="pedido-ficha-card">
+
+                <div class="pedido-ficha-card-header">
+                    <h2>Partidas</h2>
+                    <span>{{ pedido.partidas.count }} partida(s)</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table pedido-ficha-tabla">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Cant.</th>
+                                <th>Descripción</th>
+                                <th>Entregado</th>
+                                <th>% avance</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for fila in avance_partidas %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ fila.partida.cantidad }}</td>
+                                <td class="pedido-partida-descripcion">
+                                    {{ fila.partida.descripcion }}
+                                </td>
+
+                                <td>
+                                    {% if pedido.cantidad_entregada == 0 %}
+                                        0 de {{ fila.partida.cantidad }}
+                                    {% else %}
+                                        <span
+                                            class="pedido-entrega-no-desglosada"
+                                            title="Las entregas actuales se guardan a nivel pedido, no por partida."
+                                        >
+                                            Sin desglose
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if fila.pct is not None %}
+                                    <div class="pedido-mini-progreso">
+                                        <div class="pedido-mini-progreso-track">
+                                            <span style="width: {{ fila.pct }}%"></span>
+                                        </div>
+                                        <strong>{{ fila.pct }} %</strong>
+                                    </div>
+                                    {% else %}
+                                    <span class="pedido-sin-ruta">Sin ruta</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    Este pedido no tiene partidas registradas.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pedido-ficha-resumen-partidas">
+                    <div>
+                        <span>Entregado del pedido</span>
+                        <strong>{{ pedido.cantidad_entregada }} de {{ pedido.cantidad }}</strong>
+                    </div>
+                    <div>
+                        <span>Min total</span>
+                        <strong>{{ pedido.min_total }}</strong>
+                    </div>
+                    <div>
+                        <span>Min restantes</span>
+                        <strong>{{ pedido.min_restante }}</strong>
+                    </div>
+                    <div class="pedido-avance-general">
+                        <span>Avance del pedido</span>
+                        <strong>{{ pedido.pct_avance }} %</strong>
+                    </div>
+                </div>
+
+                <div class="pedido-ficha-nota-tecnica">
+                    Las entregas se registran actualmente a nivel pedido.
+                    El desglose por partida requiere ampliar el registro de entregas.
+                </div>
+
+            </section>
+
+            <!-- TAREAS DE DESIGNACIÓN -->
+            <section class="pedido-ficha-card">
+
+                <div class="pedido-ficha-card-header">
+                    <h2>Tareas en Designación</h2>
+                    <span>Solo lectura · se palomean en Designación diaria</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table pedido-ficha-tabla pedido-tareas-tabla">
+                        <thead>
+                            <tr>
+                                <th>Paso</th>
+                                <th>Partida</th>
+                                <th>Operación</th>
+                                <th>Máquina</th>
+                                <th>Quién</th>
+                                <th>Min.</th>
+                                <th>✓</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for tarea in tareas_designacion %}
+                            <tr{% if tarea.bloqueado_por and not tarea.hecho %} class="pedido-tarea-bloqueada"{% endif %}>
+                                <td>{{ tarea.paso }}</td>
+                                <td>{{ tarea.partida.descripcion|default:"—" }}</td>
+
+                                <td class="pedido-operacion-celda">
+                                    <strong>{{ tarea.operacion_madre.nombre }}</strong>
+                                    <span>{{ tarea.operacion_detallada.nombre }}</span>
+                                    {% if tarea.detalle %}
+                                    <small>{{ tarea.detalle }}</small>
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ tarea.maquina|default:"—" }}</td>
+                                <td>{{ tarea.quien|default:"—" }}</td>
+                                <td>{{ tarea.minutos }}</td>
+
+                                <td>
+                                    {% if tarea.hecho %}
+                                        <span class="pedido-tarea-hecha" title="Completada" aria-label="Completada">
+                                            <i class="bi bi-check-lg"></i><span class="visually-hidden">Completada</span>
+                                        </span>
+                                    {% elif tarea.bloqueado_por %}
+                                        <span class="pedido-tarea-bloqueada-label">
+                                            BLOQUEADA · {{ tarea.bloqueado_por }}
+                                        </span>
+                                    {% else %}
+                                        <span class="pedido-tarea-pendiente">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    Este pedido todavía no tiene tareas en Designación.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+
         </div>
 
-        <div class="detail-field field-wide">
-            <span class="detail-label">Avance · {{ pedido.pct_avance }} % ({{ pedido.min_hechos }} de {{ pedido.min_total }} min)</span>
-            {% include "pedidos/_avance_partidas.html" with filas=avance_partidas %}
-            <small class="text-muted">% por partida = minutos con ✓ ÷ minutos de sus tareas. Las tareas de todo el pedido (p. ej. Empaquetar) solo cuentan en el total.</small>
+        <!-- COLUMNA DERECHA -->
+        <div class="pedido-ficha-columna">
+
+            <section class="pedido-ficha-card">
+
+                <div class="pedido-ficha-card-header">
+                    <h2>Seguimiento</h2>
+                    <span>Enviado · Facturado · Pagado</span>
+                </div>
+
+                <div class="pedido-seguimiento-grid">
+                    <div class="pedido-seguimiento-item">
+                        <i class="bi bi-circle"></i>
+                        <strong>ENVIADO</strong>
+                        <small>Sin registro</small>
+                    </div>
+
+                    <div class="pedido-seguimiento-item">
+                        <i class="bi bi-circle"></i>
+                        <strong>FACTURADO</strong>
+                        <small>Sin registro</small>
+                    </div>
+
+                    <div class="pedido-seguimiento-item">
+                        <i class="bi bi-circle"></i>
+                        <strong>PAGADO</strong>
+                        <small>Sin registro</small>
+                    </div>
+                </div>
+
+                <div class="pedido-ficha-nota-tecnica">
+                    El seguimiento comercial todavía no está conectado al pedido.
+                </div>
+
+            </section>
+
+            <!-- ENTREGAS -->
+            <section class="pedido-ficha-card">
+
+                <div class="pedido-ficha-card-header">
+                    <h2>Entregas</h2>
+                    <span>{{ pedido.cantidad_entregada }} de {{ pedido.cantidad }} pzas</span>
+                </div>
+
+                <div class="pedido-entregas-contenido">
+
+                    <div class="pedido-entrega-resumen">
+                        <div>
+                            <span>Entregado</span>
+                            <strong>{{ pedido.cantidad_entregada }} pzas</strong>
+                        </div>
+                        <div>
+                            <span>Por entregar</span>
+                            <strong>{{ pedido.cantidad_por_entregar }} pzas</strong>
+                        </div>
+                    </div>
+
+                    {% for entrega in pedido.entregas.all %}
+                    <div class="pedido-entrega-registro">
+                        <div>
+                            <strong>{{ entrega.fecha|date:"d/m/Y" }}</strong>
+                            <span>{{ entrega.cantidad }} pzas</span>
+                            {% if entrega.nota %}
+                            <small>{{ entrega.nota }}</small>
+                            {% endif %}
+                            {% if entrega.registrada_por %}
+                            <small>Registró: {{ entrega.registrada_por }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="pedido-ficha-vacio">Sin entregas todavía.</p>
+                    {% endfor %}
+
+                    {% if pedido.cantidad_por_entregar %}
+                    <a
+                        href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}"
+                        class="pedido-enlace-accion"
+                    >
+                        <i class="bi bi-plus-circle"></i> Registrar entrega
+                    </a>
+                    {% endif %}
+
+                </div>
+            </section>
+
+            <!-- NOTAS Y FOTOS -->
+            <section class="pedido-ficha-card">
+
+                <div class="pedido-ficha-card-header">
+                    <h2>Notas y fotos</h2>
+                    <span>Observaciones del pedido</span>
+                </div>
+
+                <div class="pedido-notas-contenido">
+                    {% if pedido.notas %}
+                        <p>{{ pedido.notas|linebreaksbr }}</p>
+                    {% else %}
+                        <p class="pedido-ficha-vacio">Sin observaciones registradas.</p>
+                    {% endif %}
+
+                    <div class="pedido-adjuntos-pendientes">
+                        <i class="bi bi-paperclip"></i>
+                        Adjuntos de foto y PDF: pendiente de implementación.
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- BITÁCORA -->
+            <section class="pedido-ficha-card">
+
+                <div class="pedido-ficha-card-header">
+                    <h2>Bitácora</h2>
+                    <span>Movimientos registrados</span>
+                </div>
+
+                <div class="pedido-bitacora-lista">
+
+                    {% for movimiento in movimientos %}
+                    <article class="pedido-bitacora-item">
+                        <time>{{ movimiento.fecha|date:"d M H:i" }}</time>
+                        <div>
+                            <strong>
+                                {{ movimiento.usuario }}
+                                · {{ movimiento.get_accion_display }}
+                            </strong>
+                            {% if movimiento.detalle %}
+                            <p>{{ movimiento.detalle }}</p>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% empty %}
+                    <p class="pedido-ficha-vacio">
+                        Aún no hay movimientos de archivo o desarchivo registrados.
+                    </p>
+                    {% endfor %}
+
+                </div>
+
+                <div class="pedido-ficha-nota-tecnica">
+                    Los cambios de estado, captura y tareas todavía no se registran aquí.
+                </div>
+
+            </section>
+
         </div>
 
-        <div class="detail-field field-wide">
-            <span class="detail-label">Notas</span>
-            <p>{{ pedido.notas|default:"Sin observaciones"|linebreaksbr }}</p>
-        </div>
-
-        <div class="detail-field">
-            <span class="detail-label">Fecha de creación</span>
-            <strong>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</strong>
-        </div>
-
-        <div class="detail-field">
-            <span class="detail-label">Última actualización</span>
-            <strong>{{ pedido.fecha_actualizacion|date:"d/m/Y H:i" }}</strong>
-        </div>
     </div>
-
-    <div class="form-footer">
-        <a
-            href="{% url 'pedidos:editar' pedido.pk %}"
-            class="btn-inaher"
-        >
-            <i class="bi bi-pencil-square"></i>
-            Editar pedido
-        </a>
-
-        {% if pedido.estado != "ENTREGADO" %}
-        <a href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-inaher">
-            <i class="bi bi-truck"></i>
-            Registrar entrega
-        </a>
-        {% endif %}
-
-        <a href="{% url 'pedidos:imprimir_ficha' pedido.pk %}" target="_blank" rel="noopener" class="btn-outline-inaher">
-            <i class="bi bi-printer"></i>
-            Imprimir ficha
-        </a>
-
-        <form method="post" action="{% if pedido.archivado %}{% url 'pedidos:desarchivar' %}{% else %}{% url 'pedidos:archivar' %}{% endif %}" class="m-0">
-            {% csrf_token %}
-            <input type="hidden" name="pedido_ids" value="{{ pedido.pk }}">
-            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button type="submit" class="btn-outline-inaher">
-                {% if pedido.archivado %}<i class="bi bi-box-arrow-up"></i> Desarchivar{% else %}<i class="bi bi-archive"></i> Archivar{% endif %}
-            </button>
-        </form>
-
-        <a
-            href="{% url 'pedidos:eliminar' pedido.pk %}?next={{ request.get_full_path|urlencode }}"
-            class="btn-outline-danger-custom"
-        >
-            <i class="bi bi-trash3"></i>
-            Eliminar
-        </a>
-    </div>
-</section>
+</div>
 
 {% endblock %}

@@ -135,7 +135,7 @@
             </thead>
             <tbody>
                 {% for pedido in pedidos %}
-                <tr class="fila-tarjeta{% if pedido.detenido %} fila-detenida{% endif %}">
+                <tr class="fila-tarjeta{% if pedido.detenido %} fila-detenida{% endif %}" data-pedido-url="{% url 'pedidos:detalle' pedido.pk %}" tabindex="0" title="Abrir pedido {{ pedido.numero }}">
                     <td class="col-check">
                         <input type="checkbox" name="pedido_ids" value="{{ pedido.id }}" form="formSeleccion"
                                class="pedido-select-check form-check-input" aria-label="Seleccionar pedido {{ pedido.numero }}">
@@ -279,5 +279,34 @@ function enviarSeleccion(accion) {
     form.action = accion;
     form.submit();
 }
+document.querySelectorAll(
+    ".tabla-tarjetas tbody tr.fila-tarjeta[data-pedido-url]"
+).forEach((fila) => {
+
+    fila.addEventListener("click", (evento) => {
+        const control = evento.target.closest(
+            "a, button, input, select, textarea, label, form, [data-bs-toggle], .dropdown-menu"
+        );
+
+        if (control) {
+            return;
+        }
+
+        window.location.assign(fila.dataset.pedidoUrl);
+    });
+
+    fila.addEventListener("keydown", (evento) => {
+        if (
+            evento.target !== fila ||
+            (evento.key !== "Enter" && evento.key !== " ")
+        ) {
+            return;
+        }
+
+        evento.preventDefault();
+        window.location.assign(fila.dataset.pedidoUrl);
+    });
+
+});
 </script>
 {% endblock %}

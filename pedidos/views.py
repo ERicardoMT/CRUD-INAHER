@@ -2,7 +2,7 @@ from datetime import date
 
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from urllib.parse import quote
@@ -259,13 +259,50 @@ class PedidoDetailView(DetailView):
     context_object_name = "pedido"
 
     def get_queryset(self):
-        return Pedido.objects.con_minutos().select_related("cliente").prefetch_related("partidas", "entregas")
+        return (
+            Pedido.objects.con_minutos()
+            .select_related("cliente")
+            .prefetch_related("partidas", "entregas")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["avance_partidas"] = self.object.avance_partidas()
-        return context
+        pedido = self.object
 
+        context["avance_partidas"] = pedido.avance_partidas()
+        context["estados"] = Pedido.Estado.choices
+
+        # Consulta de tareas vigentes. No se modifican desde esta ficha.
+        context["tareas_designacion"] = (
+            pedido.items_designacion
+            .filter(
+                Q(hecho=True) |
+                Q(designacion__cerrada=False)
+            )
+            .select_related(
+                "designacion",
+                "partida",
+                "quien",
+                "operacion_madre",
+                "operacion_detallada",
+                "maquina",
+            )
+            .order_by(
+                "designacion__fecha",
+                "paso",
+                "orden",
+                "id",
+            )
+        )
+
+        # Movimientos disponibles en la bitácora actual.
+        context["movimientos"] = (
+            MovimientoPedido.objects
+            .filter(pedido_numero=pedido.numero)
+            .order_by("-fecha", "-id")[:8]
+        )
+
+        return context
 
 class PedidoFormMixin:
     """Formulario del pedido + sus partidas (lo comparten Registrar y Editar)."""

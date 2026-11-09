@@ -4,9 +4,22 @@
     {{ f.cantidad }}
     {{ f.descripcion }}
     <span class="d-none">{{ f.DELETE }}</span>
-    <button type="button" class="btn-action-icon text-danger js-quitar-partida" title="Quitar partida" aria-label="Quitar partida">
+    <button
+        type="button"
+        class="btn-action-icon text-danger js-quitar-partida"
+        title="{% if f.tiene_avance %}No se puede eliminar una partida con tareas completadas{% else %}Quitar partida{% endif %}"
+        aria-label="Quitar partida"
+        {% if f.tiene_avance %}disabled{% endif %}
+    >
         <i class="bi bi-x-lg"></i>
     </button>
+    {% if f.tiene_avance %}
+        <div class="field-help text-warning partida-error">
+            Esta partida ya tiene tareas completadas (✓).
+            No se puede eliminar. Puedes modificar la cantidad,
+            pero revisa el avance de producción antes de guardar.
+        </div>
+    {% endif %}
     {% if f.errors %}
         <div class="field-error partida-error">{% for campo in f.visible_fields %}{{ campo.errors|striptags }} {% endfor %}</div>
     {% endif %}

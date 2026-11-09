@@ -75,6 +75,13 @@ class PedidoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["fecha_salida"].required = True
+
+        # El número lo proporciona el SAE: no se modifica al editar.
+        if self.instance.pk:
+            self.fields["numero"].disabled = True
+            self.fields["numero"].help_text = (
+                "El número de pedido proviene del SAE y no se puede modificar."
+            )
         self.fields["detenido_por"].help_text = ""
         # ENTREGADO solo se registra con fecha y cantidad (botón "Registrar entrega")
         if self.instance.estado != Pedido.Estado.ENTREGADO:
@@ -139,17 +146,56 @@ class PartidaForm(forms.ModelForm):
 
 
 class BasePartidaFormSet(BaseInlineFormSet):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Detecta partidas que ya tienen al menos una tarea completada.
+        for form in self.forms:
+            form.tiene_avance = False
+
+            if form.instance.pk:
+                form.tiene_avance = (
+                    form.instance.items_designacion
+                    .filter(hecho=True)
+                    .exists()
+                )
+
     def clean(self):
         super().clean()
+
         if any(self.errors):
             return
-        vivas = [
-            f for f in self.forms
-            if f.cleaned_data and not f.cleaned_data.get("DELETE")
-        ]
-        if not vivas:
-            raise ValidationError("Captura al menos una partida con cantidad mayor a 0.")
 
+        # Una partida con tareas completadas no se puede eliminar.
+        protegidas = [
+            form.instance.descripcion
+            for form in self.forms
+            if (
+                form.instance.pk
+                and form.cleaned_data.get("DELETE")
+                and form.tiene_avance
+            )
+        ]
+
+        if protegidas:
+            nombres = ", ".join(protegidas)
+
+            raise ValidationError(
+                "No se pueden eliminar estas partidas porque ya tienen "
+                f"tareas completadas: {nombres}. "
+                "Solo se permite modificar su cantidad."
+            )
+
+        vivas = [
+            form for form in self.forms
+            if form.cleaned_data and not form.cleaned_data.get("DELETE")
+        ]
+
+        if not vivas:
+            raise ValidationError(
+                "Captura al menos una partida con cantidad mayor a 0."
+            )
 
 PartidaFormSet = inlineformset_factory(
     Pedido,
