@@ -18,4 +18,5 @@ urlpatterns = [
     path("<int:pk>/estado/", views.cambiar_estado, name="cambiar_estado"),
     path("<int:pk>/eliminar/", PedidoDeleteView.as_view(), name="eliminar"),
     path("vaciar-seleccionados/", views.vaciar_pedidos_seleccionados, name="vaciar_seleccionados"),
+    path("api/numero-disponible/", views.numero_disponible, name="numero_disponible"),
 ]

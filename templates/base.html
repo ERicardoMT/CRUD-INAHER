@@ -130,6 +130,13 @@
             </header>
 
             <main class="main-content">
+                {% for mensaje in messages %}
+                <div class="alert alert-{% if mensaje.tags == 'error' %}danger{% else %}{{ mensaje.tags }}{% endif %} alert-dismissible fade show py-2 small" role="alert">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+                {% endfor %}
+
                 {% block content %}{% endblock %}
             </main>
 

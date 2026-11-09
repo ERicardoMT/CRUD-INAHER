@@ -1,239 +1,105 @@
 {% extends "base.html" %}
 
-{% block title %}Pedido {{ pedido.numero }} | INAHER{% if pedido.estado == "EN_PROCESO" %}
-<div class="modal fade" id="modalDetener" tabindex="-1" aria-labelledby="modalDetenerTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <form method="post" action="{% url 'pedidos:cambiar_estado' pedido.pk %}" class="modal-content">
-            {% csrf_token %}
-            <input type="hidden" name="estado" value="DETENIDO">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalDetenerTitulo">Detener pedido {{ pedido.numero }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-                <label for="detenido_por" class="form-label">¿Por qué se detiene?</label>
-                <input type="text" id="detenido_por" name="detenido_por" class="form-control" maxlength="150" required
-                       placeholder="Ej. Base MT-2 · llega 12 nov">
-                <div class="form-text">Se mostrará en la columna "Detenido por" de la lista de pedidos.</div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-danger">Detener pedido</button>
-            </div>
-        </form>
-    </div>
-</div>
-{% endif %}
-
-{% endblock %}
+{% block title %}Pedido {{ pedido.numero }} | INAHER{% endblock %}
 
 {% block content %}
 
-<a href="{% url 'pedidos:lista' %}" class="pd-back"><i class="bi bi-arrow-left"></i> Pedidos</a>
-
-<div class="pd-heading">
+<div class="page-heading">
     <div>
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <h1>Pedido {{ pedido.numero }}</h1>
-            <span class="alerta-pill {{ pedido.alerta_estado.clase }}">
-                {{ pedido.alerta_estado.texto }}{% if pedido.fecha_salida and pedido.estado != "ENTREGADO" %} · sale {{ pedido.fecha_salida|date:"d M"|lower }}{% endif %}
-            </span>
-            <span class="pd-estatus pd-estatus-{{ pedido.estado|lower }}">{{ pedido.get_estado_display }}</span>
-        </div>
-        <p>{{ pedido.descripcion }} · registrado {{ pedido.fecha_creacion|date:"d M"|lower }}</p>
+        <div class="eyebrow">DETALLE DEL PEDIDO</div>
+
+        <h1>Pedido #{{ pedido.numero }}</h1>
+
+        <p>Consulta la información del registro seleccionado.</p>
     </div>
 
-    <div class="pd-actions">
-        <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn btn-outline-inaher">Editar pedido</a>
-        {% if pedido.estado == "EN_PROCESO" %}
-            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDetener">
-                <i class="bi bi-pause-circle"></i> Detener
-            </button>
-        {% elif pedido.estado == "DETENIDO" %}
-            {% include "pedidos/_boton_estado.html" with estado="EN_PROCESO" texto="Reanudar" icono="play-circle" clase="btn-outline-success" %}
-        {% endif %}
-
-        {% if pedido.estado == "EN_PROCESO" or pedido.estado == "DETENIDO" %}
-            {% include "pedidos/_boton_estado.html" with estado="TERMINADO" texto="Marcar terminado" icono="check2-circle" clase="btn-outline-inaher" confirmar="¿Marcar el pedido como terminado?" %}
-        {% endif %}
-
-        {% if pedido.estado != "ENTREGADO" %}
-            {% include "pedidos/_boton_estado.html" with estado="ENTREGADO" texto="Marcar entregado" icono="truck" clase="btn-outline-inaher" confirmar="¿Marcar el pedido como entregado?" %}
-        {% endif %}
-
-        {% if pedido.estado == "TERMINADO" or pedido.estado == "ENTREGADO" %}
-            {% include "pedidos/_boton_estado.html" with estado="EN_PROCESO" texto="Reabrir" icono="arrow-counterclockwise" clase="btn-outline-inaher" confirmar="¿Regresar el pedido a En proceso?" %}
-        {% endif %}
-        <a href="{% url 'designaciones:hoy' %}" class="btn-inaher">Asignar tareas HOY</a>
-    </div>
+    <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
+        <i class="bi bi-arrow-left"></i>
+        Volver
+    </a>
 </div>
 
-{% if messages %}
-    {% for m in messages %}
-    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} py-2 small">{{ m }}</div>
-    {% endfor %}
-{% endif %}
-
-{% if pedido.notas %}
-<div class="pd-notas"><i class="bi bi-info-circle"></i> {{ pedido.notas }}</div>
-{% endif %}
-
-<!-- ===== Indicadores ===== -->
-<section class="stats-grid stats-grid-pedidos pd-kpis mb-4">
-    <article class="stat-card">
-        <div class="stat-card-top"><span>Tiempo total</span></div>
-        <strong class="mono-num">{{ kpi.min_total }} min</strong>
-        <small>{{ kpi.horas_total }} h · {{ kpi.pasos }} paso{{ kpi.pasos|pluralize }} · {{ pedido.cantidad }} pzas</small>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top"><span>Hecho</span></div>
-        <strong class="mono-num text-success">{{ kpi.min_hecho }} min</strong>
-        <small>{{ kpi.pct_hecho }}% · {{ kpi.pasos_listos }} paso{{ kpi.pasos_listos|pluralize }} con ✓</small>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top"><span>Se puede hacer hoy</span></div>
-        <strong class="mono-num">{{ kpi.min_hoy }} min</strong>
-        <small>
-            {% if pedido.estado == "DETENIDO" %}Pedido detenido{% else %}{{ kpi.tareas_hoy }} tarea{{ kpi.tareas_hoy|pluralize }} en la designación de hoy{% endif %}
-        </small>
-    </article>
-
-    {% if pedido.estado == "DETENIDO" %}
-    <article class="stat-card stat-card-alert">
-        <div class="stat-card-top"><span class="text-danger">Detenido</span></div>
-        <strong class="mono-num text-danger">{{ kpi.min_pend }} min</strong>
-        <small>{{ kpi.pasos_pend }} paso{{ kpi.pasos_pend|pluralize }} en espera{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}</small>
-    </article>
-    {% else %}
-    <article class="stat-card">
-        <div class="stat-card-top"><span>Pendiente</span></div>
-        <strong class="mono-num">{{ kpi.min_pend }} min</strong>
-        <small>{{ kpi.pasos_pend }} paso{{ kpi.pasos_pend|pluralize }} sin terminar</small>
-    </article>
-    {% endif %}
-
-    <article class="stat-card{% if kpi.dif_dias is not None and kpi.dif_dias > 0 %} stat-card-alert{% endif %}">
-        <div class="stat-card-top"><span{% if kpi.dif_dias is not None and kpi.dif_dias > 0 %} class="text-danger"{% endif %}>Terminación estimada</span></div>
-        {% if kpi.terminacion %}
-            <strong class="mono-num{% if kpi.dif_dias is not None and kpi.dif_dias > 0 %} text-danger{% endif %}">{{ kpi.terminacion|date:"d M"|lower }}</strong>
-            <small>
-                {% if kpi.dif_dias is None %}Sin fecha comprometida
-                {% elif kpi.dif_dias > 0 %}{{ kpi.dif_dias }} día{{ kpi.dif_dias|pluralize }} después de la fecha comprometida
-                {% elif kpi.dif_dias == 0 %}Justo en la fecha comprometida
-                {% else %}{{ kpi.dif_dias_abs }} día{{ kpi.dif_dias_abs|pluralize }} antes de la fecha comprometida{% endif %}
-            </small>
-        {% else %}
-            <strong class="mono-num text-muted">—</strong>
-            <small>{% if pedido.estado == "DETENIDO" %}No se puede estimar: pedido detenido{% else %}Ruta sin cargar{% endif %}</small>
-        {% endif %}
-    </article>
-</section>
-
-<div class="pd-layout">
-    <!-- ===== Ruta ===== -->
-    <section class="content-card pedidos-card">
-        <div class="pd-card-header">
-            <h2>Ruta · {{ pedido.descripcion }}</h2>
+<section class="content-card detail-card">
+    <div class="detail-top">
+        <div>
+            <span class="detail-label">Número de pedido</span>
+            <h2>#{{ pedido.numero }}</h2>
         </div>
 
-        {% if ruta %}
-        <div class="table-responsive">
-            <table class="tabla-pedidos pd-ruta">
-                <thead>
-                    <tr>
-                        <th style="width: 44px;">#</th>
-                        <th>Operación madre · detallada</th>
-                        <th>Máquina</th>
-                        <th class="text-end">Min</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for paso in ruta %}
-                    <tr class="paso-{{ paso.clase }}">
-                        <td><span class="paso-num paso-num-{{ paso.clase }}">{{ paso.numero }}</span></td>
-                        <td>
-                            <div class="paso-madre">{{ paso.madre }}</div>
-                            <div class="paso-detallada">{{ paso.detallada }}{% if paso.detalle %} · {{ paso.detalle }}{% endif %}</div>
-                            {% for r in paso.registros %}
-                            <div class="paso-registro{% if not r.hecho and paso.clase == 'detenido' %} text-danger{% endif %}">
-                                {{ r.quien.nombre }} · {{ r.designacion.fecha|date:"d M"|lower }} ·
-                                {% if r.hecho %}{{ r.minutos }} min · {{ r.cantidad }}/{{ pedido.cantidad }} pzas ✓{% else %}{{ r.cantidad }} pzas · pendiente{% endif %}
-                            </div>
-                            {% endfor %}
-                            {% if paso.clase == "detenido" and pedido.detenido_por %}
-                            <div class="paso-registro text-danger">Espera: {{ pedido.detenido_por }}</div>
-                            {% endif %}
-                        </td>
-                        <td class="mono">{{ paso.maquina }}</td>
-                        <td class="mono text-end">{{ paso.minutos }}</td>
-                        <td><span class="paso-estado paso-estado-{{ paso.clase }}">{{ paso.estado }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+            <span class="status-badge {{ pedido.alerta_estado.clase }}">{{ pedido.alerta_estado.texto }}</span>
+            <span class="status-pill {{ pedido.estatus_clase }}">{{ pedido.get_estado_display }}</span>
+            {% if pedido.detenido %}
+                <span class="status-pill status-stopped">⛔ Detenido{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}</span>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="text-center text-muted py-5 px-3">
-            <p class="mb-2">Este pedido todavía no tiene ruta cargada.</p>
-            <a href="{% url 'designaciones:hoy' %}" class="btn-inaher">Cargar ruta en la designación de hoy</a>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-field">
+            <span class="detail-label">Cliente</span>
+            <strong>{{ pedido.cliente|default:"Sin cliente" }}</strong>
         </div>
-        {% endif %}
-    </section>
 
-    <!-- ===== Lateral ===== -->
-    <aside class="pd-side">
-        <section class="content-card pd-side-card">
-            <h3>¿Cuándo termina?</h3>
-            <ul class="pd-timeline">
-                <li class="tl-green">
-                    <strong>{{ hoy|date:"d M"|lower }} · hoy</strong>
-                    <span>{% if kpi.pasos_listos %}{{ kpi.pasos_listos }} de {{ kpi.pasos }} pasos terminados{% else %}Ningún paso terminado aún{% endif %}</span>
-                </li>
-                {% if pedido.fecha_salida %}
-                <li class="tl-orange">
-                    <strong class="text-warning-dark">{{ pedido.fecha_salida|date:"d M"|lower }} · fecha comprometida</strong>
-                    <span>
-                        {% if kpi.dif_dias is None %}{% if pedido.estado == "DETENIDO" %}En riesgo: pedido detenido{% else %}Sin estimación{% endif %}
-                        {% elif kpi.dif_dias > 0 %}No se alcanza con el trabajo pendiente
-                        {% else %}Se alcanza{% endif %}
-                    </span>
-                </li>
-                {% endif %}
-                {% if pedido.estado == "DETENIDO" %}
-                <li class="tl-red">
-                    <strong>Detenido</strong>
-                    <span>{{ pedido.detenido_por|default:"Sin motivo capturado" }}</span>
-                </li>
-                {% endif %}
-                {% if kpi.terminacion %}
-                <li class="tl-navy">
-                    <strong>{{ kpi.terminacion|date:"d M"|lower }} · terminación estimada</strong>
-                    <span>{{ kpi.min_pend }} min pendientes · jornada de {{ jornada_horas }} h</span>
-                </li>
-                {% endif %}
-            </ul>
-        </section>
+        <div class="detail-field">
+            <span class="detail-label">Cantidad total</span>
+            <strong>{{ pedido.cantidad }} pzas</strong>
+        </div>
 
-        <section class="content-card pd-side-card">
-            <h3>Avance en escalera</h3>
-            <p class="pd-side-help">Quién hizo qué, aunque sea en partes y en distintos días.</p>
-            {% for r in registros %}
-            <div class="escalera-row{% if not r.hecho %} text-muted{% endif %}">
-                <span>{% if r.hecho %}{{ r.designacion.fecha|date:"d M"|lower }} · {{ r.quien.nombre }}{% else %}— · pendiente{% endif %} · {{ r.operacion_madre.nombre|lower }}</span>
-                <span class="mono">{{ r.cantidad }} pzas{% if r.hecho %} · {{ r.minutos }} min{% endif %}</span>
-            </div>
+        <div class="detail-field field-wide">
+            <span class="detail-label">Partidas</span>
+            {% for partida in pedido.partidas.all %}
+                <p class="mb-1"><strong>{{ partida.cantidad }}</strong> · {{ partida.descripcion }}</p>
             {% empty %}
-            <p class="text-muted small mb-0">Sin registros todavía.</p>
+                <p>Sin partidas</p>
             {% endfor %}
-        </section>
-
-        <div class="text-end">
-            <a href="{% url 'pedidos:eliminar' pedido.pk %}" class="pd-delete"><i class="bi bi-trash3"></i> Eliminar pedido</a>
         </div>
-    </aside>
-</div>
+
+        <div class="detail-field">
+            <span class="detail-label">Fecha de captura</span>
+            <strong>{{ pedido.fecha_captura|date:"d/m/Y" }}</strong>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Fecha de salida</span>
+            <strong>
+                {{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}
+            </strong>
+        </div>
+
+        <div class="detail-field field-wide">
+            <span class="detail-label">Notas</span>
+            <p>{{ pedido.notas|default:"Sin observaciones"|linebreaksbr }}</p>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Fecha de creación</span>
+            <strong>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</strong>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Última actualización</span>
+            <strong>{{ pedido.fecha_actualizacion|date:"d/m/Y H:i" }}</strong>
+        </div>
+    </div>
+
+    <div class="form-footer">
+        <a
+            href="{% url 'pedidos:editar' pedido.pk %}"
+            class="btn-inaher"
+        >
+            <i class="bi bi-pencil-square"></i>
+            Editar pedido
+        </a>
+
+        <a
+            href="{% url 'pedidos:eliminar' pedido.pk %}"
+            class="btn-outline-danger-custom"
+        >
+            <i class="bi bi-trash3"></i>
+            Eliminar
+        </a>
+    </div>
+</section>
 
 {% endblock %}

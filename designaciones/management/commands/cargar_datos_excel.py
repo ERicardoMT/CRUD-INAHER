@@ -122,8 +122,8 @@ class Command(BaseCommand):
                 estatus_raw = cols.get('G', 'EN PROCESO').upper()
                 if "TERMINADO" in estatus_raw:
                     estatus = Pedido.Estado.TERMINADO
-                elif "DETENIDO" in estatus_raw:
-                    estatus = Pedido.Estado.DETENIDO
+                elif "ESPERA" in estatus_raw:
+                    estatus = Pedido.Estado.EN_ESPERA
                 else:
                     estatus = Pedido.Estado.EN_PROCESO
 
@@ -132,13 +132,15 @@ class Command(BaseCommand):
                 pedido, created = Pedido.objects.update_or_create(
                     numero=num_pedido,
                     defaults={
-                        'descripcion': desc,
-                        'cantidad': cant,
                         'fecha_salida': fecha_salida,
                         'estado': estatus,
+                        'detenido': "DETENIDO" in estatus_raw,
                         'notas': notas,
                     }
                 )
+                pedido.partidas.all().delete()
+                pedido.partidas.create(cantidad=max(cant, 1), descripcion=(desc or "Sin descripción")[:255])
+                pedido.actualizar_resumen()
                 if created:
                     pedidos_creados += 1
 

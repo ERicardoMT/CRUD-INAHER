@@ -1,5 +1,0 @@
-<form method="post" action="{% url 'pedidos:cambiar_estado' pedido.pk %}"{% if confirmar %} onsubmit="return confirm('{{ confirmar|escapejs }}');"{% endif %}>
-    {% csrf_token %}
-    <input type="hidden" name="estado" value="{{ estado }}">
-    <button type="submit" class="btn {{ clase }}"><i class="bi bi-{{ icono }}"></i> {{ texto }}</button>
-</form>

@@ -1,0 +1,13 @@
+<div class="partida-row{% if f.errors %} has-errors{% endif %}{% if f.DELETE.value %} d-none{% endif %}">
+    {% for oculto in f.hidden_fields %}{{ oculto }}{% endfor %}
+    <span class="partida-num" aria-hidden="true"></span>
+    {{ f.cantidad }}
+    {{ f.descripcion }}
+    <span class="d-none">{{ f.DELETE }}</span>
+    <button type="button" class="btn-action-icon text-danger js-quitar-partida" title="Quitar partida" aria-label="Quitar partida">
+        <i class="bi bi-x-lg"></i>
+    </button>
+    {% if f.errors %}
+        <div class="field-error partida-error">{% for campo in f.visible_fields %}{{ campo.errors|striptags }} {% endfor %}</div>
+    {% endif %}
+</div>

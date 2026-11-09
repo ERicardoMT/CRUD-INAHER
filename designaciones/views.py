@@ -48,100 +48,28 @@ def designacion_hoy(request):
     else:
         items = items_qs.order_by("orden", "id")
 
-    items_list = list(items)
     operarios = Operario.objects.filter(activo=True)
-    maquinas = Maquina.objects.filter(activa=True)
-    hoy = timezone.localdate()
-
-    pedidos_abiertos_qs = Pedido.objects.exclude(estado=Pedido.Estado.TERMINADO)
-    pedidos_abiertos_count = pedidos_abiertos_qs.count()
-    pedidos_atrasados_count = pedidos_abiertos_qs.filter(fecha_salida__lt=hoy).count()
-    pedidos_salen_hoy_count = pedidos_abiertos_qs.filter(fecha_salida=hoy).count()
-    pedidos_detenidos_count = Pedido.objects.filter(estado=Pedido.Estado.DETENIDO).count()
-
-    total_min_asignados = sum(i.minutos for i in items_list)
-    total_min_hechos = sum(i.minutos for i in items_list if i.hecho)
-    min_pendientes = total_min_asignados - total_min_hechos
-    carga_total_horas = round(min_pendientes / 60, 1)
-
-    capacidad_dia_horas = round(operarios.count() * 7.0, 1)
-
-    min_se_puede_hacer = sum(
-        i.minutos for i in items_list
-        if not i.hecho and (not i.pedido or i.pedido.estado != Pedido.Estado.DETENIDO)
-    )
-    se_puede_hacer_horas = round(min_se_puede_hacer / 60, 1)
-
-    min_detenidos = sum(
-        i.minutos for i in items_list
-        if (i.pedido and i.pedido.estado == Pedido.Estado.DETENIDO)
-    )
-    detenido_material_horas = round(min_detenidos / 60, 1)
-
-    tareas_listas = sum(1 for i in items_list if i.hecho)
-    tareas_detenidas = sum(1 for i in items_list if (i.pedido and i.pedido.estado == Pedido.Estado.DETENIDO))
-    tareas_en_curso = len(items_list) - tareas_listas - tareas_detenidas
-    if tareas_en_curso < 0:
-        tareas_en_curso = 0
-
-    carga_personas = []
+    resumen_operarios = []
     for op in operarios:
-        items_op = [i for i in items_list if i.quien_id == op.id]
+        items_op = [i for i in items if i.quien_id == op.id]
         min_asig = sum(i.minutos for i in items_op)
         min_hech = sum(i.minutos for i in items_op if i.hecho)
-        pct_barra = min(100, round((min_asig / 420) * 100)) if min_asig > 0 else 0
-        carga_personas.append({
+        pct = round((min_hech / min_asig * 100)) if min_asig > 0 else 0
+        resumen_operarios.append({
             "operario": op,
             "min_asignados": min_asig,
             "min_hechos": min_hech,
-            "pct_barra": pct_barra,
-            "tiene_tareas": (min_asig > 0),
+            "porcentaje": pct,
+            "tareas_total": len(items_op),
+            "tareas_hechas": len([i for i in items_op if i.hecho]),
+            "items": items_op,
         })
-    carga_personas.sort(key=lambda x: x["min_asignados"], reverse=True)
 
-    carga_maquinas = []
-    for maq in maquinas:
-        min_maq = sum(i.minutos for i in items_list if i.maquina_id == maq.id)
-        pct_maq = round((min_maq / total_min_asignados) * 100) if total_min_asignados > 0 else 0
-        carga_maquinas.append({
-            "maquina": maq,
-            "minutos": min_maq,
-            "porcentaje": pct_maq,
-            "tiene_carga": (min_maq > 0),
-        })
-    carga_maquinas.sort(key=lambda x: x["minutos"], reverse=True)
-
-    avisos = []
-    items_sin_maq = [i for i in items_list if not i.maquina and not i.hecho]
-    for it in items_sin_maq[:2]:
-        p_num = it.pedido.numero if it.pedido else "STOCK"
-        avisos.append(f"{p_num} · falta escoger máquina en {it.operacion_madre.nombre}.")
-
-    for p in Pedido.objects.filter(estado=Pedido.Estado.DETENIDO)[:2]:
-        avisos.append(f"{p.numero} · detenido por material: {p.descripcion[:35]}.")
-
-    for it in items_list:
-        if it.pedido and it.pedido.fecha_salida == hoy and not it.hecho:
-            avisos.append(f"{it.pedido.numero} · sale hoy y le faltan tareas pendientes.")
-            break
-
-    sin_tareas = [op.nombre for op in operarios if not any(i.quien_id == op.id for i in items_list)]
-    for op_nom in sin_tareas[:2]:
-        avisos.append(f"{op_nom} no tiene tareas asignadas hoy.")
-
-    kpis = {
-        "pedidos_abiertos": pedidos_abiertos_count,
-        "atrasados": pedidos_atrasados_count,
-        "salen_hoy": pedidos_salen_hoy_count,
-        "carga_total_horas": carga_total_horas,
-        "capacidad_dia_horas": capacidad_dia_horas,
-        "se_puede_hacer_horas": se_puede_hacer_horas,
-        "detenido_material_horas": detenido_material_horas,
-        "pedidos_detenidos": pedidos_detenidos_count,
-        "total_min_asignados": total_min_asignados,
-        "tareas_listas": tareas_listas,
-        "tareas_en_curso": tareas_en_curso,
-        "tareas_detenidas": tareas_detenidas,
+    # Conteo de alertas
+    alertas_conteo = {
+        "atrasados": len([i for i in items if i.alerta["texto"].startswith("ATRASADO")]),
+        "sale_hoy": len([i for i in items if i.alerta["texto"] == "SALE HOY"]),
+        "urgentes": len([i for i in items if i.alerta["texto"].startswith("URGENTE")]),
     }
 
     form_item = ItemDesignacionForm()
@@ -151,15 +79,12 @@ def designacion_hoy(request):
         "designacion": designacion,
         "fecha_actual": fecha_actual,
         "es_hoy": (fecha_actual == timezone.localdate()),
-        "items": items_list,
-        "operarios": operarios,
-        "maquinas": maquinas,
-        "carga_personas": carga_personas,
-        "carga_maquinas": carga_maquinas,
-        "avisos": avisos,
-        "kpis": kpis,
+        "items": items,
+        "resumen_operarios": resumen_operarios,
+        "alertas_conteo": alertas_conteo,
         "form_item": form_item,
         "form_moldes": form_moldes,
+        "operarios": operarios,
         "operaciones_madre": OperacionMadre.objects.filter(activa=True),
         "pedidos_activos": Pedido.objects.exclude(estado__in=Pedido.ESTADOS_CERRADOS),
     }
@@ -172,6 +97,9 @@ def toggle_item_hecho(request, pk):
     item = get_object_or_404(ItemDesignacion, pk=pk)
     item.hecho = not item.hecho
     item.save(update_fields=["hecho"])
+
+    if item.pedido:
+        item.pedido.sincronizar_estatus()
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
         desig = item.designacion

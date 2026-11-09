@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ titulo }} | INAHER{% endblock %}
 
@@ -10,7 +11,7 @@
 
         <h1>{{ titulo }}</h1>
 
-        <p>{{ subtitulo }}</p>
+        <p>{{ subtitulo }} <span class="text-danger">*</span> obligatorio</p>
     </div>
 
     <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
@@ -24,52 +25,93 @@
         <div>
             <h2>Información del pedido</h2>
 
-            <p>
-                Completa los campos del registro.
-                La fecha de salida es opcional.
-            </p>
+            <p>El número lo da el SAE. La fecha de captura se pone sola con la de hoy.</p>
         </div>
     </div>
 
-    <form method="post">
+    <form method="post" id="formPedido" novalidate
+          data-numero-url="{% url 'pedidos:numero_disponible' %}"
+          data-pedido-id="{{ object.pk|default:'' }}">
         {% csrf_token %}
 
+        {% if errores %}
+            <div class="alert alert-danger py-2 small mb-4">
+                No se guardó: corrige {{ errores }} campo{{ errores|pluralize }} marcado{{ errores|pluralize }}.
+            </div>
+        {% endif %}
         {{ form.non_field_errors }}
 
         <div class="form-grid">
-            {% for field in form %}
-                <div class="field-block{% if field.errors %} has-errors{% endif %} field-{{ field.name }}">
+            {% include "pedidos/_campo.html" with field=form.numero nota="SAE · números y letras" %}
+            {% include "pedidos/_campo.html" with field=form.cliente_nombre nota="opcional · autorrelleno" %}
 
-                    <label
-                        for="{{ field.id_for_label }}"
-                        class="form-label"
-                    >
-                        {{ field.label }}
-                    </label>
+            {# Partidas: un renglón por partida, como en el SAE #}
+            <div class="field-block field-wide{% if partidas.non_form_errors %} has-errors{% endif %}">
+                <label class="form-label">
+                    Partidas <span class="text-danger">*</span>
+                    <small class="field-label-note">un renglón por partida · Enter agrega renglón</small>
+                </label>
 
-                    {{ field }}
+                {{ partidas.management_form }}
 
-                    {% if field.help_text %}
-                        <div class="field-help">
-                            {{ field.help_text }}
-                        </div>
-                    {% endif %}
+                <div class="partidas-box">
+                    <div class="partidas-head" aria-hidden="true">
+                        <span>#</span><span>Cant</span><span>Descripción</span><span></span>
+                    </div>
 
-                    {% if field.errors %}
-                        <div class="field-error">
-                            {{ field.errors|striptags }}
-                        </div>
-                    {% endif %}
+                    <div id="partidasLista">
+                        {% for f in partidas %}
+                            {% include "pedidos/_partida.html" with f=f %}
+                        {% endfor %}
+                    </div>
 
+                    <div class="partidas-foot">
+                        <button type="button" class="btn-outline-inaher btn-sm" id="btnAgregarPartida">
+                            <i class="bi bi-plus-lg"></i> Agregar partida
+                        </button>
+                        <span>Cantidad total (se llena sola) <strong id="cantidadTotal">0</strong> pzas</span>
+                    </div>
                 </div>
-            {% endfor %}
+
+                <template id="partidaVacia">
+                    {% include "pedidos/_partida.html" with f=partidas.empty_form %}
+                </template>
+
+                {% if partidas.non_form_errors %}
+                    <div class="field-error">{{ partidas.non_form_errors|striptags }}</div>
+                {% endif %}
+            </div>
+
+            {% include "pedidos/_campo.html" with field=form.fecha_captura nota="hoy por default" %}
+            {% include "pedidos/_campo.html" with field=form.fecha_salida %}
+            {% include "pedidos/_campo.html" with field=form.estado ayuda="En espera · En proceso · Terminado · Entregado. Cambia solo con las ✓ de la designación; también se puede poner a mano." %}
+
+            {# Detenido: bandera + motivo #}
+            <div class="field-block{% if form.detenido_por.errors %} has-errors{% endif %}">
+                <label for="{{ form.detenido_por.id_for_label }}" class="form-label">
+                    Detenido <small class="field-label-note">bandera</small>
+                </label>
+                <div class="detenido-input">
+                    {{ form.detenido }}
+                    {{ form.detenido_por }}
+                </div>
+                {% if form.detenido_por.errors %}
+                    <div class="field-error">{{ form.detenido_por.errors|striptags }}</div>
+                {% endif %}
+            </div>
+
+            {% include "pedidos/_campo.html" with field=form.notas nota="opcional" %}
         </div>
 
+        <datalist id="clientes-lista">
+            {% for nombre in clientes %}<option value="{{ nombre }}"></option>{% endfor %}
+        </datalist>
+        <datalist id="modelos-lista">
+            {% for modelo in modelos %}<option value="{{ modelo }}"></option>{% endfor %}
+        </datalist>
+
         <div class="form-footer">
-            <a
-                href="{% url 'pedidos:lista' %}"
-                class="btn-outline-inaher"
-            >
+            <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
                 Cancelar
             </a>
 
@@ -81,4 +123,8 @@
     </form>
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'pedidos/js/pedido_form.js' %}"></script>
 {% endblock %}
