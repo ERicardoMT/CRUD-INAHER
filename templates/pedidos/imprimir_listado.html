@@ -1,0 +1,52 @@
+{% extends "pedidos/_imprimir_base.html" %}
+
+{% block titulo_doc %}INAHER · {{ titulo }}{% endblock %}
+{% block pie %}{{ titulo }}{% endblock %}
+{% block encabezado %}INAHER · {{ titulo }}{% endblock %}
+{% block impreso_extra %} · <strong>orden:</strong> {{ orden_nombre }}{% endblock %}
+{% block sub %}Filtro aplicado: {{ filtro_nombre }} ({{ pedidos|length }}) · Días y Estado calculados con la fecha de impresión{% endblock %}
+
+{% block cuerpo %}
+<table>
+    <thead>
+        <tr>
+            <th># Pedido</th>
+            <th>Cliente</th>
+            <th class="num">Cant</th>
+            <th>Descripción</th>
+            <th>Captura</th>
+            <th>Salida</th>
+            <th class="num">Días</th>
+            <th>Estado</th>
+            <th>Estatus</th>
+            <th class="num">Min total</th>
+            <th class="num">Min rest.</th>
+            <th class="num">% av.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in pedidos %}
+        <tr>
+            <td class="nowrap"><strong>{{ p.numero }}</strong></td>
+            <td>{{ p.cliente|default:"—" }}</td>
+            <td class="num">{% for x in p.partidas.all %}{{ x.cantidad }}<br>{% empty %}{{ p.cantidad }}{% endfor %}</td>
+            <td>{% for x in p.partidas.all %}{{ x.descripcion }}<br>{% empty %}{{ p.descripcion }}{% endfor %}</td>
+            <td class="nowrap">{{ p.fecha_captura|date:"d/m/y" }}</td>
+            <td class="nowrap">{{ p.fecha_salida|date:"d/m/y"|default:"—" }}</td>
+            <td class="num{% if p.dias_restantes is not None and p.dias_restantes < 0 %} rojo{% endif %}">{% if p.dias_restantes is not None %}{{ p.dias_restantes }}{% else %}—{% endif %}</td>
+            <td class="nowrap tag{% if p.alerta_estado.texto == 'ATRASADO' %} rojo{% endif %}">{{ p.alerta_estado.texto }}</td>
+            <td>
+                {{ p.get_estado_display }}
+                {% if p.detenido %}<div class="rojo tag">DETENIDO{% if p.detenido_por %} · {{ p.detenido_por }}{% endif %}</div>{% endif %}
+                {% if p.archivado %}<div class="muted tag">Archivado{% if p.archivado_sin_terminar %} sin terminar{% endif %}</div>{% endif %}
+            </td>
+            <td class="num">{{ p.min_total }}</td>
+            <td class="num">{{ p.min_restante }}</td>
+            <td class="num">{{ p.pct_avance }} %</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" class="c muted">No hay pedidos con este filtro.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

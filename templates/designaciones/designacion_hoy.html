@@ -408,6 +408,10 @@
                             <label class="form-label fw-semibold" for="{{ form_item.pedido.id_for_label }}"># Pedido</label>
                             {{ form_item.pedido }}
                         </div>
+                        <div class="col-12 col-md-3 order-md-last">
+                            <label class="form-label" for="{{ form_item.partida.id_for_label }}">Partida</label>
+                            {{ form_item.partida }}
+                        </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label fw-semibold" for="{{ form_item.paso.id_for_label }}">Paso *</label>
                             {{ form_item.paso }}
@@ -449,6 +453,11 @@
                             <label class="form-label fw-semibold" for="{{ form_item.minutos.id_for_label }}">Minutos calculados</label>
                             {{ form_item.minutos }}
                             <small class="text-muted">Se calcula automáticamente con el estándar (Cant × Min/pz).</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form_item.bloqueado_por.id_for_label }}"><i class="bi bi-slash-circle text-warning"></i> Bloqueada por material</label>
+                            {{ form_item.bloqueado_por }}
+                            <small class="text-muted">Si se llena, el pedido se marca DETENIDO solo.</small>
                         </div>
                     </div>
                 </div>
@@ -543,6 +552,7 @@
 {% block extra_js %}
 <script src="{% static 'designaciones/js/motor_rutas_inaher.js' %}"></script>
 <script src="{% static 'designaciones/js/cargar_ruta.js' %}"></script>
+<script src="{% static 'designaciones/js/partidas_tarea.js' %}"></script>
 <script>
 function toggleItemHecho(itemId, btnElem) {
     fetch(`/designacion/item/toggle/${itemId}/`, {

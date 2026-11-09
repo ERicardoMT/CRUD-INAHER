@@ -1,7 +1,7 @@
 from datetime import date
 from django.db import models
 from django.utils import timezone
-from pedidos.models import Pedido
+from pedidos.models import PartidaPedido, Pedido
 
 
 class Operario(models.Model):
@@ -133,6 +133,22 @@ class ItemDesignacion(models.Model):
         blank=True,
         related_name="items_designacion",
         verbose_name="# Pedido",
+    )
+    partida = models.ForeignKey(
+        PartidaPedido,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="items_designacion",
+        verbose_name="Partida",
+        help_text="Vacío = tarea de todo el pedido (p. ej. Empaquetar, cuenta una vez).",
+    )
+    bloqueado_por = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        verbose_name="Bloqueada por material",
+        help_text="Material faltante · fecha esperada. Si se llena, el pedido se marca DETENIDO solo.",
     )
     es_stock = models.BooleanField(
         default=False,

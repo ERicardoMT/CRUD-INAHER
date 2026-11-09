@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar entrega · {{ pedido.numero }} | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">PEDIDOS / ENTREGA</div>
+        <h1>Registrar entrega · Pedido {{ pedido.numero }}</h1>
+        <p>Entregado se registra a mano, con fecha y cantidad. Si la cantidad no completa el pedido, queda abierto como entrega parcial.</p>
+    </div>
+    <a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="entrega-layout">
+    <section class="content-card entrega-card">
+        <div class="entrega-resumen">
+            <div><span>Total del pedido</span><strong>{{ pedido.cantidad }} pzas</strong></div>
+            <div><span>Entregado</span><strong>{{ pedido.cantidad_entregada }} pzas</strong></div>
+            <div><span>Por entregar</span><strong class="{% if pedido.cantidad_por_entregar %}text-warning-emphasis{% else %}text-success{% endif %}">{{ pedido.cantidad_por_entregar }} pzas</strong></div>
+        </div>
+
+        {% if pedido.cantidad_por_entregar %}
+        <form method="post" class="entrega-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <div class="form-grid">
+                {% include "pedidos/_campo.html" with field=form.fecha %}
+                {% include "pedidos/_campo.html" with field=form.cantidad ayuda="Por defecto, lo que falta por entregar." %}
+                <div class="field-wide">
+                    {% include "pedidos/_campo.html" with field=form.nota nota="opcional" %}
+                </div>
+            </div>
+            <div class="form-footer">
+                <a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher">Cancelar</a>
+                <button type="submit" class="btn-inaher"><i class="bi bi-truck"></i> Registrar entrega</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="alert alert-success mb-0">
+            <i class="bi bi-check2-circle"></i> Entregado completo{% if pedido.fecha_entrega %} el {{ pedido.fecha_entrega|date:"d/m/Y" }}{% endif %}. El pedido está cerrado y fuera de Activos.
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="content-card entrega-card">
+        <h2 class="entrega-titulo">Entregas registradas</h2>
+        {% for e in pedido.entregas.all %}
+        <div class="entrega-fila">
+            <div>
+                <strong>{{ e.fecha|date:"d/m/Y" }}</strong> · {{ e.cantidad }} pzas
+                {% if e.nota %}<div class="text-muted small">{{ e.nota }}</div>{% endif %}
+            </div>
+            <form method="post" action="{% url 'pedidos:eliminar_entrega' e.pk %}"
+                  onsubmit="return confirm('¿Quitar esta entrega de {{ e.cantidad }} pzas? El estatus se recalcula.');">
+                {% csrf_token %}
+                <button type="submit" class="btn-action-icon text-danger" title="Quitar entrega (corrección)"><i class="bi bi-x-circle"></i></button>
+            </form>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-0">Aún no hay entregas.</p>
+        {% endfor %}
+    </section>
+</div>
+
+{% endblock %}

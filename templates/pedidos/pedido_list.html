@@ -12,14 +12,56 @@
 
     <div class="d-flex align-items-center gap-2">
         <div class="dropdown">
-            <button class="btn btn-outline-inaher dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-grid-fill text-primary"></i> <strong>INAHER</strong>
+            <button class="btn btn-outline-inaher d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-three-dots-vertical"></i> <strong>Opciones</strong> <i class="bi bi-caret-down-fill small"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm menu-opciones">
                 <li>
-                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger" onclick="enviarVaciarPedidos()">
-                        <i class="bi bi-trash"></i> Eliminar pedido(s) seleccionado(s)
+                    <a class="dropdown-item" href="{% url 'pedidos:imprimir_listado' %}?{{ consulta }}" target="_blank" rel="noopener">
+                        <i class="bi bi-printer"></i> Imprimir listado
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'pedidos:exportar_excel' %}?{{ consulta }}">
+                        <i class="bi bi-file-earmark-excel text-success"></i> Exportar a Excel
+                    </a>
+                </li>
+
+                <li><h6 class="dropdown-header">Ordenar por</h6></li>
+                {% for clave, nombre in ordenes.items %}
+                <li>
+                    <a class="dropdown-item{% if clave == orden %} active{% endif %}" href="?{% if consulta_sin_orden %}{{ consulta_sin_orden }}&{% endif %}orden={{ clave }}">
+                        {{ nombre|capfirst }}{% if clave == orden %} <i class="bi bi-check2 ms-auto"></i>{% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+
+                <li><h6 class="dropdown-header">Pedidos seleccionados <i class="bi bi-check-square"></i></h6></li>
+                {% if es_historico %}
+                <li>
+                    <button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:desarchivar' %}')">
+                        <i class="bi bi-box-arrow-up"></i> Desarchivar → Pedidos
                     </button>
+                </li>
+                {% else %}
+                <li>
+                    <button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:archivar' %}')">
+                        <i class="bi bi-archive"></i> Archivar pedido → Histórico
+                    </button>
+                </li>
+                {% endif %}
+                <li>
+                    <button type="button" class="dropdown-item text-danger" onclick="enviarSeleccion('{% url 'pedidos:eliminar_seleccionados' %}')">
+                        <i class="bi bi-trash"></i> Eliminar pedido
+                    </button>
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="?ver=historico"><i class="bi bi-clock-history"></i> Ver Histórico</a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'pedidos:bitacora' %}"><i class="bi bi-journal-text"></i> Bitácora</a>
                 </li>
             </ul>
         </div>
@@ -33,7 +75,7 @@
 {# Tarjetas: al hacer clic filtran el listado #}
 <nav class="stats-grid stats-grid-filtros mb-4" aria-label="Filtrar pedidos">
     {% for t in tarjetas %}
-    <a href="?ver={{ t.clave }}" class="stat-card stat-card-link tono-{{ t.tono }}{% if t.clave == filtro %} is-active{% endif %}"{% if t.clave == filtro %} aria-current="true"{% endif %}>
+    <a href="?ver={{ t.clave }}&orden={{ orden }}" class="stat-card stat-card-link tono-{{ t.tono }}{% if t.clave == filtro %} is-active{% endif %}"{% if t.clave == filtro %} aria-current="true"{% endif %}>
         <div class="stat-card-top">
             <span>{{ t.emoji }} {{ t.titulo }}</span>
             <span class="stat-icon"><i class="bi {{ t.icono }}"></i></span>
@@ -48,7 +90,7 @@
     <div class="content-card-header">
         <div>
             <h2>Listado de pedidos</h2>
-            <p>Clic en una tarjeta de arriba para filtrar · <strong>{{ filtro_nombre }} ({{ pedidos|length }})</strong></p>
+            <p>Clic en una tarjeta de arriba para filtrar · <strong>{{ filtro_nombre }} ({{ pedidos|length }})</strong> · ordenados por {{ orden_nombre }}</p>
         </div>
 
         <div class="dropdown">
@@ -58,15 +100,16 @@
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                 {% for clave, nombre in mostrar.items %}
                 <li>
-                    <a class="dropdown-item{% if clave == filtro %} active{% endif %}" href="?ver={{ clave }}">{{ nombre }}</a>
+                    <a class="dropdown-item{% if clave == filtro %} active{% endif %}" href="?ver={{ clave }}&orden={{ orden }}">{{ nombre }}</a>
                 </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
 
-    <form id="formVaciarPedidos" method="post" action="{% url 'pedidos:vaciar_seleccionados' %}">
+    <form id="formSeleccion" method="post" action="">
         {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
     </form>
 
     {% if pedidos %}
@@ -94,11 +137,16 @@
                 {% for pedido in pedidos %}
                 <tr class="fila-tarjeta{% if pedido.detenido %} fila-detenida{% endif %}">
                     <td class="col-check">
-                        <input type="checkbox" name="pedido_ids" value="{{ pedido.id }}" form="formVaciarPedidos"
+                        <input type="checkbox" name="pedido_ids" value="{{ pedido.id }}" form="formSeleccion"
                                class="pedido-select-check form-check-input" aria-label="Seleccionar pedido {{ pedido.numero }}">
                     </td>
                     <td data-label="# Pedido">
                         <a href="{% url 'pedidos:detalle' pedido.pk %}" class="fw-bold text-primary">#{{ pedido.numero }}</a>
+                        {% if pedido.archivado %}
+                        <div class="archivado-tag{% if pedido.archivado_sin_terminar %} sin-terminar{% endif %}" title="Archivado el {{ pedido.archivado_en|date:'d/m/Y H:i' }}">
+                            <i class="bi bi-archive"></i> {% if pedido.archivado_sin_terminar %}Sin terminar{% else %}Archivado{% endif %}
+                        </div>
+                        {% endif %}
                     </td>
                     <td data-label="Cliente">{{ pedido.cliente|default:"—" }}</td>
                     <td data-label="Cant" class="text-center">
@@ -132,9 +180,12 @@
                                 </select>
                             </form>
                             {% if pedido.detenido %}
-                            <span class="detenido-tag">
-                                <i class="bi bi-slash-circle"></i> DETENIDO{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}
+                            <span class="detenido-tag" title="{% if pedido.detenido_manual %}Puesto a mano{% else %}Automático: tarea bloqueada por material{% endif %}">
+                                <i class="bi bi-slash-circle"></i> DETENIDO{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}{% if pedido.detenido_fecha_esperada %} · llega {{ pedido.detenido_fecha_esperada|date:"d M"|lower }}{% endif %}
                             </span>
+                            {% endif %}
+                            {% if pedido.entrega_parcial %}
+                            <span class="entrega-tag"><i class="bi bi-truck"></i> Entregado {{ pedido.cantidad_entregada }} de {{ pedido.cantidad }}</span>
                             {% endif %}
                         </div>
                     </td>
@@ -155,10 +206,29 @@
                             {% include "pedidos/_dato_min.html" with titulo="Min total" valor=pedido.min_total nota="ruta × cantidad × min estándar" %}
                             {% include "pedidos/_dato_min.html" with titulo="Min restante" valor=pedido.min_restante nota="tareas sin ✓" tono="restante" %}
                             {% include "pedidos/_barra_avance.html" with pct=pedido.pct_avance %}
+                            {% if pedido.avance_por_partida %}
+                            <div class="avance-partidas">
+                                <span class="avance-partidas-titulo">Por partida</span>
+                                {% include "pedidos/_avance_partidas.html" with filas=pedido.avance_por_partida %}
+                            </div>
+                            {% endif %}
                             <div class="resumen-min-acciones">
                                 <a href="{% url 'pedidos:detalle' pedido.pk %}" class="btn-outline-inaher btn-sm"><i class="bi bi-eye"></i> Ver ficha</a>
                                 <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-outline-inaher btn-sm"><i class="bi bi-pencil"></i> Editar</a>
-                                <a href="{% url 'pedidos:eliminar' pedido.pk %}" class="btn-outline-danger-custom btn-sm"><i class="bi bi-trash"></i> Eliminar</a>
+                                {% if pedido.estado != "ENTREGADO" %}
+                                <a href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-inaher btn-sm"><i class="bi bi-truck"></i> Registrar entrega</a>
+                                {% endif %}
+                                <form method="post" action="{% if pedido.archivado %}{% url 'pedidos:desarchivar' %}{% else %}{% url 'pedidos:archivar' %}{% endif %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="pedido_ids" value="{{ pedido.pk }}">
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    {% if pedido.archivado %}
+                                    <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-box-arrow-up"></i> Desarchivar</button>
+                                    {% else %}
+                                    <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-archive"></i> Archivar</button>
+                                    {% endif %}
+                                </form>
+                                <a href="{% url 'pedidos:eliminar' pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-danger-custom btn-sm"><i class="bi bi-trash"></i> Eliminar</a>
                             </div>
                         </div>
                     </td>
@@ -198,15 +268,16 @@ function toggleSelectAllPedidos(master) {
     document.querySelectorAll('.pedido-select-check').forEach(cb => cb.checked = master.checked);
 }
 
-function enviarVaciarPedidos() {
+function enviarSeleccion(accion) {
     const checks = document.querySelectorAll('.pedido-select-check:checked');
     if (checks.length === 0) {
-        alert("Selecciona al menos un pedido marcando la casilla de la izquierda.");
+        alert("Selecciona al menos un pedido marcando la casilla ☑ de la izquierda.");
         return;
     }
-    if (confirm(`¿Eliminar los ${checks.length} pedido(s) seleccionado(s)? Esta acción no se puede deshacer.`)) {
-        document.getElementById('formVaciarPedidos').submit();
-    }
+    // La confirmación (y las reglas) se muestran en la siguiente pantalla
+    const form = document.getElementById('formSeleccion');
+    form.action = accion;
+    form.submit();
 }
 </script>
 {% endblock %}

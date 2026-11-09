@@ -1,0 +1,114 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titulo_doc %}{% endblock %}</title>
+    <style>
+        @page {
+            size: letter {% block orientacion %}landscape{% endblock %};
+            margin: 14mm 12mm 16mm;
+            @bottom-left {
+                content: "INAHER · {% block pie %}{% endblock %} · Impreso {{ ahora|date:'d/m/Y H:i' }}";
+                font: 8pt system-ui, sans-serif;
+                color: #6B7686;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font: 8pt system-ui, sans-serif;
+                color: #6B7686;
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #FFFFFF;
+            color: #1F2D3D;
+            font: 10pt/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        .barra-pantalla {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+        .barra-pantalla button, .barra-pantalla a {
+            padding: 7px 14px;
+            border: 1px solid #C9D3E0;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #203D6B;
+            font: 600 13px system-ui, sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .barra-pantalla button { background: #203D6B; border-color: #203D6B; color: #FFFFFF; }
+        .encabezado {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 4px 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #203D6B;
+        }
+        .encabezado h1 { margin: 0; color: #203D6B; font-size: 16pt; }
+        .encabezado .impreso { font-size: 9.5pt; }
+        .sub {
+            margin: 6px 0 14px;
+            color: #4B5869;
+            font-size: 9pt;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; }
+        th {
+            padding: 5px 6px;
+            border-bottom: 1px solid #9AA7B8;
+            background: #EEF2F7;
+            font-size: 7.5pt;
+            letter-spacing: .3px;
+            text-align: left;
+            text-transform: uppercase;
+        }
+        td {
+            padding: 5px 6px;
+            border-bottom: 1px solid #DDE3EA;
+            font-size: 8.5pt;
+            vertical-align: top;
+        }
+        .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .c { text-align: center; }
+        .nowrap { white-space: nowrap; }
+        .rojo { color: #A3262A; font-weight: 700; }
+        .tag { font-size: 7.5pt; font-weight: 700; }
+        .muted { color: #6B7686; }
+        @media print {
+            body { padding: 0; }
+            .barra-pantalla { display: none; }
+        }
+        {% block estilos %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="barra-pantalla">
+        <a href="javascript:window.close()">Cerrar</a>
+        <button type="button" onclick="window.print()">Imprimir</button>
+    </div>
+
+    <header class="encabezado">
+        <h1>{% block encabezado %}{% endblock %}</h1>
+        <div class="impreso">
+            <strong>Impreso:</strong> {{ ahora|date:"l d M Y · H:i"|lower }}{% block impreso_extra %}{% endblock %}
+        </div>
+    </header>
+    <p class="sub">{% block sub %}{% endblock %}</p>
+
+    {% block cuerpo %}{% endblock %}
+
+    <script>
+        window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 300); });
+    </script>
+</body>
+</html>

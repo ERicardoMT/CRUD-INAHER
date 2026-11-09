@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Archivar pedido | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">PEDIDOS / HISTÓRICO</div>
+        <h1>Archivar pedido{{ pedidos|length|pluralize }}</h1>
+        <p>Archivar lo manda al Histórico con sus partidas, tareas, ✓ y fechas. Sale de Activos y de la carga de planta; se puede consultar, imprimir y desarchivar.</p>
+    </div>
+</div>
+
+<section class="content-card regla-card regla-aviso">
+    <h2><i class="bi bi-exclamation-triangle"></i> {{ sin_terminar|length }} pedido{{ sin_terminar|length|pluralize }} no está{{ sin_terminar|length|pluralize:"n" }} terminado{{ sin_terminar|length|pluralize }}</h2>
+    <p>Normalmente se archiva un pedido <strong>Terminado</strong> o <strong>Entregado</strong>. Estos se marcarán como <strong>"archivado sin terminar"</strong> (p. ej. cancelado por el cliente):</p>
+
+    <ul class="lista-pedidos-regla">
+        {% for p in sin_terminar %}
+        <li>
+            <strong>#{{ p.numero }}</strong> · {{ p.get_estado_display }}
+            {% if p.pendientes %} · <span class="text-danger">{{ p.pendientes }} tarea{{ p.pendientes|pluralize }} sin ✓</span>{% endif %}
+            · {{ p.descripcion|truncatechars:60 }}
+        </li>
+        {% endfor %}
+    </ul>
+
+    {% if normales %}
+    <p class="small text-muted mb-3">{{ normales }} pedido{{ normales|pluralize }} más de la selección se archiva{{ normales|pluralize:"n" }} normal.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'pedidos:archivar' %}">
+        {% csrf_token %}
+        <input type="hidden" name="confirmar" value="1">
+        <input type="hidden" name="next" value="{{ next }}">
+        {% for p in pedidos %}<input type="hidden" name="pedido_ids" value="{{ p.pk }}">{% endfor %}
+
+        <div class="quien-campo">
+            <label for="quien" class="form-label">¿Quién archiva?</label>
+            <input type="text" id="quien" name="quien" class="form-control" maxlength="150" required placeholder="Tu nombre">
+        </div>
+
+        <div class="form-footer">
+            <a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher">Cancelar</a>
+            <button type="submit" class="btn-inaher"><i class="bi bi-archive"></i> Sí, archivar sin terminar</button>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

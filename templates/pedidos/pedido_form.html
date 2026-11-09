@@ -84,7 +84,7 @@
 
             {% include "pedidos/_campo.html" with field=form.fecha_captura nota="hoy por default" %}
             {% include "pedidos/_campo.html" with field=form.fecha_salida %}
-            {% include "pedidos/_campo.html" with field=form.estado ayuda="En espera · En proceso · Terminado · Entregado. Cambia solo con las ✓ de la designación; también se puede poner a mano." %}
+            {% include "pedidos/_campo.html" with field=form.estado ayuda="En espera al capturar · En proceso con la primera ✓ · Terminado cuando todas las tareas tienen ✓. También se puede poner a mano. Entregado se registra con fecha y cantidad desde «Registrar entrega»." %}
 
             {# Detenido: bandera + motivo #}
             <div class="field-block{% if form.detenido_por.errors %} has-errors{% endif %}">
@@ -98,7 +98,12 @@
                 {% if form.detenido_por.errors %}
                     <div class="field-error">{{ form.detenido_por.errors|striptags }}</div>
                 {% endif %}
+                {% if form.instance.detenido and not form.instance.detenido_manual %}
+                    <div class="field-help">Se encendió solo por una tarea bloqueada por material. Si la marcas o desmarcas aquí, queda puesta a mano y lo automático ya no la cambia.</div>
+                {% endif %}
             </div>
+
+            {% include "pedidos/_campo.html" with field=form.detenido_fecha_esperada nota="si está detenido" %}
 
             {% include "pedidos/_campo.html" with field=form.notas nota="opcional" %}
         </div>

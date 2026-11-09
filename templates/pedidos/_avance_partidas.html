@@ -1,0 +1,14 @@
+{# filas: lista de {partida, min_total, pct} de Pedido.avance_partidas() #}
+<ul class="lista-avance-partidas">
+    {% for fila in filas %}
+    <li>
+        <span class="lap-desc" title="{{ fila.partida.cantidad }} {{ fila.partida.descripcion }}">{{ fila.partida.cantidad }} · {{ fila.partida.descripcion }}</span>
+        {% if fila.pct is None %}
+            <span class="lap-sin-ruta">Ruta sin cargar</span>
+        {% else %}
+            <span class="lap-barra"><span style="width: {{ fila.pct }}%"></span></span>
+            <span class="lap-pct">{{ fila.pct }} %</span>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Cliente, PartidaPedido, Pedido
+from .models import Cliente, MovimientoPedido, PartidaPedido, Pedido
 
 
 class PartidaInline(admin.TabularInline):
@@ -18,11 +18,13 @@ class PedidoAdmin(admin.ModelAdmin):
         "fecha_salida",
         "estado",
         "detenido",
+        "archivado",
     )
 
     list_filter = (
         "estado",
         "detenido",
+        "archivado",
         "fecha_salida",
     )
 
@@ -42,3 +44,13 @@ class PedidoAdmin(admin.ModelAdmin):
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
     search_fields = ("nombre",)
+
+
+@admin.register(MovimientoPedido)
+class MovimientoPedidoAdmin(admin.ModelAdmin):
+    list_display = ("fecha", "accion", "pedido_numero", "usuario", "detalle")
+    list_filter = ("accion",)
+    search_fields = ("pedido_numero", "usuario", "detalle")
+
+    def has_change_permission(self, request, obj=None):
+        return False

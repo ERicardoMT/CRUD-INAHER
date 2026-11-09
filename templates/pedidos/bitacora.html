@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Bitácora de pedidos | INAHER{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">PEDIDOS / BITÁCORA</div>
+        <h1>Bitácora de pedidos</h1>
+        <p>Quién eliminó, archivó o desarchivó cada pedido. Últimos 300 movimientos.</p>
+    </div>
+    <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> Pedidos</a>
+</div>
+
+<section class="content-card">
+    {% if movimientos %}
+    <div class="table-responsive">
+        <table class="table-designacion align-middle">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                    <th># Pedido</th>
+                    <th>Quién</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimientos %}
+                <tr>
+                    <td class="text-nowrap">{{ m.fecha|date:"d/m/Y H:i" }}</td>
+                    <td><span class="bitacora-accion accion-{{ m.accion|lower }}">{{ m.get_accion_display }}</span></td>
+                    <td><strong>#{{ m.pedido_numero }}</strong></td>
+                    <td>{{ m.usuario }}</td>
+                    <td><small class="text-muted">{{ m.detalle|default:"—" }}</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-journal-text"></i>
+        <h3>Sin movimientos</h3>
+        <p>Aquí aparecerá quién elimina o archiva pedidos.</p>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}

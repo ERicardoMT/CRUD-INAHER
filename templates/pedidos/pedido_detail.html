@@ -19,6 +19,16 @@
     </a>
 </div>
 
+{% if pedido.archivado %}
+<div class="archivado-aviso">
+    <i class="bi bi-archive"></i>
+    <div>
+        <strong>Pedido en el Histórico{% if pedido.archivado_sin_terminar %} · archivado sin terminar{% endif %}</strong>
+        <span>Archivado el {{ pedido.archivado_en|date:"d/m/Y H:i" }}. No aparece en Activos ni en la carga de planta.</span>
+    </div>
+</div>
+{% endif %}
+
 <section class="content-card detail-card">
     <div class="detail-top">
         <div>
@@ -30,7 +40,10 @@
             <span class="status-badge {{ pedido.alerta_estado.clase }}">{{ pedido.alerta_estado.texto }}</span>
             <span class="status-pill {{ pedido.estatus_clase }}">{{ pedido.get_estado_display }}</span>
             {% if pedido.detenido %}
-                <span class="status-pill status-stopped">⛔ Detenido{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}</span>
+                <span class="status-pill status-stopped" title="{% if pedido.detenido_manual %}Puesto a mano{% else %}Automático: tarea bloqueada por material{% endif %}">⛔ Detenido{% if pedido.detenido_por %} · {{ pedido.detenido_por }}{% endif %}{% if pedido.detenido_fecha_esperada %} · llega {{ pedido.detenido_fecha_esperada|date:"d M"|lower }}{% endif %}</span>
+            {% endif %}
+            {% if pedido.entrega_parcial %}
+                <span class="entrega-tag"><i class="bi bi-truck"></i> Entregado {{ pedido.cantidad_entregada }} de {{ pedido.cantidad }}</span>
             {% endif %}
         </div>
     </div>
@@ -67,6 +80,27 @@
             </strong>
         </div>
 
+        <div class="detail-field">
+            <span class="detail-label">Fecha de terminado</span>
+            <strong>{{ pedido.fecha_terminado|date:"d/m/Y"|default:"—" }}</strong>
+        </div>
+
+        <div class="detail-field">
+            <span class="detail-label">Fecha de entrega</span>
+            <strong>{{ pedido.fecha_entrega|date:"d/m/Y"|default:"—" }}</strong>
+            {% if pedido.entregas.all %}
+            <div class="small text-muted mt-1">
+                {% for e in pedido.entregas.all %}{{ e.fecha|date:"d/m" }}: {{ e.cantidad }} pzas{% if not forloop.last %} · {% endif %}{% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="detail-field field-wide">
+            <span class="detail-label">Avance · {{ pedido.pct_avance }} % ({{ pedido.min_hechos }} de {{ pedido.min_total }} min)</span>
+            {% include "pedidos/_avance_partidas.html" with filas=avance_partidas %}
+            <small class="text-muted">% por partida = minutos con ✓ ÷ minutos de sus tareas. Las tareas de todo el pedido (p. ej. Empaquetar) solo cuentan en el total.</small>
+        </div>
+
         <div class="detail-field field-wide">
             <span class="detail-label">Notas</span>
             <p>{{ pedido.notas|default:"Sin observaciones"|linebreaksbr }}</p>
@@ -92,8 +126,29 @@
             Editar pedido
         </a>
 
+        {% if pedido.estado != "ENTREGADO" %}
+        <a href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-inaher">
+            <i class="bi bi-truck"></i>
+            Registrar entrega
+        </a>
+        {% endif %}
+
+        <a href="{% url 'pedidos:imprimir_ficha' pedido.pk %}" target="_blank" rel="noopener" class="btn-outline-inaher">
+            <i class="bi bi-printer"></i>
+            Imprimir ficha
+        </a>
+
+        <form method="post" action="{% if pedido.archivado %}{% url 'pedidos:desarchivar' %}{% else %}{% url 'pedidos:archivar' %}{% endif %}" class="m-0">
+            {% csrf_token %}
+            <input type="hidden" name="pedido_ids" value="{{ pedido.pk }}">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn-outline-inaher">
+                {% if pedido.archivado %}<i class="bi bi-box-arrow-up"></i> Desarchivar{% else %}<i class="bi bi-archive"></i> Archivar{% endif %}
+            </button>
+        </form>
+
         <a
-            href="{% url 'pedidos:eliminar' pedido.pk %}"
+            href="{% url 'pedidos:eliminar' pedido.pk %}?next={{ request.get_full_path|urlencode }}"
             class="btn-outline-danger-custom"
         >
             <i class="bi bi-trash3"></i>

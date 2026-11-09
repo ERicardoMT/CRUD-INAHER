@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from .models import Cliente, PartidaPedido, Pedido
+from .models import Cliente, Entrega, PartidaPedido, Pedido
 
 
 def mensaje_numero_ocupado(pedido):
@@ -44,6 +44,7 @@ class PedidoForm(forms.ModelForm):
             "estado",
             "detenido",
             "detenido_por",
+            "detenido_fecha_esperada",
             "notas",
         ]
         labels = {
@@ -57,6 +58,7 @@ class PedidoForm(forms.ModelForm):
             }),
             "fecha_captura": FechaInput(),
             "fecha_salida": FechaInput(),
+            "detenido_fecha_esperada": FechaInput(),
             "estado": forms.Select(attrs={"class": "form-select"}),
             "detenido": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "detenido_por": forms.TextInput(attrs={
@@ -74,6 +76,11 @@ class PedidoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["fecha_salida"].required = True
         self.fields["detenido_por"].help_text = ""
+        # ENTREGADO solo se registra con fecha y cantidad (botón "Registrar entrega")
+        if self.instance.estado != Pedido.Estado.ENTREGADO:
+            self.fields["estado"].choices = [
+                c for c in self.fields["estado"].choices if c[0] != Pedido.Estado.ENTREGADO
+            ]
         if self.instance.cliente_id:
             self.initial["cliente_nombre"] = self.instance.cliente.nombre
 
@@ -94,6 +101,8 @@ class PedidoForm(forms.ModelForm):
         if datos.get("detenido") and not motivo:
             self.add_error("detenido_por", "Escribe por qué está detenido.")
         datos["detenido_por"] = motivo if datos.get("detenido") else ""
+        if not datos.get("detenido"):
+            datos["detenido_fecha_esperada"] = None
         return datos
 
     def save(self, commit=True):
@@ -102,6 +111,9 @@ class PedidoForm(forms.ModelForm):
         if nombre:
             cliente = Cliente.objects.filter(nombre__iexact=nombre).first() or Cliente.objects.create(nombre=nombre)
         self.instance.cliente = cliente
+        # Si el usuario movió la casilla, la bandera queda "puesta a mano"
+        if "detenido" in self.changed_data:
+            self.instance.detenido_manual = bool(self.cleaned_data.get("detenido"))
         return super().save(commit)
 
 
@@ -148,3 +160,29 @@ PartidaFormSet = inlineformset_factory(
     min_num=1,
     can_delete=True,
 )
+
+
+class EntregaForm(forms.ModelForm):
+    class Meta:
+        model = Entrega
+        fields = ["fecha", "cantidad", "nota"]
+        widgets = {
+            "fecha": FechaInput(),
+            "cantidad": forms.NumberInput(attrs={"class": "form-control", "min": 1, "inputmode": "numeric"}),
+            "nota": forms.TextInput(attrs={"class": "form-control", "placeholder": "Opcional · factura, guía, quién recibió…"}),
+        }
+
+    def __init__(self, *args, pedido, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pedido = pedido
+        self.fields["cantidad"].initial = pedido.cantidad_por_entregar or None
+        self.fields["cantidad"].widget.attrs["max"] = pedido.cantidad_por_entregar or None
+
+    def clean_cantidad(self):
+        cantidad = self.cleaned_data["cantidad"]
+        faltan = self.pedido.cantidad_por_entregar
+        if not faltan:
+            raise ValidationError("Este pedido ya se entregó completo.")
+        if cantidad > faltan:
+            raise ValidationError(f"Solo faltan {faltan} pzas por entregar.")
+        return cantidad

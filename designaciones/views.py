@@ -20,6 +20,14 @@ from .forms import DesignacionDiaForm, ItemDesignacionForm
 from pedidos.models import Pedido
 
 
+def sincronizar_pedidos(*pedidos):
+    """Tras cambiar tareas: estatus por ✓ y bandera DETENIDO por tareas bloqueadas."""
+    for pedido in {p for p in pedidos if p}:
+        pedido.refresh_from_db()
+        pedido.sincronizar_estatus()
+        pedido.sincronizar_detenido()
+
+
 def designacion_hoy(request):
     fecha_param = request.GET.get("fecha")
     if fecha_param:
@@ -86,7 +94,7 @@ def designacion_hoy(request):
         "form_moldes": form_moldes,
         "operarios": operarios,
         "operaciones_madre": OperacionMadre.objects.filter(activa=True),
-        "pedidos_activos": Pedido.objects.exclude(estado__in=Pedido.ESTADOS_CERRADOS),
+        "pedidos_activos": Pedido.objects.carga_planta(),
     }
 
     return render(request, "designaciones/designacion_hoy.html", contexto)
@@ -98,8 +106,7 @@ def toggle_item_hecho(request, pk):
     item.hecho = not item.hecho
     item.save(update_fields=["hecho"])
 
-    if item.pedido:
-        item.pedido.sincronizar_estatus()
+    sincronizar_pedidos(item.pedido)
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("format") == "json":
         desig = item.designacion
@@ -123,6 +130,7 @@ def agregar_item(request, designacion_id):
         item = form.save(commit=False)
         item.designacion = designacion
         item.save()
+        sincronizar_pedidos(item.pedido)
         messages.success(request, f"Tarea asignada a {item.quien.nombre} correctamente.")
     else:
         messages.error(request, "Error al registrar la tarea. Verifica los campos requeridos.")
@@ -133,9 +141,11 @@ def agregar_item(request, designacion_id):
 def editar_item(request, pk):
     item = get_object_or_404(ItemDesignacion, pk=pk)
     if request.method == "POST":
+        pedido_anterior = item.pedido
         form = ItemDesignacionForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
+            sincronizar_pedidos(pedido_anterior, item.pedido)
             messages.success(request, "Tarea actualizada.")
             return redirect(f"{reverse('designaciones:hoy')}?fecha={item.designacion.fecha.strftime('%Y-%m-%d')}")
     else:
@@ -152,7 +162,9 @@ def editar_item(request, pk):
 def eliminar_item(request, pk):
     item = get_object_or_404(ItemDesignacion, pk=pk)
     fecha_str = item.designacion.fecha.strftime("%Y-%m-%d")
+    pedido = item.pedido
     item.delete()
+    sincronizar_pedidos(pedido)
     messages.info(request, "Tarea eliminada de la designación.")
     return redirect(f"{reverse('designaciones:hoy')}?fecha={fecha_str}")
 
@@ -188,6 +200,10 @@ def api_pedido_info(request):
             "descripcion": pedido.descripcion,
             "cantidad": pedido.cantidad,
             "fecha_salida": pedido.fecha_salida.strftime("%Y-%m-%d") if pedido.fecha_salida else "",
+            "partidas": [
+                {"id": x.pk, "cantidad": x.cantidad, "descripcion": x.descripcion}
+                for x in pedido.partidas.all()
+            ],
         })
     except Pedido.DoesNotExist:
         return JsonResponse({"error": "No existe"}, status=404)
@@ -197,7 +213,10 @@ def vaciar_items_seleccionados(request, designacion_id):
     """Vacía las filas de tareas seleccionadas mediante checkboxes."""
     item_ids = request.POST.getlist("item_ids")
     if item_ids:
-        eliminados, _ = ItemDesignacion.objects.filter(id__in=item_ids, designacion_id=designacion_id).delete()
+        items = ItemDesignacion.objects.filter(id__in=item_ids, designacion_id=designacion_id)
+        pedidos = [i.pedido for i in items.select_related("pedido")]
+        eliminados, _ = items.delete()
+        sincronizar_pedidos(*pedidos)
         messages.success(request, f"Se vaciaron {eliminados} fila(s) seleccionada(s).")
     else:
         messages.warning(request, "No seleccionaste ninguna fila para vaciar.")
@@ -224,6 +243,8 @@ def nuevo_dia(request, designacion_id):
             designacion=nuevo,
             quien=p.quien,
             pedido=p.pedido,
+            partida=p.partida,
+            bloqueado_por=p.bloqueado_por,
             es_stock=p.es_stock,
             paso=p.paso,
             descripcion_manual=p.descripcion_manual,
@@ -288,9 +309,11 @@ def cargar_ruta(request, designacion_id):
     }
 
     pasos = secuencia_rutas.get(familia, secuencia_rutas["MT"])
+    # Cada partida lleva su ruta; Empaquetar cuenta una vez para todo el pedido.
+    partidas = list(pedido.partidas.all()) or [None]
     creadas = 0
 
-    for idx, (nombre_madre, nombre_maq) in enumerate(pasos, start=1):
+    def crear_paso(idx, nombre_madre, nombre_maq, partida, cantidad):
         madre = OperacionMadre.objects.filter(nombre__icontains=nombre_madre).first()
         if not madre:
             madre, _ = OperacionMadre.objects.get_or_create(nombre=nombre_madre)
@@ -305,14 +328,33 @@ def cargar_ruta(request, designacion_id):
             designacion=designacion,
             quien=quien,
             pedido=pedido,
+            partida=partida,
             paso=idx,
             operacion_madre=madre,
             operacion_detallada=detallada,
             maquina=maquina,
-            cantidad=pedido.cantidad,
-            minutos=int(round(float(detallada.minutos_estandar or 1) * pedido.cantidad))
+            cantidad=cantidad,
+            minutos=int(round(float(detallada.minutos_estandar or 1) * cantidad))
         )
-        creadas += 1
 
-    messages.success(request, f"Se cargó la ruta ({familia}) con {creadas} pasos para el Pedido #{pedido.numero}.")
+    for partida in partidas:
+        cantidad = partida.cantidad if partida else pedido.cantidad
+        for idx, (nombre_madre, nombre_maq) in enumerate(pasos, start=1):
+            if nombre_madre == "Empaquetar":
+                continue
+            crear_paso(idx, nombre_madre, nombre_maq, partida, cantidad)
+            creadas += 1
+
+    for idx, (nombre_madre, nombre_maq) in enumerate(pasos, start=1):
+        if nombre_madre == "Empaquetar":
+            crear_paso(idx, nombre_madre, nombre_maq, None, 1)
+            creadas += 1
+
+    sincronizar_pedidos(pedido)
+
+    messages.success(
+        request,
+        f"Se cargó la ruta ({familia}) con {creadas} pasos para el Pedido #{pedido.numero} "
+        f"({len(partidas)} partida(s); Empaquetar una vez).",
+    )
     return redirect(f"{reverse('designaciones:hoy')}?fecha={designacion.fecha.strftime('%Y-%m-%d')}")    

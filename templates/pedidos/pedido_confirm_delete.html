@@ -7,36 +7,71 @@
 <div class="page-heading">
     <div>
         <div class="eyebrow">PEDIDOS / ELIMINACIÓN</div>
-        <h1>Eliminar pedido</h1>
-        <p>Confirma que deseas eliminar este registro de prueba.</p>
+        <h1>Eliminar pedido{{ total|pluralize }}</h1>
+        <p>Eliminar lo borra por completo: no queda en el Histórico. Solo se permite si no tiene ninguna ✓ en la designación (captura equivocada).</p>
     </div>
 </div>
 
+{% if con_avance %}
+<section class="content-card regla-card regla-aviso mb-3">
+    <h2><i class="bi bi-shield-exclamation"></i> No se puede{{ con_avance|length|pluralize:"n" }} eliminar: ya tiene{{ con_avance|length|pluralize:"n" }} avance</h2>
+    <p>Estos pedidos tienen tareas con ✓ en la designación. Para sacarlos de Activos, archívalos: quedan en el Histórico y se pueden consultar e imprimir.</p>
+    <ul class="lista-pedidos-regla">
+        {% for p in con_avance %}
+        <li><strong>#{{ p.numero }}</strong> · {{ p.cliente|default:"Sin cliente" }} · {{ p.descripcion|truncatechars:70 }}</li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="{% url 'pedidos:archivar' %}">
+        {% csrf_token %}
+        {% for p in con_avance %}<input type="hidden" name="pedido_ids" value="{{ p.pk }}">{% endfor %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn-inaher"><i class="bi bi-archive"></i> Archivar en su lugar</button>
+    </form>
+</section>
+{% endif %}
+
+{% if eliminables %}
 <section class="content-card delete-card">
     <div class="delete-icon">
         <i class="bi bi-exclamation-triangle"></i>
     </div>
 
-    <h2>¿Deseas eliminar el pedido #{{ pedido.numero }}?</h2>
+    <h2>¿Eliminar {% if eliminables|length == 1 %}el pedido #{{ eliminables.0.numero }}{% else %}{{ eliminables|length }} pedidos{% endif %}?</h2>
 
-    <p>
-        Estás por eliminar el registro
-        <strong>{{ pedido.numero }}</strong>.
-        Esta acción no se puede deshacer desde esta pantalla.
-    </p>
+    <ul class="lista-pedidos-regla text-start">
+        {% for p in eliminables %}
+        <li><strong>#{{ p.numero }}</strong> · {{ p.cliente|default:"Sin cliente" }} · {{ p.descripcion|truncatechars:70 }}</li>
+        {% endfor %}
+    </ul>
 
-    <form method="post" class="form-footer">
+    <p>Esta acción no se puede deshacer. Si tenía tareas sin ✓ en la designación, también se quitan. Queda registrado en la bitácora quién lo eliminó.</p>
+
+    <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="confirmar" value="1">
+        <input type="hidden" name="next" value="{{ next }}">
+        {% for p in eliminables %}<input type="hidden" name="pedido_ids" value="{{ p.pk }}">{% endfor %}
+        {% for p in con_avance %}<input type="hidden" name="pedido_ids" value="{{ p.pk }}">{% endfor %}
 
-        <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
-            Cancelar
-        </a>
+        <div class="quien-campo">
+            <label for="quien" class="form-label">¿Quién elimina?</label>
+            <input type="text" id="quien" name="quien" class="form-control" maxlength="150" required
+                   value="{{ quien_sesion }}" {% if quien_sesion %}readonly{% endif %} placeholder="Tu nombre">
+        </div>
 
-        <button type="submit" class="btn-delete">
-            <i class="bi bi-trash3"></i>
-            Confirmar eliminación
-        </button>
+        <div class="form-footer">
+            <a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher">Cancelar</a>
+            <button type="submit" class="btn-delete">
+                <i class="bi bi-trash3"></i>
+                Confirmar eliminación
+            </button>
+        </div>
     </form>
 </section>
+{% elif not con_avance %}
+<p class="text-muted">No hay nada que eliminar.</p>
+{% else %}
+<a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher">Cancelar</a>
+{% endif %}
 
 {% endblock %}

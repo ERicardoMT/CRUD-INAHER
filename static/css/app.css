@@ -1721,3 +1721,270 @@ textarea.form-control {
     margin-top: 1.25rem;
     margin-bottom: 1.25rem;
 }
+
+/* ===== Opciones · Histórico · Bitácora ===== */
+.menu-opciones {
+    min-width: 250px;
+    font-size: 13px;
+}
+
+.menu-opciones .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-opciones .dropdown-header {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.resumen-min-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.resumen-min-acciones form {
+    margin: 0;
+}
+
+.archivado-tag {
+    display: inline-flex;
+    gap: 4px;
+    margin-top: 3px;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: #EEF1F5;
+    color: #4B5563;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.archivado-tag.sin-terminar {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.archivado-aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border: 1px solid #D5DCE6;
+    border-radius: var(--control-radius);
+    background: #F4F6F9;
+    color: var(--text-main);
+    font-size: 13px;
+}
+
+.archivado-aviso > i {
+    font-size: 20px;
+    color: var(--text-muted);
+}
+
+.archivado-aviso span {
+    display: block;
+    color: var(--text-muted);
+}
+
+.regla-card {
+    padding: 20px 22px;
+}
+
+.regla-card h2 {
+    margin: 0 0 8px;
+    color: var(--inaher-navy);
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.regla-aviso {
+    border-color: #FDE68A;
+    background: #FFFBEB;
+}
+
+.lista-pedidos-regla {
+    margin: 10px 0 16px;
+    padding-left: 18px;
+    font-size: 13px;
+}
+
+.quien-campo {
+    max-width: 320px;
+    margin: 0 auto 8px;
+    text-align: left;
+}
+
+.regla-card .quien-campo {
+    margin: 0 0 8px;
+}
+
+.bitacora-accion {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: #EEF1F5;
+    color: #4B5563;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.bitacora-accion.accion-eliminado { background: var(--danger-bg); color: var(--danger-text); }
+.bitacora-accion.accion-archivado_sin_terminar { background: var(--warning-bg); color: var(--warning-text); }
+.bitacora-accion.accion-desarchivado { background: #E4EFFC; color: #245A94; }
+
+/* ===== Reglas de estatus y estados ===== */
+/* Estado por fecha: SALE HOY naranja, URGENTE ámbar */
+.status-badge.status-urgente {
+    background: #FEF9C3;
+    color: #854D0E;
+    border: 1px solid #FDE047;
+}
+
+.alerta-pill.status-urgente {
+    background: #F2C230;
+    color: #3D2E05;
+}
+
+.status-badge.status-proceso {
+    background: #FFEDD5;
+    color: #9A3412;
+    border: 1px solid #FDBA74;
+}
+
+.entrega-tag {
+    display: inline-block;
+    padding: 3px 9px;
+    border: 1px solid #BFDBFE;
+    border-radius: 8px;
+    background: #EFF6FF;
+    color: #1E4F8A;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.avance-partidas {
+    flex: 1 1 260px;
+    min-width: 220px;
+}
+
+.avance-partidas-titulo {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.lista-avance-partidas {
+    margin: 4px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.lista-avance-partidas li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 90px 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    font-size: 12px;
+}
+
+.lap-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lap-barra {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #E8EDF3;
+}
+
+.lap-barra > span {
+    display: block;
+    height: 100%;
+    background: var(--inaher-teal);
+}
+
+.lap-pct {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.lap-sin-ruta {
+    grid-column: 2 / 4;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.entrega-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 16px;
+}
+
+.entrega-card {
+    padding: 20px;
+}
+
+.entrega-resumen {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.entrega-resumen span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.entrega-resumen strong {
+    color: var(--inaher-navy);
+    font-size: 20px;
+}
+
+.entrega-titulo {
+    margin: 0 0 10px;
+    color: var(--inaher-navy);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.entrega-fila {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.entrega-fila form {
+    margin: 0;
+}
+
+@media (max-width: 900px) {
+    .entrega-layout {
+        grid-template-columns: 1fr;
+    }
+}

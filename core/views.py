@@ -47,9 +47,9 @@ MODULOS = [
 
 def inicio(request):
     contexto = {
-        "total_pedidos": Pedido.objects.count(),
-        "pedidos_en_proceso": Pedido.objects.filter(estado=Pedido.Estado.EN_PROCESO).count(),
-        "pedidos_terminados": Pedido.objects.filter(estado=Pedido.Estado.TERMINADO).count(),
+        "total_pedidos": Pedido.objects.vigentes().count(),
+        "pedidos_en_proceso": Pedido.objects.vigentes().filter(estado=Pedido.Estado.EN_PROCESO).count(),
+        "pedidos_terminados": Pedido.objects.vigentes().filter(estado=Pedido.Estado.TERMINADO).count(),
         "modulos": MODULOS,
     }
     return render(request, "core/inicio.html", contexto)
