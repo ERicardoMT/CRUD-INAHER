@@ -1,8 +1,10 @@
-from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from urllib.parse import quote
 
 
 # Al archivar un día, las tareas pendientes se copian a la jornada siguiente y la
@@ -15,6 +17,20 @@ Q_ITEM_PENDIENTE_REL = Q(items_designacion__hecho=False, items_designacion__desi
 
 def porcentaje(parte, total):
     return round(parte * 100 / total) if total else 0
+
+# Letras (con acentos/ñ), números y signos comunes.
+texto_seguro = RegexValidator(
+    r"^[\w\s.,;:#°/()&'\"¿?¡!@%+\-]*$",
+    "Solo letras, números y signos básicos (sin emojis ni símbolos especiales).",
+)
+solo_guia = RegexValidator(r"^[A-Za-z0-9\-]*$", "La guía solo lleva letras, números y guiones.")
+
+ACUSE_MAX_MB = 5
+
+
+def max_5mb(archivo):
+    if archivo.size > ACUSE_MAX_MB * 1024 * 1024:
+        raise ValidationError(f"El archivo pesa más de {ACUSE_MAX_MB} MB.")
 
 
 class Cliente(models.Model):
@@ -428,6 +444,13 @@ class PartidaPedido(models.Model):
     def __str__(self):
         return f"{self.cantidad} {self.descripcion}"
 
+    @property
+    def entregado(self):
+        return sum(e.cantidad for e in self.entregas.all())
+
+    @property
+    def faltan(self):
+        return max(self.cantidad - self.entregado, 0)
 
 class MovimientoPedido(models.Model):
     """Bitácora: quién eliminó, archivó o desarchivó un pedido."""
@@ -456,13 +479,42 @@ class MovimientoPedido(models.Model):
 
 class Entrega(models.Model):
     """Entrega a cliente. Admite parciales: el pedido se cierra al completar la cantidad."""
+
+    class Paqueteria(models.TextChoices):
+        ESTAFETA = "ESTAFETA", "Estafeta"
+        DHL = "DHL", "DHL"
+        FEDEX = "FEDEX", "FedEx"
+        PAQUETEXPRESS = "PAQUETEXPRESS", "Paquetexpress"
+        CASTORES = "CASTORES", "Castores"
+        TRES_GUERRAS = "TRES_GUERRAS", "Tres Guerras"
+        FLETE_PROPIO = "FLETE_PROPIO", "Flete propio"
+        CLIENTE_RECOGE = "CLIENTE_RECOGE", "Cliente recoge"
+        OTRA = "OTRA", "Otra"
+
+    SIN_GUIA = {Paqueteria.FLETE_PROPIO, Paqueteria.CLIENTE_RECOGE}
+    RASTREO = {
+        Paqueteria.ESTAFETA: "https://rastreositecorecms.azurewebsites.net/Tracking/searchByGet/?wayBillType=1&wayBill={}",
+        Paqueteria.DHL: "https://www.dhl.com/mx-es/home/rastreo.html?tracking-id={}&submit=1",
+        Paqueteria.FEDEX: "https://www.fedex.com/fedextrack/?trknbr={}",
+        Paqueteria.PAQUETEXPRESS: "https://www.paquetexpress.com.mx/rastreo/{}",
+    }
+
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="entregas")
     fecha = models.DateField(default=timezone.localdate, verbose_name="Fecha de entrega")
     cantidad = models.PositiveIntegerField(
         validators=[MinValueValidator(1, "La cantidad debe ser mayor a 0.")],
         verbose_name="Cantidad entregada",
     )
-    nota = models.CharField(max_length=200, blank=True, default="", verbose_name="Nota")
+    nota = models.CharField(max_length=200, blank=True, default="", validators=[texto_seguro], verbose_name="Nota")
+    recibe = models.CharField(max_length=80, blank=True, default="", validators=[texto_seguro], verbose_name="Quién recibe")
+    paqueteria = models.CharField(max_length=20, choices=Paqueteria.choices, blank=True, default="", verbose_name="Paquetería")
+    paqueteria_otra = models.CharField(max_length=60, blank=True, default="", validators=[texto_seguro], verbose_name="¿Cuál paquetería?")
+    guia = models.CharField(max_length=40, blank=True, default="", validators=[solo_guia], verbose_name="Número de guía")
+    acuse = models.ImageField(
+        upload_to="acuses/%Y/%m/", blank=True,
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"]), max_5mb],
+        verbose_name="Foto / acuse",
+    )
     registrada_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Registró")
     registrada_en = models.DateTimeField(auto_now_add=True)
 
@@ -473,3 +525,24 @@ class Entrega(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} pzas · {self.pedido.numero} · {self.fecha:%d/%m/%Y}"
+    
+    @property
+    def paqueteria_nombre(self):
+        """Nombre a mostrar: si es "Otra", lo que escribió el usuario."""
+        if self.paqueteria == self.Paqueteria.OTRA and self.paqueteria_otra:
+            return self.paqueteria_otra
+        return self.get_paqueteria_display()
+    
+    @property
+    def rastreo_url(self):
+        plantilla = self.RASTREO.get(self.paqueteria)
+        return plantilla.format(quote(self.guia)) if plantilla and self.guia else ""
+class EntregaPartida(models.Model):
+    """Cuánto de cada partida se fue en una entrega."""
+    entrega = models.ForeignKey(Entrega, on_delete=models.CASCADE, related_name="partidas")
+    partida = models.ForeignKey(PartidaPedido, on_delete=models.CASCADE, related_name="entregas")
+    cantidad = models.PositiveIntegerField(verbose_name="Entregado")
+
+    class Meta:
+        verbose_name = "Partida entregada"
+        verbose_name_plural = "Partidas entregadas"

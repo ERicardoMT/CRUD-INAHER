@@ -23,7 +23,7 @@ from openpyxl.utils import get_column_letter
 
 from .catalogo import modelos_catalogo
 from .forms import EntregaForm, PartidaFormSet, PedidoForm, mensaje_numero_ocupado
-from .models import Cliente, Entrega, MovimientoPedido, Pedido, porcentaje
+from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje
 
 
 # Tarjetas de arriba del listado: al hacer clic filtran la tabla.
@@ -262,7 +262,7 @@ class PedidoDetailView(DetailView):
         return (
             Pedido.objects.con_minutos()
             .select_related("cliente")
-            .prefetch_related("partidas", "entregas")
+            .prefetch_related("partidas__entregas", "entregas")
         )
 
     def get_context_data(self, **kwargs):
@@ -528,17 +528,24 @@ def cambiar_estado(request, pk):
 
 def registrar_entrega(request, pk):
     """ENTREGADO: solo a mano, con fecha y cantidad. Admite entregas parciales."""
-    pedido = get_object_or_404(Pedido.objects.prefetch_related("entregas", "partidas"), pk=pk)
+    pedido = get_object_or_404(
+        Pedido.objects.prefetch_related("entregas__partidas__partida", "partidas__entregas"), pk=pk
+    )
     siguiente = request.POST.get("next") or request.GET.get("next") or ""
 
     if request.method == "POST":
-        form = EntregaForm(request.POST, pedido=pedido)
+        form = EntregaForm(request.POST, request.FILES, pedido=pedido)
         if form.is_valid():
             with transaction.atomic():
                 entrega = form.save(commit=False)
                 entrega.pedido = pedido
                 entrega.registrada_por = quien_hace(request)
                 entrega.save()
+                EntregaPartida.objects.bulk_create(
+                    EntregaPartida(entrega=entrega, partida=p, cantidad=c)
+                    for p, c in form.cantidades.items() if c
+                )
+
                 pedido.actualizar_por_entregas()
 
             pedido = Pedido.objects.prefetch_related("entregas").get(pk=pedido.pk)
@@ -566,6 +573,7 @@ def eliminar_entrega(request, pk):
     entrega = get_object_or_404(Entrega.objects.select_related("pedido"), pk=pk)
     pedido = entrega.pedido
     with transaction.atomic():
+        entrega.acuse.delete(save=False)
         entrega.delete()
         pedido.actualizar_por_entregas()
     messages.info(request, f"Se quitó la entrega de {entrega.cantidad} pzas del pedido {pedido.numero}.")

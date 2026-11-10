@@ -211,24 +211,53 @@ PartidaFormSet = inlineformset_factory(
 class EntregaForm(forms.ModelForm):
     class Meta:
         model = Entrega
-        fields = ["fecha", "cantidad", "nota"]
+        fields = ["fecha", "recibe", "paqueteria", "paqueteria_otra", "guia", "nota", "acuse"]
+        labels = {"guia": "Número de guía de ESTA entrega"}
         widgets = {
             "fecha": FechaInput(),
-            "cantidad": forms.NumberInput(attrs={"class": "form-control", "min": 1, "inputmode": "numeric"}),
-            "nota": forms.TextInput(attrs={"class": "form-control", "placeholder": "Opcional · factura, guía, quién recibió…"}),
+            "recibe": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nombre"}),
+            "paqueteria": forms.Select(attrs={"class": "form-select"}),
+            "paqueteria_otra": forms.TextInput(attrs={"class": "form-control", "placeholder": "Escribe el nombre de la paquetería"}),
+            "guia": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej. 805312209875"}),
+            "nota": forms.TextInput(attrs={"class": "form-control", "placeholder": "Opcional · factura, cajas, observaciones…"}),
+            "acuse": forms.FileInput(attrs={"class": "form-control", "accept": "image/jpeg,image/png,image/webp"}),
         }
 
     def __init__(self, *args, pedido, **kwargs):
         super().__init__(*args, **kwargs)
         self.pedido = pedido
-        self.fields["cantidad"].initial = pedido.cantidad_por_entregar or None
-        self.fields["cantidad"].widget.attrs["max"] = pedido.cantidad_por_entregar or None
+        self.fields["paqueteria"].required = True
+        self.fields["paqueteria"].choices = [("", "Selecciona…")] + list(Entrega.Paqueteria.choices)
 
-    def clean_cantidad(self):
-        cantidad = self.cleaned_data["cantidad"]
+        self.filas = []
+        for partida in pedido.partidas.all():
+            nombre = f"partida_{partida.pk}"
+            self.fields[nombre] = forms.IntegerField(
+                required=False, min_value=0, max_value=partida.faltan, initial=partida.faltan,
+                widget=forms.NumberInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+            )
+            self.filas.append((partida, self[nombre]))
+
+    def clean(self):
+        datos = super().clean()
+        paqueteria = datos.get("paqueteria")
+        if paqueteria and paqueteria not in Entrega.SIN_GUIA and not datos.get("guia"):
+            self.add_error("guia", "Captura la guía (solo es opcional si es flete propio o cliente recoge).")
+
+        if paqueteria == Entrega.Paqueteria.OTRA:
+            if not datos.get("paqueteria_otra"):
+                self.add_error("paqueteria_otra", "Escribe el nombre de la paquetería.")
+        else:
+            datos["paqueteria_otra"] = ""
+
+        self.cantidades = {p: datos.get(f"partida_{p.pk}") or 0 for p, _ in self.filas}
+        total = sum(self.cantidades.values())
         faltan = self.pedido.cantidad_por_entregar
         if not faltan:
             raise ValidationError("Este pedido ya se entregó completo.")
-        if cantidad > faltan:
+        if not total:
+            raise ValidationError("Captura al menos una pieza en alguna partida.")
+        if total > faltan:
             raise ValidationError(f"Solo faltan {faltan} pzas por entregar.")
-        return cantidad
+        self.instance.cantidad = total
+        return datos

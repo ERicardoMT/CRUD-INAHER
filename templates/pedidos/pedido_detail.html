@@ -22,7 +22,6 @@
     </div>
     {% endif %}
 
-    <!-- CABECERA DEL PEDIDO -->
     <header class="pedido-ficha-header">
 
         <div class="pedido-ficha-heading-main">
@@ -90,7 +89,6 @@
 
         </div>
 
-        <!-- ACCIONES -->
         <div class="pedido-ficha-acciones">
 
             <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
@@ -146,10 +144,8 @@
         </div>
     </header>
 
-    <!-- CONTENIDO EN DOS COLUMNAS -->
     <div class="pedido-ficha-grid">
 
-        <!-- COLUMNA IZQUIERDA -->
         <div class="pedido-ficha-columna">
 
             <section class="pedido-ficha-card">
@@ -180,18 +176,7 @@
                                     {{ fila.partida.descripcion }}
                                 </td>
 
-                                <td>
-                                    {% if pedido.cantidad_entregada == 0 %}
-                                        0 de {{ fila.partida.cantidad }}
-                                    {% else %}
-                                        <span
-                                            class="pedido-entrega-no-desglosada"
-                                            title="Las entregas actuales se guardan a nivel pedido, no por partida."
-                                        >
-                                            Sin desglose
-                                        </span>
-                                    {% endif %}
-                                </td>
+                                <td>{{ fila.partida.entregado }} de {{ fila.partida.cantidad }}</td>
 
                                 <td>
                                     {% if fila.pct is not None %}
@@ -236,14 +221,8 @@
                     </div>
                 </div>
 
-                <div class="pedido-ficha-nota-tecnica">
-                    Las entregas se registran actualmente a nivel pedido.
-                    El desglose por partida requiere ampliar el registro de entregas.
-                </div>
-
             </section>
 
-            <!-- TAREAS DE DESIGNACIÓN -->
             <section class="pedido-ficha-card">
 
                 <div class="pedido-ficha-card-header">
@@ -312,7 +291,6 @@
 
         </div>
 
-        <!-- COLUMNA DERECHA -->
         <div class="pedido-ficha-columna">
 
             <section class="pedido-ficha-card">
@@ -323,10 +301,22 @@
                 </div>
 
                 <div class="pedido-seguimiento-grid">
-                    <div class="pedido-seguimiento-item">
-                        <i class="bi bi-circle"></i>
+                    <div class="pedido-seguimiento-item{% if pedido.entregas.all %} is-done{% endif %}">
+                        <i class="bi {% if pedido.entregas.all %}bi-check-lg{% else %}bi-circle{% endif %}"></i>
                         <strong>ENVIADO</strong>
+                        {% for e in pedido.entregas.all %}
+                        <div class="pedido-envio">
+                            <small>{{ e.fecha|date:"d M"|lower }}{% if e.registrada_por %} · {{ e.registrada_por }}{% endif %}</small>
+                            {% if e.paqueteria %}<b>{{ e.paqueteria_nombre }}</b>{% endif %}
+                            {% if e.rastreo_url %}
+                            <a href="{{ e.rastreo_url }}" target="_blank" rel="noopener">Guía {{ e.guia }}</a>
+                            {% elif e.guia %}
+                            <small>Guía {{ e.guia }}</small>
+                            {% endif %}
+                        </div>
+                        {% empty %}
                         <small>Sin registro</small>
+                        {% endfor %}
                     </div>
 
                     <div class="pedido-seguimiento-item">
@@ -343,12 +333,11 @@
                 </div>
 
                 <div class="pedido-ficha-nota-tecnica">
-                    El seguimiento comercial todavía no está conectado al pedido.
+                    Enviado se llena al registrar una entrega. Facturado y Pagado: pendientes.
                 </div>
 
             </section>
 
-            <!-- ENTREGAS -->
             <section class="pedido-ficha-card">
 
                 <div class="pedido-ficha-card-header">
@@ -398,7 +387,6 @@
                 </div>
             </section>
 
-            <!-- NOTAS Y FOTOS -->
             <section class="pedido-ficha-card">
 
                 <div class="pedido-ficha-card-header">
@@ -421,7 +409,6 @@
 
             </section>
 
-            <!-- BITÁCORA -->
             <section class="pedido-ficha-card">
 
                 <div class="pedido-ficha-card-header">

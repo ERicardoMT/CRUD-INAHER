@@ -8,7 +8,7 @@
     <div>
         <div class="eyebrow">PEDIDOS / ENTREGA</div>
         <h1>Registrar entrega · Pedido {{ pedido.numero }}</h1>
-        <p>Entregado se registra a mano, con fecha y cantidad. Si la cantidad no completa el pedido, queda abierto como entrega parcial.</p>
+        <p>Entregado se registra a mano, por partida, con fecha y cantidad. Si la cantidad no completa el pedido, queda abierto como entrega parcial.</p>
     </div>
     <a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> Volver</a>
 </div>
@@ -22,16 +22,49 @@
         </div>
 
         {% if pedido.cantidad_por_entregar %}
-        <form method="post" class="entrega-form">
+        <form method="post" class="entrega-form" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
+                <div class="entrega-partidas">
+                    <div class="entrega-titulo">Por Partida <small class="text-muted fw-normal">(Propone lo que falta; 0 en lo que no va)</small></div>
+                    <div class="table-responsive">
+                        <table class="table inaher-table align-middle">
+                            <thead>
+                                <tr><th>#</th><th>Descripción</th><th class="text-end">Cant</th><th class="text-end">Faltan</th><th>Entregar</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for partida, campo in form.filas %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td class="description-cell">
+                                        {{ partida.descripcion }}
+                                        {% if partida.entregado %}<div class="small {% if partida.faltan %}text-warning-emphasis{% else %}text-success{% endif %}">entregado {{ partida.entregado }} de {{ partida.cantidad }}</div>{% endif %}
+                                    </td>
+                                    <td class="text-end">{{ partida.cantidad }}</td>
+                                    <td class="text-end">{{ partida.faltan }}</td>
+                                    <td>{{ campo }}{% for e in campo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% for e in form.non_field_errors %}<div class="text-danger small mt-2">{{ e }}</div>{% endfor %}
+                </div>
+
             <div class="form-grid">
                 {% include "pedidos/_campo.html" with field=form.fecha %}
-                {% include "pedidos/_campo.html" with field=form.cantidad ayuda="Por defecto, lo que falta por entregar." %}
-                <div class="field-wide">
-                    {% include "pedidos/_campo.html" with field=form.nota nota="opcional" %}
+                {% include "pedidos/_campo.html" with field=form.recibe nota="(opcional)" %}
+                <div>
+                    {% include "pedidos/_campo.html" with field=form.paqueteria nota="(lista)" %}
+                    <div id="paqueteria-otra" {% if form.paqueteria.value != "OTRA" %}hidden{% endif %}>
+                        {% include "pedidos/_campo.html" with field=form.paqueteria_otra %}
+                    </div>
                 </div>
+                {% include "pedidos/_campo.html" with field=form.guia ayuda="Opcional si es flete propio o cliente recoge." %}
+                {% include "pedidos/_campo.html" with field=form.nota nota="(opcional)" %}
+                {% include "pedidos/_campo.html" with field=form.acuse nota="(opcional) · remisión firmada o etiqueta de guía" ayuda="Tamaño máximo: 5 MB. Formatos: JPG, JPEG, PNG o WEBP." %}
             </div>
+
             <div class="form-footer">
                 <a href="{{ next|default:'/pedidos/' }}" class="btn-outline-inaher">Cancelar</a>
                 <button type="submit" class="btn-inaher"><i class="bi bi-truck"></i> Registrar entrega</button>
@@ -44,24 +77,56 @@
         {% endif %}
     </section>
 
-    <section class="content-card entrega-card">
-        <h2 class="entrega-titulo">Entregas registradas</h2>
-        {% for e in pedido.entregas.all %}
-        <div class="entrega-fila">
-            <div>
-                <strong>{{ e.fecha|date:"d/m/Y" }}</strong> · {{ e.cantidad }} pzas
-                {% if e.nota %}<div class="text-muted small">{{ e.nota }}</div>{% endif %}
+    <aside class="entrega-lateral">
+        <section class="content-card entrega-card">
+            <h2 class="entrega-titulo">Entregas registradas</h2>
+            {% for e in pedido.entregas.all %}
+            <div class="entrega-fila">
+                <div>
+                    <strong>{{ e.fecha|date:"d/m/Y" }}</strong> · {{ e.cantidad }} pzas
+                    {% for ep in e.partidas.all %}
+                    <div class="small">{{ ep.cantidad }} × {{ ep.partida.descripcion }}</div>
+                    {% endfor %}
+                    <div class="text-muted small">
+                        {{ e.paqueteria_nombre|default:"Sin paquetería" }}{% if e.guia %} · Guía {{ e.guia }}{% endif %}{% if e.recibe %} · Recibió: {{ e.recibe }}{% endif %}
+                    </div>
+                    {% if e.nota %}<div class="text-muted small">{{ e.nota }}</div>{% endif %}
+                    {% if e.acuse %}
+                    <a href="{{ e.acuse.url }}" target="_blank" rel="noopener" class="entrega-acuse">
+                        <img src="{{ e.acuse.url }}" alt="Acuse de la entrega del {{ e.fecha|date:'d/m/Y' }}">
+                    </a>
+                    {% endif %}
+                </div>
+                <form method="post" action="{% url 'pedidos:eliminar_entrega' e.pk %}"
+                      onsubmit="return confirm('¿Quitar esta entrega de {{ e.cantidad }} pzas? El estatus se recalcula.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-action-icon text-danger" title="Quitar entrega (corrección)"><i class="bi bi-x-circle"></i></button>
+                </form>
             </div>
-            <form method="post" action="{% url 'pedidos:eliminar_entrega' e.pk %}"
-                  onsubmit="return confirm('¿Quitar esta entrega de {{ e.cantidad }} pzas? El estatus se recalcula.');">
-                {% csrf_token %}
-                <button type="submit" class="btn-action-icon text-danger" title="Quitar entrega (corrección)"><i class="bi bi-x-circle"></i></button>
-            </form>
-        </div>
-        {% empty %}
-        <p class="text-muted small mb-0">Aún no hay entregas.</p>
-        {% endfor %}
-    </section>
+            {% empty %}
+            <p class="text-muted small mb-0">Aún no hay entregas. Después de guardar, aparecen aquí por fecha: partidas y cantidades, quién recibió, paquetería, guía y foto del acuse.</p>
+            {% endfor %}
+        </section>
+
+        <section class="content-card entrega-card">
+            <h2 class="entrega-titulo">Qué pasa al guardar</h2>
+            <ul class="entrega-reglas">
+                <strong>Reglas</strong>
+                <li>Partida completa → su renglón marca <strong>entregado N de N</strong>.</li>
+                <li>Falta algo → el pedido sigue <strong>EN PROCESO</strong> con "entregado X de N".</li>
+                <li>Todo entregado → pasa a <strong>ENTREGADO</strong> y guarda la fecha.</li>
+                <li>Cada entrega guarda su paquetería y guía; la tarjeta <strong>ENVIADO</strong> de la ficha las lista.</li>
+            </ul>
+        </section>
+    </aside>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById("{{ form.paqueteria.id_for_label }}")?.addEventListener("change", (e) => {
+        document.getElementById("paqueteria-otra").hidden = e.target.value !== "OTRA";
+    });
+</script>
 {% endblock %}
