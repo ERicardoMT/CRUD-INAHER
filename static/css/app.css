@@ -2652,3 +2652,17 @@ textarea.form-control {
         min-height: 57px;
     }
 }
+/* Modal con scroll cuando un <form> envuelve modal-body + modal-footer:
+   Bootstrap solo hace scroll si modal-body es hijo directo de modal-content. */
+.modal-dialog-scrollable .modal-form-scroll {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-form-scroll > .modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
