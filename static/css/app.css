@@ -2602,6 +2602,10 @@ textarea.form-control {
         flex-direction: column;
     }
 
+    .pedido-ficha-heading-main {
+        flex-basis: auto;
+    }
+
     .pedido-ficha-acciones {
         flex-basis: auto;
         justify-content: flex-start;
