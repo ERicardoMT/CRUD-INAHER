@@ -9,7 +9,8 @@ urlpatterns = [
     path("", include("core.urls")),
     path("pedidos/", include("pedidos.urls")),
     path("designacion/", include("designaciones.urls")),
-    path("estudio-tiempos/", include("tiempos.urls"))
+    path("estudio-tiempos/", include("tiempos.urls")),
+    path("archivo/", include("archivo.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

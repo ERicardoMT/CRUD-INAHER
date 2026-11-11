@@ -1,0 +1,27 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Facturado{% endblock %}
+
+{% block cuerpo %}
+{% for opcion in form.factura_estado %}
+<div class="ventana-opcion">
+    <label class="ventana-opcion-titulo">{{ opcion.tag }} {{ opcion.choice_label }}</label>
+    {% if opcion.data.value == "FACTURADO" %}
+    <div class="ventana-opcion-campos">
+        {% include "pedidos/_campo.html" with field=form.factura_fecha %}
+        {% include "pedidos/_campo.html" with field=form.factura_folio ayuda="Enter guarda" %}
+        {% include "pedidos/_campo.html" with field=form.factura_nota nota="(opcional)" %}
+    </div>
+    {% else %}
+    <small class="text-muted">Sale de Sin facturar. Sigue contando para Sin pagar hasta que se liquide.</small>
+    {% endif %}
+</div>
+{% endfor %}
+{% if pedido.factura_por %}<p class="small text-muted mb-0">Última captura: {{ pedido.factura_por }}</p>{% endif %}
+{% endblock %}
+
+{% block pie_extra %}
+{% if pedido.factura_estado != "PENDIENTE" %}
+<button type="submit" name="accion" value="quitar" class="btn-outline-danger-custom me-auto" formnovalidate>Quitar (vuelve a pendiente)</button>
+{% endif %}
+{% endblock %}

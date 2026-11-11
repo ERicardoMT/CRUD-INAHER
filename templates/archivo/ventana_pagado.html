@@ -1,0 +1,29 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Pagado{% endblock %}
+
+{% block cuerpo %}
+{% if pedido.pagos.all %}
+<ul class="ventana-pagos">
+    {% for pago in pedido.pagos.all %}
+    <li>
+        <span>
+            <strong>{{ pago.get_tipo_display }}</strong> · {{ pago.fecha|date:"d/m/Y" }} · {{ pago.get_forma_display }}
+            {% if pago.nota or pago.registrado_por %}<small>{{ pago.nota }}{% if pago.registrado_por %} · registró {{ pago.registrado_por }}{% endif %}</small>{% endif %}
+        </span>
+        <button type="submit" formaction="{% url 'archivo:quitar_pago' pago.pk %}" formnovalidate
+                class="btn-action-icon text-danger" title="Quitar este pago" aria-label="Quitar pago">
+            <i class="bi bi-x-circle"></i>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="form-grid">
+    {% include "pedidos/_campo.html" with field=form.fecha %}
+    {% include "pedidos/_campo.html" with field=form.tipo ayuda="Anticipo · Abono · Liquidación (pago total)" %}
+    {% include "pedidos/_campo.html" with field=form.forma %}
+    {% include "pedidos/_campo.html" with field=form.nota nota="(opcional)" %}
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@ from pedidos.models import Pedido
 from designaciones.models import Operario, Maquina, OperacionMadre, OperacionDetallada
 from tiempos.models import MedicionTiempo
 from .forms import OperarioForm, MaquinaForm, OperacionMadreForm, OperacionDetalladaForm
+from django.db.models import ProtectedError
 
 
 MODULOS = [
@@ -38,9 +39,9 @@ MODULOS = [
     },
     {
         "slug": "historico-reportes",
-        "titulo": "Histórico y reportes",
-        "descripcion": "Consulta los registros y prepara reportes de producción.",
-        "icono": "bi-clock-history",
+        "titulo": "Archivo",
+        "descripcion": "Pedidos archivados, seguimiento comercial y tareas cerradas.",
+        "icono": "bi-archive",
     },
 ]
 
@@ -58,6 +59,8 @@ def inicio(request):
 def modulo_pendiente(request, slug):
     if slug == "catalogos":
         return redirect("core:catalogos")
+    if slug == "historico-reportes":
+        return redirect("archivo:pedidos")
 
     modulo = next((item for item in MODULOS if item["slug"] == slug), None)
     if modulo is None:
@@ -203,6 +206,10 @@ def eliminar_catalogo(request, tipo, pk):
     try:
         item.delete()
         messages.info(request, f"{tipo.capitalize()} eliminado correctamente.")
-    except Exception:
-        messages.error(request, f"No se puede eliminar porque tiene registros asociados.")
+    except ProtectedError:
+        # Tiene historial: no se borra, se da de baja (sigue saliendo en el Archivo marcado "baja")
+        campo = "activo" if hasattr(item, "activo") else "activa"
+        setattr(item, campo, False)
+        item.save(update_fields=[campo])
+        messages.info(request, f"“{item}” tiene historial: se dio de baja en lugar de borrarse.")
     return redirect("core:catalogos")

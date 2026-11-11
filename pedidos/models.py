@@ -5,6 +5,9 @@ from django.db.models import Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from urllib.parse import quote
+from .catalogo import modelos_catalogo
+import re
+import unicodedata
 
 
 # Al archivar un día, las tareas pendientes se copian a la jornada siguiente y la
@@ -31,7 +34,34 @@ ACUSE_MAX_MB = 5
 def max_5mb(archivo):
     if archivo.size > ACUSE_MAX_MB * 1024 * 1024:
         raise ValidationError(f"El archivo pesa más de {ACUSE_MAX_MB} MB.")
+solo_folio = RegexValidator(r"^[A-Za-z0-9\-]*$", "Solo letras, números y guiones.")
 
+
+def normalizar(texto):
+    """Para buscar: sin acentos, minúsculas, solo letras y números ("#F-2231" → "f2231")."""
+    texto = unicodedata.normalize("NFKD", str(texto or ""))
+    texto = "".join(c for c in texto if not unicodedata.combining(c))
+    return re.sub(r"[^0-9a-z]", "", texto.lower())
+
+def detectar_modelo(descripcion):
+    """Modelo exacto según el catálogo del motor de rutas. R-3 no trae MR-338 ni NR-3."""
+    texto = (descripcion or "").upper()
+    for modelo in sorted(modelos_catalogo(), key=len, reverse=True):
+        partes = [re.escape(p) for p in re.split(r"[\s\-]+", modelo.upper()) if p]
+        patron = r"(?<![A-Z0-9])" + r"[\s\-]?".join(partes) + r"(?![A-Z0-9])"
+        if re.search(patron, texto):
+            return modelo
+    return ""
+
+
+def armar_busqueda(pedido):
+    """Texto del buscador: # pedido, cotización, OC, cliente, folio, partidas, modelos y guías."""
+    piezas = [pedido.numero, pedido.cotizacion, pedido.oc_cliente, pedido.factura_folio,
+              pedido.cliente.nombre if pedido.cliente_id else ""]
+    for descripcion, modelo in pedido.partidas.values_list("descripcion", "modelo"):
+        piezas += [descripcion, modelo]
+    piezas += list(pedido.entregas.values_list("guia", flat=True))
+    return "|".join(normalizar(p) for p in piezas if p)
 
 class Cliente(models.Model):
     nombre = models.CharField(max_length=150, unique=True, verbose_name="Nombre")
@@ -86,7 +116,25 @@ class PedidoQuerySet(models.QuerySet):
             min_restante=Coalesce(Sum("items_designacion__minutos", filter=Q_ITEM_PENDIENTE_REL), 0),
         )
 
+    def entregados_cobrables(self):
+        """Entregados que cuentan para cobranza (los "No se terminó" no cuentan)."""
+        return self.filter(estado=Pedido.Estado.ENTREGADO, archivado_sin_terminar=False)
 
+    def sin_facturar(self):
+        return self.entregados_cobrables().filter(factura_estado=Pedido.Factura.PENDIENTE)
+
+    def sin_pagar(self):
+        return (
+            self.entregados_cobrables()
+            .exclude(factura_estado=Pedido.Factura.PENDIENTE)
+            .exclude(pagos__tipo=Pago.Tipo.LIQUIDACION)
+        )
+
+    
+
+    def buscar(self, texto):
+        clave = normalizar(texto)
+        return self.filter(busqueda__contains=clave) if clave else self
 class Pedido(models.Model):
 
     class Estado(models.TextChoices):
@@ -104,6 +152,17 @@ class Pedido(models.Model):
         Estado.TERMINADO: "status-finished",
         Estado.ENTREGADO: "status-finished",
     }
+    class MotivoNoTerminado(models.TextChoices):
+        CANCELADO = "CANCELADO", "Cancelado por el cliente"
+        ERROR_CAPTURA = "ERROR_CAPTURA", "Error de captura / duplicado"
+        STOCK = "STOCK", "Se surtió de stock"
+        OTRO = "OTRO", "Otro"
+
+    class Factura(models.TextChoices):
+        PENDIENTE = "PENDIENTE", "Pendiente"
+        FACTURADO = "FACTURADO", "Facturado"
+        NO_PIDIO = "NO_PIDIO", "No pidió factura"
+
 
     numero = models.CharField(
         max_length=30,
@@ -189,6 +248,7 @@ class Pedido(models.Model):
         blank=True,
         verbose_name="Fecha de entrega",
         help_text="Se llena al completar las entregas.",
+        db_index=True,
     )
 
     notas = models.TextField(
@@ -206,6 +266,7 @@ class Pedido(models.Model):
         null=True,
         blank=True,
         verbose_name="Fecha de archivado",
+        db_index=True,
     )
 
     archivado_sin_terminar = models.BooleanField(
@@ -213,6 +274,35 @@ class Pedido(models.Model):
         verbose_name="Archivado sin terminar",
         help_text="Se archivó con tareas sin ✓ o sin estar terminado (p. ej. cancelado por el cliente).",
     )
+
+    archivado_motivo = models.CharField(
+        max_length=20, choices=MotivoNoTerminado.choices, blank=True, default="",
+        verbose_name="Motivo (no se terminó)",
+    )
+    archivado_motivo_otro = models.CharField(
+        max_length=120, blank=True, default="", validators=[texto_seguro], verbose_name="Otro motivo",
+    )
+
+    cotizacion = models.CharField(
+        max_length=30, blank=True, default="", db_index=True, validators=[texto_seguro],
+        verbose_name="Cotización (SAE)",
+    )
+    oc_cliente = models.CharField(
+        max_length=40, blank=True, default="", db_index=True, validators=[texto_seguro],
+        verbose_name="OC del cliente",
+    )
+
+    factura_estado = models.CharField(
+        max_length=10, choices=Factura.choices, default=Factura.PENDIENTE, db_index=True, verbose_name="Facturado",
+    )
+    factura_fecha = models.DateField(null=True, blank=True, verbose_name="Fecha de factura")
+    factura_folio = models.CharField(
+        max_length=30, blank=True, default="", db_index=True, validators=[solo_folio], verbose_name="Folio",
+    )
+    factura_nota = models.CharField(max_length=200, blank=True, default="", validators=[texto_seguro], verbose_name="Nota de factura")
+    factura_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Facturó")
+
+    busqueda = models.TextField(blank=True, default="", editable=False)
 
     fecha_creacion = models.DateTimeField(
         auto_now_add=True,
@@ -320,6 +410,7 @@ class Pedido(models.Model):
         else:
             self.descripcion = " y ".join(f"{p.cantidad} {p.descripcion}" for p in partidas)
         self.save(update_fields=["cantidad", "descripcion", "fecha_actualizacion"])
+        self.actualizar_busqueda()
 
     def establecer_estado(self, nuevo, guardar=True):
         """
@@ -405,7 +496,7 @@ class Pedido(models.Model):
         Parcial → sigue abierto (EN ESPERA pasa a EN PROCESO).
         Si se borra una entrega de un ENTREGADO, regresa según sus ✓.
         """
-        # .order_by() fuerza la consulta: ignora entregas precargadas que ya no estén al día
+        self.actualizar_busqueda()
         entregas = list(self.entregas.order_by("fecha", "id"))
         total = sum(e.cantidad for e in entregas)
         if self.cantidad and total >= self.cantidad:
@@ -419,6 +510,106 @@ class Pedido(models.Model):
         elif total and self.estado == self.Estado.EN_ESPERA:
             self.establecer_estado(self.Estado.EN_PROCESO)
 
+    def actualizar_busqueda(self):
+        self.busqueda = armar_busqueda(self)
+        Pedido.objects.filter(pk=self.pk).update(busqueda=self.busqueda)
+
+    @property
+    def envio_resumen(self):
+        """ENVIADO: última guía y cuántas entregas más hay (+N)."""
+        entregas = list(self.entregas.all())
+        if not entregas:
+            return None
+        ultima = entregas[-1]
+        guia = f"…{ultima.guia[-4:]}" if ultima.guia else ""
+        return {
+            "texto": " ".join(filter(None, [ultima.paqueteria_nombre, guia])) or f"{ultima.cantidad} pzas",
+            "extra": len(entregas) - 1,
+            "completo": self.estado == self.Estado.ENTREGADO,
+        }
+
+    @property
+    def dias_sin_facturar(self):
+        if self.factura_estado != self.Factura.PENDIENTE or not self.fecha_entrega or self.archivado_sin_terminar:
+            return None
+        return (timezone.localdate() - self.fecha_entrega).days
+
+    @property
+    def liquidacion(self):
+        """El pago de liquidación, o None si todavía no se liquida."""
+        return next((p for p in self.pagos.all() if p.tipo == Pago.Tipo.LIQUIDACION), None)
+
+    @property
+    def dias_sin_pagar(self):
+        """Desde la factura o, si no pidió factura, desde la entrega."""
+        if self.archivado_sin_terminar or self.factura_estado == self.Factura.PENDIENTE or self.liquidacion:
+            return None
+        desde = self.factura_fecha or self.fecha_entrega
+        return (timezone.localdate() - desde).days if desde else None   
+
+    @property
+    def situacion_archivo(self):
+        if self.archivado_sin_terminar:
+            motivo = self.archivado_motivo_otro or self.get_archivado_motivo_display() or "sin motivo"
+            return f"No se terminó · {motivo}"
+        return "Terminado" if self.archivado else "Sin archivar"
+
+    @property
+    def factura_texto(self):
+        if self.factura_estado == self.Factura.FACTURADO:
+            return self.factura_folio
+        if self.factura_estado == self.Factura.NO_PIDIO:
+            return "No pidió factura"
+        dias = self.dias_sin_facturar
+        return f"Pendiente · {dias} días" if dias is not None else "—"
+
+    @property
+    def pago_texto(self):
+        if self.liquidacion:
+            return f"Pagado {self.liquidacion.fecha:%d/%m/%Y}"
+        pagos = len(self.pagos.all())
+        return f"Parcial · {pagos} pago(s)" if pagos else "Pendiente"
+
+    def archivar(self, no_terminado=False, motivo="", motivo_otro=""):
+        """
+        Manda el pedido al Archivo. Sus tareas pendientes salen de Designación:
+        Ya se terminó → se cierran como "✓ al archivar"; No se terminó → quedan apartadas (no se borran).
+        """
+        pendientes = self.items_designacion.filter(hecho=False, designacion__cerrada=False)
+        if no_terminado:
+            pendientes.update(cerrada_al_archivar=True)
+        else:
+            pendientes.update(cerrada_al_archivar=True, hecho=True, fecha_cierre=timezone.localdate())
+        self.archivado = True
+        self.archivado_en = timezone.now()
+        self.archivado_sin_terminar = no_terminado
+        self.archivado_motivo = motivo
+        self.archivado_motivo_otro = motivo_otro
+        self.save(update_fields=[
+            "archivado", "archivado_en", "archivado_sin_terminar",
+            "archivado_motivo", "archivado_motivo_otro", "fecha_actualizacion",
+        ])
+
+    def desarchivar(self):
+        """Regresa a Activos. Las tareas cerradas "al archivar" vuelven pendientes a la jornada abierta."""
+        from designaciones.models import DesignacionDia  # import local: designaciones importa pedidos
+
+        tareas = self.items_designacion.filter(cerrada_al_archivar=True)
+        if tareas.exists():
+            jornada = (
+                DesignacionDia.objects.filter(cerrada=False).order_by("-fecha").first()
+                or DesignacionDia.objects.get_or_create(fecha=timezone.localdate())[0]
+            )
+            tareas.update(designacion=jornada, hecho=False, cerrada_al_archivar=False, fecha_cierre=None)
+        self.archivado = False
+        self.archivado_en = None
+        self.archivado_sin_terminar = False
+        self.archivado_motivo = ""
+        self.archivado_motivo_otro = ""
+        self.save(update_fields=[
+            "archivado", "archivado_en", "archivado_sin_terminar",
+            "archivado_motivo", "archivado_motivo_otro", "fecha_actualizacion",
+        ])
 
 class PartidaPedido(models.Model):
     pedido = models.ForeignKey(
@@ -435,7 +626,13 @@ class PartidaPedido(models.Model):
         max_length=255,
         verbose_name="Descripción",
     )
-
+    modelo = models.CharField(
+        max_length=40, blank=True, 
+        default="", 
+        db_index=True, 
+        editable=False, 
+        verbose_name="Modelo"
+    )
     class Meta:
         ordering = ["id"]
         verbose_name = "Partida"
@@ -443,6 +640,10 @@ class PartidaPedido(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} {self.descripcion}"
+    
+    def save(self, *args, **kwargs):
+        self.modelo = detectar_modelo(self.descripcion)
+        super().save(*args, **kwargs)
 
     @property
     def entregado(self):
@@ -454,12 +655,12 @@ class PartidaPedido(models.Model):
 
 class MovimientoPedido(models.Model):
     """Bitácora: quién eliminó, archivó o desarchivó un pedido."""
-
     class Accion(models.TextChoices):
         ELIMINADO = "ELIMINADO", "Eliminado"
         ARCHIVADO = "ARCHIVADO", "Archivado"
         ARCHIVADO_SIN_TERMINAR = "ARCHIVADO_SIN_TERMINAR", "Archivado sin terminar"
         DESARCHIVADO = "DESARCHIVADO", "Desarchivado"
+        FOLIO_CAMBIADO = "FOLIO_CAMBIADO", "Folio de factura cambiado"
 
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
     accion = models.CharField(max_length=30, choices=Accion.choices, verbose_name="Acción")
@@ -509,7 +710,7 @@ class Entrega(models.Model):
     recibe = models.CharField(max_length=80, blank=True, default="", validators=[texto_seguro], verbose_name="Quién recibe")
     paqueteria = models.CharField(max_length=20, choices=Paqueteria.choices, blank=True, default="", verbose_name="Paquetería")
     paqueteria_otra = models.CharField(max_length=60, blank=True, default="", validators=[texto_seguro], verbose_name="¿Cuál paquetería?")
-    guia = models.CharField(max_length=40, blank=True, default="", validators=[solo_guia], verbose_name="Número de guía")
+    guia = models.CharField(max_length=40, blank=True, default="", validators=[solo_guia], verbose_name="Número de guía", db_index= True,)
     acuse = models.ImageField(
         upload_to="acuses/%Y/%m/", blank=True,
         validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"]), max_5mb],
@@ -546,3 +747,33 @@ class EntregaPartida(models.Model):
     class Meta:
         verbose_name = "Partida entregada"
         verbose_name_plural = "Partidas entregadas"
+class Pago(models.Model):
+    """Pagos del pedido. Sin importes: la cobranza se lleva en el SAE."""
+
+    class Tipo(models.TextChoices):
+        ANTICIPO = "ANTICIPO", "Anticipo"
+        ABONO = "ABONO", "Abono"
+        LIQUIDACION = "LIQUIDACION", "Liquidación (pago total)"
+
+    class Forma(models.TextChoices):
+        TRANSFERENCIA = "TRANSFERENCIA", "Transferencia"
+        EFECTIVO = "EFECTIVO", "Efectivo"
+        TARJETA = "TARJETA", "Tarjeta"
+        MERCADO_PAGO = "MERCADO_PAGO", "Mercado Pago"
+        CREDITO = "CREDITO", "Crédito (por cobrar)"
+
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="pagos")
+    fecha = models.DateField(default=timezone.localdate, verbose_name="Fecha de pago")
+    tipo = models.CharField(max_length=15, choices=Tipo.choices, default=Tipo.ANTICIPO, verbose_name="Tipo")
+    forma = models.CharField(max_length=15, choices=Forma.choices, default=Forma.TRANSFERENCIA, verbose_name="Forma de pago")
+    nota = models.CharField(max_length=200, blank=True, default="", validators=[texto_seguro], verbose_name="Nota")
+    registrado_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Registró")
+    registrado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["fecha", "id"]
+        verbose_name = "Pago"
+        verbose_name_plural = "Pagos"
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} · {self.pedido.numero} · {self.fecha:%d/%m/%Y}"

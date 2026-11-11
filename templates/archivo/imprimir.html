@@ -1,0 +1,40 @@
+{% extends "pedidos/_imprimir_base.html" %}
+
+{% block titulo_doc %}INAHER · Archivo de pedidos{% endblock %}
+{% block pie %}Archivo de pedidos{% endblock %}
+{% block encabezado %}INAHER · Archivo de pedidos{% endblock %}
+{% block impreso_extra %} · <strong>orden:</strong> fecha de entrega, recientes primero{% endblock %}
+{% block sub %}Filtro: {{ filtro }} · {{ pedidos|length }} pedido{{ pedidos|length|pluralize }}{% endblock %}
+
+{% block cuerpo %}
+<table>
+    <thead>
+        <tr>
+            <th># Pedido</th><th>Cliente</th><th class="num">Cant</th><th>Descripción</th><th>Captura</th>
+            <th>Entregado</th><th>Situación</th><th>Enviado</th><th>Facturado</th><th>Pagado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in pedidos %}
+        <tr>
+            <td class="nowrap">
+                <strong>{{ p.numero }}</strong>
+                {% if p.cotizacion %}<div class="muted tag">COT {{ p.cotizacion }}</div>{% endif %}
+                {% if p.oc_cliente %}<div class="muted tag">OC {{ p.oc_cliente }}</div>{% endif %}
+            </td>
+            <td>{{ p.cliente|default:"—" }}</td>
+            <td class="num">{% for x in p.partidas.all %}{{ x.cantidad }}<br>{% endfor %}</td>
+            <td>{% for x in p.partidas.all %}{{ x.descripcion }}<br>{% endfor %}</td>
+            <td class="nowrap">{{ p.fecha_captura|date:"d/m/Y" }}</td>
+            <td class="nowrap">{{ p.fecha_entrega|date:"d/m/Y"|default:"—" }}</td>
+            <td{% if p.archivado_sin_terminar %} class="rojo"{% endif %}>{{ p.situacion_archivo }}</td>
+            <td>{% for e in p.entregas.all %}{{ e.paqueteria_nombre }} {{ e.guia }}<br>{% empty %}—{% endfor %}</td>
+            <td>{{ p.factura_texto }}</td>
+            <td>{{ p.pago_texto }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="c muted">No hay pedidos con este filtro.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

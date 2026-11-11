@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Pedidos | INAHER{% endblock %}
 
 {% block content %}
@@ -58,7 +58,7 @@
 
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item" href="?ver=historico"><i class="bi bi-clock-history"></i> Ver Histórico</a>
+                    <a class="dropdown-item" href="{% url 'archivo:pedidos' %}"><i class="bi bi-archive"></i> Ver Archivo</a>
                 </li>
                 <li>
                     <a class="dropdown-item" href="{% url 'pedidos:bitacora' %}"><i class="bi bi-journal-text"></i> Bitácora</a>
@@ -263,22 +263,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/seleccion.js' %}"></script>
 <script>
-function toggleSelectAllPedidos(master) {
-    document.querySelectorAll('.pedido-select-check').forEach(cb => cb.checked = master.checked);
-}
-
-function enviarSeleccion(accion) {
-    const checks = document.querySelectorAll('.pedido-select-check:checked');
-    if (checks.length === 0) {
-        alert("Selecciona al menos un pedido marcando la casilla ☑ de la izquierda.");
-        return;
-    }
-    // La confirmación (y las reglas) se muestran en la siguiente pantalla
-    const form = document.getElementById('formSeleccion');
-    form.action = accion;
-    form.submit();
-}
 document.querySelectorAll(
     ".tabla-tarjetas tbody tr.fila-tarjeta[data-pedido-url]"
 ).forEach((fila) => {

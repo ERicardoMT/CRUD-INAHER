@@ -1,0 +1,14 @@
+<div class="stats-grid stats-grid-4 stats-grid-filtros mb-4">
+    {% for t in tarjetas %}
+    {% if t.url %}<a href="{{ t.url }}"{% else %}<div{% endif %} class="stat-card{% if t.url %} stat-card-link{% endif %} tono-{{ t.tono }}{% if t.activo %} is-active{% endif %}"{% if t.activo %} aria-current="true"{% endif %}>
+        <div class="stat-card-top">
+            <span>{{ t.titulo }}</span>
+            <span class="stat-icon"><i class="bi {{ t.icono }}"></i></span>
+        </div>
+        <strong>{{ t.valor }}</strong>
+        {% if t.texto %}<small>{{ t.texto }}</small>{% endif %}
+        {% if t.viejo %}<small>el más viejo: <span class="text-danger fw-bold">{{ t.viejo.numero }}{% if t.dias is not None %} · {{ t.dias }} días{% endif %}</span></small>{% endif %}
+        {% if t.alcance %}<span class="archivo-alcance">{{ t.alcance }}</span>{% endif %}
+    {% if t.url %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+</div>

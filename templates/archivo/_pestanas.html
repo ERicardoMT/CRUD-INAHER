@@ -1,0 +1,4 @@
+<nav class="archivo-pestanas" aria-label="Secciones del archivo">
+    <a href="{% url 'archivo:pedidos' %}"{% if activa == "pedidos" %} class="is-active" aria-current="page"{% endif %}>Pedidos archivados</a>
+    <a href="{% url 'archivo:tareas' %}"{% if activa == "tareas" %} class="is-active" aria-current="page"{% endif %}>Tareas cerradas (Nuevo día)</a>
+</nav>

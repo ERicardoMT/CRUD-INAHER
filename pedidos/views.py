@@ -1,11 +1,11 @@
 from datetime import date
-
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import F, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from urllib.parse import quote
+from django.core.exceptions import ValidationError
 
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -23,7 +23,7 @@ from openpyxl.utils import get_column_letter
 
 from .catalogo import modelos_catalogo
 from .forms import EntregaForm, PartidaFormSet, PedidoForm, mensaje_numero_ocupado
-from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje
+from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje, texto_seguro
 
 
 # Tarjetas de arriba del listado: al hacer clic filtran la tabla.
@@ -177,7 +177,7 @@ def imprimir_listado(request):
 
 def imprimir_ficha(request, pk):
     pedido = get_object_or_404(
-        Pedido.objects.con_minutos().select_related("cliente").prefetch_related("partidas", "entregas"), pk=pk
+        Pedido.objects.con_minutos().select_related("cliente").prefetch_related("partidas", "entregas", "pagos"), pk=pk
     )
     return render(request, "pedidos/imprimir_ficha.html", {
         "pedido": pedido,
@@ -262,7 +262,7 @@ class PedidoDetailView(DetailView):
         return (
             Pedido.objects.con_minutos()
             .select_related("cliente")
-            .prefetch_related("partidas__entregas", "entregas")
+            .prefetch_related("partidas__entregas", "entregas", "pagos")
         )
 
     def get_context_data(self, **kwargs):
@@ -271,6 +271,9 @@ class PedidoDetailView(DetailView):
 
         context["avance_partidas"] = pedido.avance_partidas()
         context["estados"] = Pedido.Estado.choices
+        siguiente = self.request.GET.get("next", "")
+        es_segura = url_has_allowed_host_and_scheme(siguiente, allowed_hosts={self.request.get_host()})
+        context["volver"] = siguiente if es_segura else reverse("pedidos:lista")
 
         # Consulta de tareas vigentes. No se modifican desde esta ficha.
         context["tareas_designacion"] = (
@@ -426,74 +429,100 @@ def eliminar_pedidos(request, pk=None):
 @require_POST
 def archivar_pedidos(request):
     """
-    Archivar = mandar al Histórico (sale de Activos y de la carga de planta).
-    Normal: TERMINADO o ENTREGADO. Si tiene tareas sin ✓ (o no está terminado)
-    pide confirmar y se marca "archivado sin terminar".
+    Archivar = mandar al Archivo (sale de Activos, de la carga de planta y de Designación).
+    Si no está terminado o tiene tareas sin ✓ pregunta: Ya se terminó / No se terminó (con motivo).
     """
     pedidos = list(Pedido.objects.filter(pk__in=_ids_seleccionados(request), archivado=False))
     if not pedidos:
         messages.warning(request, "No seleccionaste ningún pedido para archivar.")
         return volver(request)
 
-    sin_terminar = [p for p in pedidos if p.archivar_es_sin_terminar()]
+    por_confirmar = [p for p in pedidos if p.archivar_es_sin_terminar()]
     quien = quien_hace(request)
+    confirmado = request.POST.get("confirmar") == "1"
+    terminado = request.POST.get("terminado", "si")
+    motivo = request.POST.get("motivo", "")
+    motivo_otro = request.POST.get("motivo_otro", "").strip()[:120]
 
-    if sin_terminar and (request.POST.get("confirmar") != "1" or not quien):
-        if request.POST.get("confirmar") == "1":
-            messages.error(request, "Escribe quién archiva (queda en la bitácora).")
-        for p in sin_terminar:
+    error = ""
+    if por_confirmar and confirmado:
+        if not quien:
+            error = "Escribe quién archiva (queda en la bitácora)."
+        elif terminado == "no" and motivo not in Pedido.MotivoNoTerminado.values:
+            error = "Elige el motivo por el que no se terminó."
+        elif terminado == "no" and motivo == Pedido.MotivoNoTerminado.OTRO and not motivo_otro:
+            error = "Escribe el otro motivo."
+        else:
+            try:
+                texto_seguro(motivo_otro)
+            except ValidationError as e:
+                error = e.messages[0]
+
+    if por_confirmar and (not confirmado or error):
+        for p in por_confirmar:
             p.pendientes = p.tareas_sin_palomear()
         return render(request, "pedidos/pedido_confirm_archivar.html", {
             "pedidos": pedidos,
-            "sin_terminar": sin_terminar,
-            "normales": len(pedidos) - len(sin_terminar),
+            "por_confirmar": por_confirmar,
+            "normales": len(pedidos) - len(por_confirmar),
+            "motivos": Pedido.MotivoNoTerminado.choices,
+            "terminado": terminado,
+            "motivo": motivo,
+            "motivo_otro": motivo_otro,
+            "error": error,
+            "quien": quien or request.POST.get("quien", ""),
             "next": request.POST.get("next", ""),
         })
 
-    ahora = timezone.now()
     with transaction.atomic():
         for p in pedidos:
-            es_sin_terminar = p in sin_terminar
-            p.archivado = True
-            p.archivado_en = ahora
-            p.archivado_sin_terminar = es_sin_terminar
-            p.save(update_fields=["archivado", "archivado_en", "archivado_sin_terminar", "fecha_actualizacion"])
+            sin_terminar = terminado == "no" and p in por_confirmar
+            p.archivar(
+                no_terminado=sin_terminar,
+                motivo=motivo if sin_terminar else "",
+                motivo_otro=motivo_otro if sin_terminar and motivo == Pedido.MotivoNoTerminado.OTRO else "",
+            )
             MovimientoPedido.objects.create(
-                accion=(MovimientoPedido.Accion.ARCHIVADO_SIN_TERMINAR if es_sin_terminar
+                accion=(MovimientoPedido.Accion.ARCHIVADO_SIN_TERMINAR if sin_terminar
                         else MovimientoPedido.Accion.ARCHIVADO),
                 pedido_numero=p.numero,
-                detalle=f"Estatus: {p.get_estado_display()}",
+                detalle=p.situacion_archivo[:255],
                 usuario=quien or "Sin nombre",
             )
 
-    messages.success(
-        request,
-        f"Se mandó {len(pedidos)} pedido(s) al Histórico: {', '.join(p.numero for p in pedidos)}.",
-    )
+    messages.success(request, f"Se archivó {len(pedidos)} pedido(s): {', '.join(p.numero for p in pedidos)}.")
     return volver(request)
 
 
 @require_POST
 def desarchivar_pedidos(request):
+    """Regresa a Activos con su estatus. Facturado y pagado se conservan."""
     pedidos = list(Pedido.objects.filter(pk__in=_ids_seleccionados(request), archivado=True))
     if not pedidos:
-        messages.warning(request, "No seleccionaste ningún pedido del Histórico.")
+        messages.warning(request, "No seleccionaste ningún pedido del Archivo.")
         return volver(request)
 
     with transaction.atomic():
         for p in pedidos:
-            p.archivado = False
-            p.archivado_en = None
-            p.archivado_sin_terminar = False
-            p.save(update_fields=["archivado", "archivado_en", "archivado_sin_terminar", "fecha_actualizacion"])
+            p.desarchivar()
             MovimientoPedido.objects.create(
                 accion=MovimientoPedido.Accion.DESARCHIVADO,
                 pedido_numero=p.numero,
                 usuario=quien_hace(request) or "Sin nombre",
             )
 
-    messages.success(request, f"Regresó a pedidos: {', '.join(p.numero for p in pedidos)}.")
+    messages.success(request, f"Regresó a Pedidos: {', '.join(p.numero for p in pedidos)}.")
     return volver(request)
+
+
+@require_POST
+def imprimir_fichas(request):
+    """Fichas de los pedidos seleccionados, una por hoja."""
+    pedidos = (
+        Pedido.objects.filter(pk__in=_ids_seleccionados(request))
+        .con_minutos().select_related("cliente").prefetch_related("partidas", "entregas", "pagos")
+    )
+    return render(request, "pedidos/imprimir_fichas.html", {"pedidos": pedidos, "ahora": timezone.localtime()})
 
 
 def bitacora(request):

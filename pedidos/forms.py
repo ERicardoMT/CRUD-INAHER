@@ -56,6 +56,8 @@ class PedidoForm(forms.ModelForm):
                 "placeholder": "Ej. 5091 o COT12961",
                 "autocomplete": "off",
             }),
+            "cotizacion": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej. 12961"}),
+            "oc_cliente": forms.TextInput(attrs={"class": "form-control", "placeholder": "Solo si el cliente la da"}),
             "fecha_captura": FechaInput(),
             "fecha_salida": FechaInput(),
             "detenido_fecha_esperada": FechaInput(),

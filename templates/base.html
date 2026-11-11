@@ -97,12 +97,13 @@
                 </a>
 
                 <a
-                    href="{% url 'core:modulo_pendiente' 'historico-reportes' %}"
-                    class="sidebar-link{% if request.path == '/modulos/historico-reportes/' %} is-active{% endif %}"
+                    href="{% url 'archivo:pedidos' %}"
+                    class="sidebar-link{% if request.resolver_match.app_name == 'archivo' %} is-active{% endif %}"
                 >
-                    <i class="bi bi-clock-history"></i>
-                    <span>Histórico y reportes</span>
+                    <i class="bi bi-archive"></i>
+                    <span>Archivo</span>
                 </a>
+
             </nav>
 
             <div class="sidebar-footer">

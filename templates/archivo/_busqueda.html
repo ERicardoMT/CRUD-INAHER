@@ -1,0 +1,18 @@
+{% for p in pedidos %}
+<a class="archivo-sugerencia" href="{% url 'pedidos:detalle' p.pk %}?next={% filter urlencode %}{% url 'archivo:pedidos' %}?q={{ q }}{% endfilter %}">
+    <span>
+        <strong>{{ p.numero }}</strong> {{ p.cliente|default:"Sin cliente" }} ·
+        {% for x in p.partidas.all %}{{ x.cantidad }} {{ x.descripcion }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        <small>
+            {% if p.cotizacion %}COT {{ p.cotizacion }} · {% endif %}
+            {% if p.archivado_sin_terminar %}{{ p.situacion_archivo|lower }} · {{ p.archivado_en|date:"d/m/y" }}
+            {% elif p.fecha_entrega %}entregado {{ p.fecha_entrega|date:"d/m/y" }}{% with e=p.envio_resumen %}{% if e %} · {{ e.texto }}{% endif %}{% endwith %}{% if p.factura_folio %} · ✓ {{ p.factura_folio }}{% endif %}{% if p.liquidacion %} · ✓ pagado{% endif %}
+            {% else %}{{ p.get_estado_display|upper }}{% if p.fecha_salida %} · sale {{ p.fecha_salida|date:"d/m/y" }}{% endif %}{% endif %}
+        </small>
+    </span>
+    {% if p.archivado %}<span class="archivo-chip is-neutral">ARCHIVADO</span>{% else %}<span class="archivo-chip is-ok">ACTIVO EN PEDIDOS →</span>{% endif %}
+</a>
+{% empty %}
+<p class="archivo-sugerencias-nota">Sin resultados para “{{ q }}”.</p>
+{% endfor %}
+{% if total %}<p class="archivo-sugerencias-nota">{{ total }} resultado{{ total|pluralize }} en todo el sistema · Enter los abre en la lista</p>{% endif %}

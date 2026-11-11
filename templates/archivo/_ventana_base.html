@@ -1,0 +1,16 @@
+<form method="post" action="{{ request.path }}" novalidate>
+    {% csrf_token %}
+    <div class="modal-header">
+        <h2 class="modal-title fs-6 fw-bold">{% block titulo %}{% endblock %} · {{ pedido.numero }}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    </div>
+    <div class="modal-body">
+        {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+        {% block cuerpo %}{% endblock %}
+    </div>
+    <div class="modal-footer">
+        {% block pie_extra %}{% endblock %}
+        <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn-inaher">Guardar</button>
+    </div>
+</form>

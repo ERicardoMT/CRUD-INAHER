@@ -199,6 +199,10 @@ class ItemDesignacion(models.Model):
         default=False,
         verbose_name="Completado (✓)",
     )
+
+    fecha_cierre = models.DateField(null=True, blank=True, db_index=True, verbose_name="Fecha de cierre")
+    cerrada_al_archivar = models.BooleanField(default=False, verbose_name="✓ al archivar")
+
     orden = models.PositiveIntegerField(
         default=0,
         verbose_name="Orden",
@@ -228,6 +232,11 @@ class ItemDesignacion(models.Model):
             return self.descripcion_manual
         return "NO ESTÁ EN PEDIDOS"
 
+    @property
+    def producto_cerrado(self):
+        """Producto en el historial: la partida si la tiene; si no, el texto de siempre."""
+        return self.partida.descripcion if self.partida else self.producto_texto
+    
     @property
     def fecha_salida(self):
         if self.pedido and self.pedido.fecha_salida:

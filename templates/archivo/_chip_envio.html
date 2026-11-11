@@ -1,0 +1,7 @@
+{% with envio=pedido.envio_resumen %}
+{% if envio and not pedido.archivado_sin_terminar %}
+<span class="archivo-chip {% if envio.completo %}is-ok{% else %}is-parcial{% endif %}">
+    <i class="bi {% if envio.completo %}bi-check-lg{% else %}bi-circle-half{% endif %}"></i>{{ envio.texto }}{% if envio.extra %} +{{ envio.extra }}{% endif %}
+</span>
+{% else %}<span class="text-muted">—</span>{% endif %}
+{% endwith %}

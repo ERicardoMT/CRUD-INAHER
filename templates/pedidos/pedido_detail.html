@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Pedido {{ pedido.numero }} | INAHER{% endblock %}
 
 {% block content %}
@@ -91,7 +91,7 @@
 
         <div class="pedido-ficha-acciones">
 
-            <a href="{% url 'pedidos:lista' %}" class="btn-outline-inaher">
+            <a href="{{ volver }}" class="btn-outline-inaher">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
 
@@ -315,7 +315,7 @@
                             {% endif %}
                         </div>
                         {% empty %}
-                        <small>Sin registro</small>
+                        {% include "archivo/_chip_factura.html" %}
                         {% endfor %}
                     </div>
 
@@ -328,7 +328,7 @@
                     <div class="pedido-seguimiento-item">
                         <i class="bi bi-circle"></i>
                         <strong>PAGADO</strong>
-                        <small>Sin registro</small>
+                        {% include "archivo/_chip_pago.html" %}
                     </div>
                 </div>
 
@@ -449,5 +449,10 @@
 
     </div>
 </div>
+{% include "archivo/_ventana.html" %}
+
+{% block extra_js %}
+<script src="{% static 'js/archivo.js' %}"></script>
+{% endblock %}
 
 {% endblock %}

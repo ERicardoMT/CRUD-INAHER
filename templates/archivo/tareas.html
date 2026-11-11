@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Tareas cerradas · Archivo | INAHER{% endblock %}
+
+{% block content %}
+{% include "archivo/_encabezado.html" with pestana="tareas" %}
+{% include "archivo/_tarjetas.html" %}
+
+<section class="content-card">
+    {% include "archivo/_pestanas.html" with activa="tareas" %}
+
+    <form method="get" class="archivo-filtros">
+        {% include "archivo/_rango.html" with etiqueta="Cerradas en:" %}
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if agrupar %}<input type="hidden" name="agrupar" value="{{ agrupar }}">{% endif %}
+
+        <select name="quien" class="form-select form-select-sm" aria-label="Quién" onchange="this.form.submit()">
+            <option value="">Quién: todos</option>
+            {% for o in operarios %}<option value="{{ o.pk }}"{% if o.pk|stringformat:"s" == quien %} selected{% endif %}>{{ o.nombre }}{% if not o.activo %} (baja){% endif %}</option>{% endfor %}
+        </select>
+        <select name="madre" class="form-select form-select-sm" aria-label="Operación madre" onchange="this.form.submit()">
+            <option value="">Operación madre: todas</option>
+            {% for m in madres %}<option value="{{ m.pk }}"{% if m.pk|stringformat:"s" == madre %} selected{% endif %}>{{ m.nombre }}{% if not m.activa %} (baja){% endif %}</option>{% endfor %}
+        </select>
+        <select name="maquina" class="form-select form-select-sm" aria-label="Máquina" onchange="this.form.submit()">
+            <option value="">Máquina: todas</option>
+            {% for m in maquinas %}<option value="{{ m.pk }}"{% if m.pk|stringformat:"s" == maquina %} selected{% endif %}>{{ m.nombre }}{% if not m.activa %} (baja){% endif %}</option>{% endfor %}
+        </select>
+        <select name="modelo" class="form-select form-select-sm" aria-label="Modelo" onchange="this.form.submit()">
+            <option value="">Modelo: todos</option>
+            {% for m in modelos %}<option value="{{ m }}"{% if m == modelo %} selected{% endif %}>{{ m }}</option>{% endfor %}
+        </select>
+        <input type="search" name="pedido" value="{{ num_pedido }}" maxlength="30" class="form-control form-control-sm"
+               placeholder="# Pedido" aria-label="Número de pedido" onchange="this.form.submit()">
+
+        <div class="archivo-agrupar">
+            <span>Agrupar:</span>
+            {% for a in agrupaciones %}<a href="{{ a.url }}"{% if a.activo %} class="is-active" aria-current="true"{% endif %}>{{ a.nombre }}</a>{% endfor %}
+        </div>
+    </form>
+
+    {% if pagina.object_list %}
+    <div class="table-responsive">
+        <table class="table-designacion tabla-pedidos tabla-archivo align-middle">
+            {% if agrupar_titulo %}
+            <thead>
+                <tr><th>{{ agrupar_titulo }}</th><th class="text-end">Tareas</th><th class="text-end">Cant</th><th class="text-end">Min est</th></tr>
+            </thead>
+            <tbody>
+                {% for g in pagina %}
+                <tr class="fila-pedido">
+                    <td data-label="{{ agrupar_titulo }}"><strong>{% if agrupar == "dia" %}{{ g.grupo|date:"d/m/y" }}{% else %}{{ g.grupo|default:"—" }}{% endif %}</strong></td>
+                    <td data-label="Tareas" class="text-end">{{ g.n }}</td>
+                    <td data-label="Cant" class="text-end">{{ g.cantidad }}</td>
+                    <td data-label="Min est" class="text-end">{{ g.minutos }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% else %}
+            <thead>
+                <tr>
+                    <th>Fecha</th><th>Quién</th><th># P</th><th class="text-center">Paso</th><th>Producto</th>
+                    <th>Operación madre › detallada</th><th>Máquina</th><th class="text-end">Cant</th><th class="text-end">Min est</th><th>Cerrada</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in pagina %}
+                <tr class="fila-pedido">
+                    <td data-label="Fecha" class="text-nowrap">{{ t.fecha_cierre|date:"d/m/y" }}</td>
+                    <td data-label="Quién"><div>{{ t.quien.nombre }}{% if not t.quien.activo %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
+                    <td data-label="# P">
+                        {% if t.pedido %}<a href="{% url 'pedidos:detalle' t.pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="fw-bold text-primary">{{ t.pedido.numero }}</a>
+                        {% else %}<span class="text-muted">stock</span>{% endif %}
+                    </td>
+                    <td data-label="Paso" class="text-center">{{ t.paso }}</td>
+                    <td data-label="Producto">{{ t.producto_cerrado }}</td>
+                    <td data-label="Operación"><div>{{ t.operacion_madre.nombre }} › {{ t.operacion_detallada.nombre }}{% if not t.operacion_madre.activa %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
+                    <td data-label="Máquina"><div>{{ t.maquina.nombre|default:"—" }}{% if t.maquina and not t.maquina.activa %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
+                    <td data-label="Cant" class="text-end">{{ t.cantidad }}</td>
+                    <td data-label="Min est" class="text-end">{{ t.minutos }}</td>
+                    <td data-label="Cerrada">
+                        {% if t.cerrada_al_archivar %}<span class="archivo-chip is-neutral"><i class="bi bi-check-lg"></i>al archivar</span>
+                        {% else %}<span class="archivo-chip is-ok"><i class="bi bi-check-lg"></i>operador</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% endif %}
+        </table>
+    </div>
+
+    <div class="archivo-total">
+        <strong>Total filtrado (todas las páginas)</strong>
+        <span>{{ totales.tareas }} tareas</span>
+        <span>Min estándar <strong>{{ totales.minutos }}</strong> · {{ totales.horas }} h</span>
+        <span>{{ totales.operador }} con ✓ del operador · {{ totales.al_archivar }} cerradas al archivar</span>
+    </div>
+    {% include "archivo/_paginacion.html" with nombre=agrupar_titulo|default:"tareas"|lower %}
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-check2-square"></i>
+        <h3>No hay tareas cerradas con estos filtros</h3>
+        <p>Las tareas pasan aquí al dar “Nuevo día” (las que tienen ✓) o al archivar un pedido como terminado.</p>
+    </div>
+    {% endif %}
+    <p class="archivo-nota">Solo consulta: aquí no se capturan tiempos. Tiempos reales, muestras y eficiencia van en el módulo Eficiencia.</p>
+</section>
+{% endblock %}

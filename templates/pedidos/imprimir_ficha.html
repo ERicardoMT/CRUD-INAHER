@@ -1,51 +1,16 @@
-{% extends "pedidos/_imprimir_base.html" %}
+{% extends "pedidos/imprimir_ficha.html" %}
 
-{% block orientacion %}portrait{% endblock %}
-{% block titulo_doc %}INAHER · Pedido {{ pedido.numero }}{% endblock %}
-{% block pie %}Ficha del pedido {{ pedido.numero }}{% endblock %}
-{% block encabezado %}INAHER · Pedido {{ pedido.numero }}{% endblock %}
-{% block sub %}Ficha del pedido · Días y Estado calculados con la fecha de impresión{% endblock %}
-
-{% block estilos %}
-.datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; margin-bottom: 18px; }
-.datos div span { display: block; color: #6B7686; font-size: 7.5pt; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
-.datos div strong { font-size: 10.5pt; }
-h2 { margin: 18px 0 6px; color: #203D6B; font-size: 11pt; }
-.notas { white-space: pre-line; }
-{% endblock %}
+{% block titulo_doc %}INAHER · Fichas de pedidos{% endblock %}
+{% block pie %}Fichas de pedidos{% endblock %}
+{% block encabezado %}INAHER · Fichas de pedidos{% endblock %}
+{% block sub %}{{ pedidos|length }} pedido{{ pedidos|length|pluralize }} seleccionado{{ pedidos|length|pluralize }} · una ficha por hoja{% endblock %}
 
 {% block cuerpo %}
-<div class="datos">
-    <div><span>Cliente</span><strong>{{ pedido.cliente|default:"Sin cliente" }}</strong></div>
-    <div><span>Estatus</span><strong>{{ pedido.get_estado_display }}{% if pedido.archivado %} · archivado{% if pedido.archivado_sin_terminar %} sin terminar{% endif %}{% endif %}</strong></div>
-    <div><span>Estado</span><strong{% if pedido.alerta_estado.texto == 'ATRASADO' %} class="rojo"{% endif %}>{{ pedido.alerta_estado.texto }}{% if pedido.dias_restantes is not None %} ({{ pedido.dias_restantes }} días){% endif %}</strong></div>
-    <div><span>Fecha de captura</span><strong>{{ pedido.fecha_captura|date:"d/m/Y" }}</strong></div>
-    <div><span>Fecha de salida</span><strong>{{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}</strong></div>
-    <div><span>Cantidad total</span><strong>{{ pedido.cantidad }} pzas</strong></div>
-    <div><span>Min total</span><strong>{{ pedido.min_total }} min</strong></div>
-    <div><span>Min restante</span><strong>{{ pedido.min_restante }} min</strong></div>
-    <div><span>% avance</span><strong>{{ pedido.pct_avance }} %</strong></div>
-    <div><span>Fecha de terminado</span><strong>{{ pedido.fecha_terminado|date:"d/m/Y"|default:"—" }}</strong></div>
-    <div><span>Entregado</span><strong>{{ pedido.cantidad_entregada }} de {{ pedido.cantidad }} pzas{% if pedido.fecha_entrega %} · {{ pedido.fecha_entrega|date:"d/m/Y" }}{% endif %}</strong></div>
-    {% if pedido.detenido %}
-    <div style="grid-column: 1 / -1"><span>Detenido</span><strong class="rojo">{{ pedido.detenido_por|default:"Sin motivo capturado" }}</strong></div>
-    {% endif %}
-</div>
-
-<h2>Partidas</h2>
-<table>
-    <thead><tr><th class="num" style="width:70px">Cant</th><th>Descripción</th></tr></thead>
-    <tbody>
-        {% for x in pedido.partidas.all %}
-        <tr><td class="num">{{ x.cantidad }}</td><td>{{ x.descripcion }}</td></tr>
-        {% empty %}
-        <tr><td colspan="2" class="muted">Sin partidas</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-{% if pedido.notas %}
-<h2>Notas</h2>
-<p class="notas">{{ pedido.notas }}</p>
-{% endif %}
+{% for pedido in pedidos %}
+<section{% if not forloop.first %} class="salto"{% endif %}>
+    <h2>Pedido {{ pedido.numero }}</h2>
+    {% include "pedidos/_ficha_impresa.html" %}
+</section>
+{% endfor %}
+.salto { break-before: page; }
 {% endblock %}

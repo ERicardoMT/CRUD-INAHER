@@ -1,0 +1,48 @@
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">ARCHIVO</div>
+        <h1>INAHER · Archivo</h1>
+        <p class="text-muted mb-0">
+            {% if pestana == "tareas" %}Historial de tareas cerradas. Solo consulta: los tiempos reales y la eficiencia se ven en el módulo Eficiencia.
+            {% else %}Pedidos archivados y tareas cerradas (Nuevo día). Solo consulta; aquí se palomea Facturado · Pagado.{% endif %}
+        </p>
+    </div>
+
+    <div class="archivo-acciones">
+        <form method="get" action="{% if pestana == 'tareas' %}{% url 'archivo:tareas' %}{% else %}{% url 'archivo:pedidos' %}{% endif %}" class="archivo-buscador" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            {% if pestana == "tareas" %}
+            <input type="search" name="q" value="{{ q }}" maxlength="60" class="form-control"
+                   placeholder="# pedido, operación, quién…" aria-label="Buscar tareas cerradas">
+            {% else %}
+            <input type="search" name="q" value="{{ q }}" maxlength="60" class="form-control" autocomplete="off"
+                   placeholder="# pedido, cotización, OC, cliente, modelo, guía, factura…" aria-label="Buscar en el archivo"
+                   data-buscar-url="{% url 'archivo:buscar' %}" aria-controls="archivo-sugerencias">
+            <small>Busca en todo el archivo y en activos, sin importar las fechas</small>
+            <div id="archivo-sugerencias" class="archivo-sugerencias" hidden></div>
+            {% endif %}
+        </form>
+
+        <div class="dropdown">
+            <button class="btn btn-outline-inaher d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-three-dots-vertical"></i> <strong>Opciones</strong> <i class="bi bi-caret-down-fill small"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm menu-opciones">
+                {% if pestana == "tareas" %}
+                <li><a class="dropdown-item" href="{% url 'archivo:exportar_tareas' %}?{{ request.GET.urlencode }}"><i class="bi bi-file-earmark-excel text-success"></i> Exportar tareas cerradas a Excel</a></li>
+                {% else %}
+                <li><a class="dropdown-item" href="{% url 'archivo:imprimir' %}?{{ request.GET.urlencode }}" target="_blank" rel="noopener"><i class="bi bi-printer"></i> Imprimir listado</a></li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'archivo:exportar' %}?{{ request.GET.urlencode }}">
+                        <i class="bi bi-file-earmark-excel text-success"></i> Exportar a Excel
+                        <small class="d-block text-muted">todo lo filtrado · un renglón por partida</small>
+                    </a>
+                </li>
+                <li><h6 class="dropdown-header">Pedidos seleccionados <i class="bi bi-check-square"></i></h6></li>
+                <li><button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:desarchivar' %}')"><i class="bi bi-box-arrow-up"></i> Desarchivar (regresa a Activos)</button></li>
+                <li><button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:imprimir_fichas' %}', true)"><i class="bi bi-printer"></i> Imprimir fichas</button></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>

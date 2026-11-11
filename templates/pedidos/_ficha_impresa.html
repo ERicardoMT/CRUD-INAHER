@@ -1,0 +1,46 @@
+<div class="datos">
+    <div><span>Cliente</span><strong>{{ pedido.cliente|default:"Sin cliente" }}</strong></div>
+    <div><span>Estatus</span><strong>{{ pedido.get_estado_display }}{% if pedido.archivado %} · {{ pedido.situacion_archivo|lower }}{% endif %}</strong></div>
+    <div><span>Estado</span><strong{% if pedido.alerta_estado.texto == 'ATRASADO' %} class="rojo"{% endif %}>{{ pedido.alerta_estado.texto }}{% if pedido.dias_restantes is not None %} ({{ pedido.dias_restantes }} días){% endif %}</strong></div>
+    <div><span>Cotización · OC</span><strong>{{ pedido.cotizacion|default:"—" }} · {{ pedido.oc_cliente|default:"—" }}</strong></div>
+    <div><span>Fecha de captura</span><strong>{{ pedido.fecha_captura|date:"d/m/Y" }}</strong></div>
+    <div><span>Fecha de salida</span><strong>{{ pedido.fecha_salida|date:"d/m/Y"|default:"Sin fecha" }}</strong></div>
+    <div><span>Cantidad total</span><strong>{{ pedido.cantidad }} pzas</strong></div>
+    <div><span>Min total · restante</span><strong>{{ pedido.min_total }} · {{ pedido.min_restante }} min</strong></div>
+    <div><span>% avance</span><strong>{{ pedido.pct_avance }} %</strong></div>
+    <div><span>Entregado</span><strong>{{ pedido.cantidad_entregada }} de {{ pedido.cantidad }} pzas{% if pedido.fecha_entrega %} · {{ pedido.fecha_entrega|date:"d/m/Y" }}{% endif %}</strong></div>
+    <div><span>Facturado</span><strong>{{ pedido.factura_texto }}</strong></div>
+    <div><span>Pagado</span><strong>{{ pedido.pago_texto }}</strong></div>
+    {% if pedido.detenido %}
+    <div style="grid-column: 1 / -1"><span>Detenido</span><strong class="rojo">{{ pedido.detenido_por|default:"Sin motivo capturado" }}</strong></div>
+    {% endif %}
+</div>
+
+<h2>Partidas</h2>
+<table>
+    <thead><tr><th class="num" style="width:70px">Cant</th><th>Descripción</th></tr></thead>
+    <tbody>
+        {% for x in pedido.partidas.all %}
+        <tr><td class="num">{{ x.cantidad }}</td><td>{{ x.descripcion }}</td></tr>
+        {% empty %}
+        <tr><td colspan="2" class="muted">Sin partidas</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if pedido.entregas.all %}
+<h2>Entregas</h2>
+<table>
+    <thead><tr><th>Fecha</th><th class="num">Cant</th><th>Paquetería</th><th>Guía</th><th>Recibió</th></tr></thead>
+    <tbody>
+        {% for e in pedido.entregas.all %}
+        <tr><td>{{ e.fecha|date:"d/m/Y" }}</td><td class="num">{{ e.cantidad }}</td><td>{{ e.paqueteria_nombre|default:"—" }}</td><td>{{ e.guia|default:"—" }}</td><td>{{ e.recibe|default:"—" }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if pedido.notas %}
+<h2>Notas</h2>
+<p class="notas">{{ pedido.notas }}</p>
+{% endif %}

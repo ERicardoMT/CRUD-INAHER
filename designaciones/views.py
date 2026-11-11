@@ -40,7 +40,7 @@ def designacion_hoy(request):
 
     designacion, _ = DesignacionDia.objects.get_or_create(fecha=fecha_actual)
 
-    items_qs = designacion.items.select_related(
+    items_qs = designacion.items.filter(cerrada_al_archivar=False).select_related(
         "quien", "pedido", "operacion_madre", "operacion_detallada", "maquina"
     )
 
@@ -237,7 +237,11 @@ def nuevo_dia(request, designacion_id):
 
     nuevo, _ = DesignacionDia.objects.get_or_create(fecha=siguiente_fecha)
 
-    pendientes = actual.items.filter(hecho=False)
+    # Las tareas con ✓ pasan al Archivo con la fecha de la jornada
+    actual.items.filter(hecho=True, fecha_cierre__isnull=True).update(fecha_cierre=actual.fecha)
+
+    # Las que no tienen ✓ se arrastran al día siguiente (menos las de pedidos archivados)
+    pendientes = actual.items.filter(hecho=False, cerrada_al_archivar=False)
     for p in pendientes:
         ItemDesignacion.objects.create(
             designacion=nuevo,

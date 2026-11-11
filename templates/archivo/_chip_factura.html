@@ -1,0 +1,13 @@
+{% if pedido.fecha_entrega and not pedido.archivado_sin_terminar %}
+<button type="button" class="archivo-chip-boton" data-ventana="{% url 'archivo:facturado' pedido.pk %}" title="Capturar o corregir la factura">
+    {% if pedido.factura_estado == "FACTURADO" %}
+    <span class="archivo-chip is-ok"><i class="bi bi-check-lg"></i>{{ pedido.factura_folio }}</span>
+    {% elif pedido.factura_estado == "NO_PIDIO" %}
+    <span class="archivo-chip is-neutral">— no pidió factura</span>
+    {% else %}
+    <span class="archivo-chip {% if pedido.dias_sin_facturar > 7 %}is-vencido{% else %}is-pendiente{% endif %}">
+        <i class="bi bi-circle"></i>pendiente · {{ pedido.dias_sin_facturar }} día{{ pedido.dias_sin_facturar|pluralize }}
+    </span>
+    {% endif %}
+</button>
+{% else %}<span class="text-muted">—</span>{% endif %}

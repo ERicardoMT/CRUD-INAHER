@@ -1,0 +1,11 @@
+{% if pedido.fecha_entrega and not pedido.archivado_sin_terminar %}
+<button type="button" class="archivo-chip-boton" data-ventana="{% url 'archivo:pagado' pedido.pk %}" title="Registrar o corregir pagos">
+    {% if pedido.liquidacion %}
+    <span class="archivo-chip is-ok"><i class="bi bi-check-lg"></i>{{ pedido.liquidacion.fecha|date:"d/m/y" }}</span>
+    {% elif pedido.pagos.all %}
+    <span class="archivo-chip is-parcial"><i class="bi bi-circle-half"></i>parcial · {{ pedido.pagos.all|length }} pago{{ pedido.pagos.all|length|pluralize }}</span>
+    {% else %}
+    <span class="archivo-chip is-neutral"><i class="bi bi-circle"></i>pendiente</span>
+    {% endif %}
+</button>
+{% else %}<span class="text-muted">—</span>{% endif %}

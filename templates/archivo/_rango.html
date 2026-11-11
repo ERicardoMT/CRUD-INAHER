@@ -1,0 +1,9 @@
+<input type="hidden" name="rango" value="{{ rango }}">
+<div class="archivo-rango" role="group" aria-label="Rango de fechas">
+    <span>{{ etiqueta }}</span>
+    {% for r in rangos %}<a href="{{ r.url }}"{% if r.activo %} class="is-active" aria-current="true"{% endif %}>{{ r.nombre }}</a>{% endfor %}
+</div>
+<input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" class="form-control form-control-sm" aria-label="Desde"
+       onchange="this.form.rango.value=''; this.form.submit()">
+<input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" class="form-control form-control-sm" aria-label="Hasta"
+       onchange="this.form.rango.value=''; this.form.submit()">

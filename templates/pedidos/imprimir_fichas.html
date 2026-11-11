@@ -1,0 +1,15 @@
+{% extends "pedidos/imprimir_ficha.html" %}
+
+{% block titulo_doc %}INAHER · Fichas de pedidos{% endblock %}
+{% block pie %}Fichas de pedidos{% endblock %}
+{% block encabezado %}INAHER · Fichas de pedidos{% endblock %}
+{% block sub %}{{ pedidos|length }} pedido{{ pedidos|length|pluralize }} seleccionado{{ pedidos|length|pluralize }} · una ficha por hoja{% endblock %}
+
+{% block cuerpo %}
+{% for pedido in pedidos %}
+<section{% if not forloop.first %} class="salto"{% endif %}>
+    <h2>Pedido {{ pedido.numero }}</h2>
+    {% include "pedidos/_ficha_impresa.html" %}
+</section>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,18 @@
+<div class="archivo-pie">
+    <span>Mostrando <strong>{{ pagina.start_index }}–{{ pagina.end_index }}</strong> de <strong>{{ pagina.paginator.count }}</strong> {{ nombre }}</span>
+    {% if pagina.has_other_pages %}
+    <nav aria-label="Páginas">
+        <ul class="pagination pagination-sm mb-0">
+            {% if pagina.has_previous %}<li class="page-item"><a class="page-link" href="{{ consulta }}&page={{ pagina.previous_page_number }}" aria-label="Anterior">‹</a></li>{% endif %}
+            {% for n in paginas %}
+                {% if n == pagina.paginator.ELLIPSIS %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% else %}
+                <li class="page-item{% if n == pagina.number %} active{% endif %}"><a class="page-link" href="{{ consulta }}&page={{ n }}"{% if n == pagina.number %} aria-current="page"{% endif %}>{{ n }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if pagina.has_next %}<li class="page-item"><a class="page-link" href="{{ consulta }}&page={{ pagina.next_page_number }}" aria-label="Siguiente">›</a></li>{% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>

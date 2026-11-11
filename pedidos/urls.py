@@ -23,6 +23,7 @@ urlpatterns = [
     path("archivar/", views.archivar_pedidos, name="archivar"),
     path("desarchivar/", views.desarchivar_pedidos, name="desarchivar"),
     path("imprimir/", views.imprimir_listado, name="imprimir_listado"),
+    path("imprimir-fichas/", views.imprimir_fichas, name="imprimir_fichas"),
     path("exportar/", views.exportar_excel, name="exportar_excel"),
     path("bitacora/", views.bitacora, name="bitacora"),
     path("api/numero-disponible/", views.numero_disponible, name="numero_disponible"),

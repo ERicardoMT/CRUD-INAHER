@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Archivo | INAHER{% endblock %}
+
+{% block content %}
+{% include "archivo/_encabezado.html" with pestana="pedidos" %}
+{% include "archivo/_tarjetas.html" %}
+
+<section class="content-card">
+    {% include "archivo/_pestanas.html" with activa="pedidos" %}
+
+    <form method="get" class="archivo-filtros">
+        {% include "archivo/_rango.html" with etiqueta="Entregados en:" %}
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if tarjeta %}<input type="hidden" name="tarjeta" value="{{ tarjeta }}">{% endif %}
+
+        <input type="search" name="cliente" value="{{ cliente }}" list="archivo-clientes" maxlength="150"
+               class="form-control form-control-sm" placeholder="Cliente: escribe y elige…" aria-label="Cliente"
+               onchange="this.form.submit()">
+        <datalist id="archivo-clientes">{% for c in clientes %}<option value="{{ c }}">{% endfor %}</datalist>
+
+        <select name="modelo" class="form-select form-select-sm" aria-label="Modelo" onchange="this.form.submit()">
+            <option value="">Modelo: todos</option>
+            {% for m in modelos %}<option value="{{ m }}"{% if m == modelo %} selected{% endif %}>{{ m }}</option>{% endfor %}
+        </select>
+
+        <select name="seguimiento" class="form-select form-select-sm" aria-label="Seguimiento" onchange="this.form.submit()">
+            <option value="">Seguimiento: todos</option>
+            {% for clave, nombre in seguimientos.items %}<option value="{{ clave }}"{% if clave == seguimiento %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
+        </select>
+    </form>
+
+    {% if q %}
+    <p class="archivo-aviso">
+        Resultados de “<strong>{{ q }}</strong>” en todo el sistema (archivo y pedidos activos), sin importar las fechas ·
+        <a href="{% url 'archivo:pedidos' %}">Quitar búsqueda</a>
+    </p>
+    {% endif %}
+
+    <form id="formSeleccion" method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    </form>
+
+    {% if pagina.object_list %}
+    <div class="table-responsive">
+        <table class="table-designacion tabla-pedidos tabla-archivo align-middle">
+            <thead>
+                <tr>
+                    <th class="col-check"><input type="checkbox" class="form-check-input" onclick="toggleSelectAllPedidos(this)" aria-label="Seleccionar todos"></th>
+                    <th># Pedido</th>
+                    <th>Cliente</th>
+                    <th class="text-center">Cant</th>
+                    <th>Descripción</th>
+                    <th class="col-opcional">Captura</th>
+                    <th>Entregado</th>
+                    <th>Enviado</th>
+                    <th>Facturado</th>
+                    <th>Pagado</th>
+                    <th class="text-center">Días sin pagar</th>
+                    <th class="col-opcional">Notas</th>
+                    <th><span class="visually-hidden">Acciones</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pagina %}
+                <tr class="fila-pedido{% if p.archivado_sin_terminar %} fila-no-terminada{% endif %}">
+                    <td class="col-check">
+                        <input type="checkbox" name="pedido_ids" value="{{ p.pk }}" form="formSeleccion"
+                               class="pedido-select-check form-check-input" aria-label="Seleccionar pedido {{ p.numero }}">
+                    </td>
+                    <td data-label="# Pedido">
+                        <div>
+                            <a href="{% url 'pedidos:detalle' p.pk %}?next={{ request.get_full_path|urlencode }}" class="fw-bold text-primary">{{ p.numero }}</a>
+                            {% if p.cotizacion %}<small class="archivo-sub">COT {{ p.cotizacion }}</small>{% endif %}
+                            {% if p.oc_cliente %}<small class="archivo-sub">OC {{ p.oc_cliente }}</small>{% endif %}
+                            {% if not p.archivado %}<span class="archivo-tag-activo">sin archivar</span>{% endif %}
+                        </div>
+                    </td>
+                    <td data-label="Cliente">{{ p.cliente|default:"—" }}</td>
+                    <td data-label="Cant" class="text-center">
+                        <div>{% for x in p.partidas.all %}<div class="partida-linea">{{ x.cantidad }}</div>{% endfor %}</div>
+                    </td>
+                    <td data-label="Descripción">
+                        <div>{% for x in p.partidas.all %}<div class="partida-linea" title="{{ x.descripcion }}">{{ x.descripcion }}</div>{% endfor %}</div>
+                    </td>
+                    <td data-label="Captura" class="col-opcional">{{ p.fecha_captura|date:"d/m/y" }}</td>
+                    <td data-label="Entregado">
+                        <div>
+                            {% if p.archivado_sin_terminar %}
+                            <strong class="text-danger">no se terminó</strong>
+                            <small class="archivo-sub text-danger">{{ p.archivado_motivo_otro|default:p.get_archivado_motivo_display|default:"sin motivo" }}</small>
+                            {% else %}
+                            {{ p.fecha_entrega|date:"d/m/y"|default:"—" }}
+                            {% if p.archivado %}<small class="archivo-sub text-success">terminado</small>{% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td data-label="Enviado">{% include "archivo/_chip_envio.html" with pedido=p %}</td>
+                    <td data-label="Facturado">{% include "archivo/_chip_factura.html" with pedido=p %}</td>
+                    <td data-label="Pagado">{% include "archivo/_chip_pago.html" with pedido=p %}</td>
+                    <td data-label="Días sin pagar" class="text-center">
+                        {% if p.liquidacion %}<span class="text-success small">pagado</span>
+                        {% elif p.dias_sin_pagar is not None %}<strong class="text-danger">{{ p.dias_sin_pagar }}</strong>
+                        {% else %}<span class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td data-label="Notas" class="col-opcional"><small class="text-muted">{{ p.notas|truncatechars:40|default:"—" }}</small></td>
+                    <td class="text-end col-mas">
+                        <div class="dropdown">
+                            <button type="button" class="btn-outline-inaher btn-mas" data-bs-toggle="dropdown" aria-expanded="false"
+                                    data-bs-popper-config='{"strategy":"fixed"}' aria-label="Acciones del pedido {{ p.numero }}">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li><a class="dropdown-item" href="{% url 'pedidos:detalle' p.pk %}?next={{ request.get_full_path|urlencode }}"><i class="bi bi-eye"></i> Ver ficha</a></li>
+                                {% if p.archivado %}
+                                <li>
+                                    <form method="post" action="{% url 'pedidos:desarchivar' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="pedido_ids" value="{{ p.pk }}">
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-up"></i> Desarchivar</button>
+                                    </form>
+                                </li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{% url 'pedidos:imprimir_ficha' p.pk %}" target="_blank" rel="noopener"><i class="bi bi-printer"></i> Imprimir ficha</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "archivo/_paginacion.html" with nombre="pedidos · totales, impresión y Excel son de todo lo filtrado" %}
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-archive"></i>
+        <h3>No hay pedidos con estos filtros</h3>
+        <p>Prueba con otro rango de fechas o con “Todo”.</p>
+    </div>
+    {% endif %}
+</section>
+
+{% include "archivo/_ventana.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/seleccion.js' %}"></script>
+<script src="{% static 'js/archivo.js' %}"></script>
+{% endblock %}

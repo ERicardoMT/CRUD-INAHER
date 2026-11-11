@@ -44,6 +44,8 @@
         <div class="form-grid">
             {% include "pedidos/_campo.html" with field=form.numero nota="SAE · números y letras" %}
             {% include "pedidos/_campo.html" with field=form.cliente_nombre nota="opcional · autorrelleno" %}
+            {% include "pedidos/_campo.html" with field=form.cotizacion nota="opcional · SAE" %}
+            {% include "pedidos/_campo.html" with field=form.oc_cliente nota="opcional" %}
 
             {# Partidas: un renglón por partida, como en el SAE #}
             <div class="field-block field-wide{% if partidas.non_form_errors %} has-errors{% endif %}">

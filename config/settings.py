@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "pedidos",
     "designaciones",
     "tiempos",
+    "archivo",
 ]
 
 MIDDLEWARE = [
