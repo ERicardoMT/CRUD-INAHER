@@ -396,7 +396,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
-            <form method="post" action="{% url 'designaciones:agregar_item' designacion.id %}">
+            <form method="post" action="{% url 'designaciones:agregar_item' designacion.id %}" class="modal-form-scroll">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="row g-3">
