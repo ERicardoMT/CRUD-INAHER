@@ -1251,6 +1251,11 @@ textarea.form-control {
     padding: 8px 16px;
 }
 
+.alert-dismissible .btn-close {
+    top: 50%;
+    padding: 0.75rem 1rem;
+    transform: translateY(-50%);
+}
 
 .btn-inaher.btn-sm,
 .btn-outline-inaher.btn-sm,

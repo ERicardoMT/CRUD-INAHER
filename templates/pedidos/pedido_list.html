@@ -73,7 +73,7 @@
 </div>
 
 {# Tarjetas: al hacer clic filtran el listado #}
-<nav class="stats-grid stats-grid-filtros mb-4" aria-label="Filtrar pedidos">
+<nav class="stats-grid stats-grid-4 stats-grid-filtros mb-4" aria-label="Filtrar pedidos">
     {% for t in tarjetas %}
     <a href="?ver={{ t.clave }}&orden={{ orden }}" class="stat-card stat-card-link tono-{{ t.tono }}{% if t.clave == filtro %} is-active{% endif %}"{% if t.clave == filtro %} aria-current="true"{% endif %}>
         <div class="stat-card-top">
