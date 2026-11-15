@@ -127,7 +127,20 @@
                     </div>
                 </div>
 
-                <span class="environment-tag"><span></span>DESARROLLO</span>
+                <div class="topbar-acciones">
+                    <span class="environment-tag"><span></span>DESARROLLO</span>
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'core:salir' %}" class="topbar-usuario">
+                        {% csrf_token %}
+                        <span class="d-none d-sm-inline"><i class="bi bi-person-circle"></i> {{ user.get_short_name|default:user.get_username }}</span>
+                        <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-box-arrow-right"></i> Salir</button>
+                    </form>
+                    {% elif request.resolver_match.url_name != "entrar" %}
+                    <a href="{% url 'core:entrar' %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-inaher btn-sm">
+                        <i class="bi bi-box-arrow-in-right"></i> Entrar
+                    </a>
+                    {% endif %}
+                </div>
             </header>
 
             <main class="main-content">

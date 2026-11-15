@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import F
 from django.utils import timezone
 from pedidos.models import PartidaPedido, Pedido
 
@@ -14,10 +15,17 @@ def clase_eficiencia(pct):
         return "efic-ok"
     return "efic-media" if pct >= 75 else "efic-baja"
 
+def campo_tarifa():
+    return models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0"))], verbose_name="Tarifa por hora ($)",
+    )
+
 class Operario(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre")
     activo = models.BooleanField(default=True, verbose_name="Activo")
     orden = models.PositiveIntegerField(default=0, verbose_name="Orden de visualización")
+    tarifa_hora = campo_tarifa()
 
     class Meta:
         ordering = ["orden", "nombre"]
@@ -32,6 +40,7 @@ class Maquina(models.Model):
     nombre = models.CharField(max_length=120, unique=True, verbose_name="Nombre de máquina")
     tipo = models.CharField(max_length=100, blank=True, verbose_name="Tipo de máquina")
     activa = models.BooleanField(default=True, verbose_name="Activa")
+    tarifa_hora = campo_tarifa()
 
     class Meta:
         ordering = ["nombre"]
@@ -92,7 +101,69 @@ class OperacionDetallada(models.Model):
 
     def __str__(self):
         return f"{self.madre.nombre} › {self.nombre}"
+    
+    def minutos_fijos(self, cantidad):
+        """Tiempo fijo o por escalones del catálogo (manda sobre el estudio). None si la operación no tiene."""
+        fijo = getattr(self, "tiempo_fijo", None)
+        if fijo:
+            return round(fijo.minutos if fijo.por_pedido else fijo.minutos * cantidad)
+        for escalon in self.escalones.all():  # ordenados por "hasta"; el último sin tope = "más de"
+            if escalon.hasta is None or cantidad <= escalon.hasta:
+                return round(escalon.minutos)
+        return None
 
+    def minutos_para(self, cantidad):
+        """Normal: min/pz del estudio × cantidad. Sin tiempo: 0."""
+        fijos = self.minutos_fijos(cantidad)
+        return fijos if fijos is not None else round(self.minutos_estandar * cantidad)
+
+    @property
+    def es_por_pedido(self):
+        """Empaquetar, Contar y revisar: tiempo por pedido, sin piezas por hora."""
+        fijo = getattr(self, "tiempo_fijo", None)
+        return bool(fijo and fijo.por_pedido) or bool(self.escalones.all())
+
+class TiempoFijo(models.Model):
+    """Tiempo fijo del catálogo; manda sobre el Estudio de tiempos (ej. Empaquetar pedido chico = 3 min por pedido)."""
+
+    operacion = models.OneToOneField(
+        OperacionDetallada, on_delete=models.CASCADE, related_name="tiempo_fijo", verbose_name="Operación detallada",
+    )
+    minutos = models.DecimalField(
+        max_digits=7, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))], verbose_name="Minutos",
+    )
+    por_pedido = models.BooleanField(default=True, verbose_name="Por pedido (no se multiplica por la cantidad)")
+
+    class Meta:
+        ordering = ["operacion__nombre"]
+        verbose_name = "Tiempo fijo"
+        verbose_name_plural = "Tiempos fijos"
+
+    def __str__(self):
+        return f"{self.operacion.nombre} · {self.minutos} min {'por pedido' if self.por_pedido else 'por pieza'}"
+
+
+class Escalon(models.Model):
+    """Minutos por pedido según la cantidad (ej. Contar y revisar: hasta 999 → 3 · hasta 5,000 → 6 …)."""
+
+    operacion = models.ForeignKey(
+        OperacionDetallada, on_delete=models.CASCADE, related_name="escalones", verbose_name="Operación detallada",
+    )
+    hasta = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="Hasta (piezas)", help_text="Vacío = más de lo anterior.",
+    )
+    minutos = models.DecimalField(
+        max_digits=7, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))], verbose_name="Minutos por pedido",
+    )
+
+    class Meta:
+        ordering = ["operacion__nombre", F("hasta").asc(nulls_last=True)]
+        verbose_name = "Escalón de tiempo"
+        verbose_name_plural = "Escalones de tiempo"
+
+    def __str__(self):
+        tope = f"hasta {self.hasta:,}" if self.hasta is not None else "más"
+        return f"{self.operacion.nombre} · {tope} → {self.minutos} min"
 
 class DesignacionDia(models.Model):
     fecha = models.DateField(unique=True, default=timezone.localdate, verbose_name="Fecha de la jornada")
@@ -239,9 +310,13 @@ class ItemDesignacion(models.Model):
         return f"{self.quien.nombre} - Paso {self.paso} ({self.operacion_detallada.nombre})"
 
     def save(self, *args, **kwargs):
-        # Cálculo automático de minutos si no se especificaron manualmente
-        if not self.minutos and self.operacion_detallada and self.operacion_detallada.minutos_estandar:
-            self.minutos = int(round(float(self.operacion_detallada.minutos_estandar) * self.cantidad))
+        # Minuto estándar (regla D): tiempo fijo o escalones mandan; si no, min/pz × cantidad (sin tiempo = 0)
+        if kwargs.get("update_fields") is None and self.operacion_detallada_id:
+            fijos = self.operacion_detallada.minutos_fijos(self.cantidad)
+            if fijos is not None:
+                self.minutos = fijos
+            elif not self.minutos:
+                self.minutos = self.operacion_detallada.minutos_para(self.cantidad)
         super().save(*args, **kwargs)
 
     @property
@@ -273,8 +348,8 @@ class ItemDesignacion(models.Model):
 
     @property
     def pzas_hora(self):
-        """Productividad: cantidad ÷ horas reales."""
-        if not self.min_real:
+        """Productividad: cantidad ÷ horas reales. Vacía en operaciones con tiempo por pedido."""
+        if not self.min_real or self.operacion_detallada.es_por_pedido:
             return None
         return round(self.cantidad * 60 / self.min_real)
     

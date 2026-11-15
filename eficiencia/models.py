@@ -20,6 +20,7 @@ class CambioEstandar(models.Model):
         permissions = [
             ("capturar_tiempos", "Puede capturar Min real"),
             ("cambiar_estandar", "Puede cambiar el estándar"),
+            ("ver_direccion", "Puede ver la pestaña Dirección"),
         ]
 
     def __str__(self):

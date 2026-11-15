@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Sin permiso | INAHER{% endblock %}
+
+{% block content %}
+<div class="empty-state">
+    <i class="bi bi-shield-lock"></i>
+    <h3>No tienes permiso para ver esta sección</h3>
+    <p>Pide al administrador que te dé acceso.</p>
+    <a href="{% url 'core:inicio' %}" class="btn-inaher">Ir al inicio</a>
+</div>
+{% endblock %}

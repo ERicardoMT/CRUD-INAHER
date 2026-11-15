@@ -13,59 +13,6 @@
         {% for v in vistas %}<a href="{{ v.url }}"{% if v.activo %} class="is-active" aria-current="true"{% endif %}>{{ v.nombre }}</a>{% endfor %}
     </div>
 </div>
-
-<div class="table-responsive">
-    <table class="table-designacion tabla-pedidos tabla-efic align-middle">
-        <thead>
-            <tr>
-                <th>{{ ver_titulo }}</th>
-                <th class="text-end">Tareas</th>
-                <th class="text-end">Piezas</th>
-                <th class="text-end">Min ocupados</th>
-                {% if con_turno %}<th class="text-end">Min libres</th>{% endif %}
-                <th class="text-end">Min hechos ✓</th>
-                <th class="text-end">Min restantes</th>
-                {% if con_turno %}<th>Ocupado del turno</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for g in grupos %}
-            <tr class="fila-pedido">
-                <td data-label="{{ ver_titulo }}"><div><strong>{{ g.nombre }}</strong>{% if g.sub %}<small class="archivo-sub">{{ g.sub }}</small>{% endif %}</div></td>
-                <td data-label="Tareas" class="text-end">{{ g.tareas }}</td>
-                <td data-label="Piezas" class="text-end">{{ g.piezas }}</td>
-                <td data-label="Min ocupados" class="text-end"><strong>{{ g.ocupados }}</strong></td>
-                {% if con_turno %}
-                <td data-label="Min libres" class="text-end">
-                    {% if g.libres is None %}<span class="text-muted">—</span>
-                    {% else %}<strong class="{% if g.libres < 0 %}text-danger{% else %}text-success{% endif %}">{{ g.libres }}</strong>{% endif %}
-                </td>
-                {% endif %}
-                <td data-label="Min hechos ✓" class="text-end">{{ g.hechos }}</td>
-                <td data-label="Min restantes" class="text-end">{{ g.restantes }}</td>
-                {% if con_turno %}
-                <td data-label="Ocupado del turno">
-                    {% if g.pct is not None %}
-                    <div class="efic-barra{% if g.pct > 100 %} is-excedido{% endif %}" title="{{ g.pct }} % del turno" role="img" aria-label="{{ g.pct }} % del turno"><span style="width: {{ g.ancho }}%"></span></div>
-                    {% endif %}
-                </td>
-                {% endif %}
-            </tr>
-            {% empty %}
-            <tr><td colspan="8" class="text-center text-muted py-4">No hay tareas en Designación este día.</td></tr>
-            {% endfor %}
-            <tr class="fila-pedido efic-total">
-                <td data-label="">TOTAL</td>
-                <td data-label="Tareas" class="text-end">{{ total.tareas }}</td>
-                <td data-label="Piezas" class="text-end">{{ total.piezas }}</td>
-                <td data-label="Min ocupados" class="text-end">{{ total.ocupados }}</td>
-                {% if con_turno %}<td data-label="Min libres"></td>{% endif %}
-                <td data-label="Min hechos ✓" class="text-end">{{ total.hechos }}</td>
-                <td data-label="Min restantes" class="text-end">{{ total.restantes }}</td>
-                {% if con_turno %}<td data-label="Ocupado del turno"></td>{% endif %}
-            </tr>
-        </tbody>
-    </table>
-</div>
+{% include "eficiencia/_tabla_minutos.html" %}
 <p class="archivo-nota pt-3">{{ nota }}</p>
 {% endblock %}

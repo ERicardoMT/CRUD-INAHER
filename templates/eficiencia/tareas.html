@@ -21,7 +21,7 @@
 {% if not puede_medir %}
 <p class="archivo-aviso">
     Solo el administrador (o quien él autorice) captura Min real ·
-    <a href="{% url 'admin:login' %}?next={{ request.get_full_path|urlencode }}">Iniciar sesión</a>
+    <a href="{% url 'core:entrar' %}?next={{ request.get_full_path|urlencode }}">Iniciar sesión</a>
 </p>
 {% endif %}
 
@@ -47,5 +47,5 @@
     <p>Cambia de día con las flechas o quita algún filtro.</p>
 </div>
 {% endif %}
-<p class="archivo-nota pt-3">Efic = min estándar ÷ min real (verde 90 % o más · ámbar 75 a 89 · rojo menos de 75). Pzas/hora = cantidad ÷ horas reales. Una tarea sin Min real no cuenta para nada.</p>
+<p class="archivo-nota pt-3">Efic = min estándar ÷ min real (verde 90 % o más · ámbar 75 a 89 · rojo menos de 75). Pzas/hora = cantidad ÷ horas reales; vacía en operaciones con tiempo por pedido. Una tarea sin Min real no cuenta para nada.</p>
 {% endblock %}

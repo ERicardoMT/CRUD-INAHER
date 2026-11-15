@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,12 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0^7fo49_j@)4*14ivjr7i%3he46#3o^1=9kp=cg_is)&(a^gx6'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Secretos y modo por variables de entorno: en el servidor nunca van escritos en el código.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-solo-desarrollo-cambiar-en-servidor")
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
 ALLOWED_HOSTS = []
 
@@ -130,3 +130,30 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ---------------------------------------------------------------- Inicio de sesión y seguridad
+LOGIN_URL = "core:entrar"
+LOGIN_REDIRECT_URL = "core:inicio"
+LOGOUT_REDIRECT_URL = "core:entrar"
+
+SESSION_COOKIE_AGE = 8 * 60 * 60          # la sesión dura un turno
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_HTTPONLY = True             # JavaScript no puede leer la cookie de sesión
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = True                # el JS toma el token del formulario, no de la cookie
+CSRF_COOKIE_SAMESITE = "Lax"
+X_FRAME_OPTIONS = "DENY"                   # nadie puede meter el sistema en un iframe
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+
+# Bloqueo por intentos fallidos
+LOGIN_INTENTOS_POR_USUARIO = 5
+LOGIN_INTENTOS_POR_IP = 20
+LOGIN_BLOQUEO_MINUTOS = 15
+
+if not DEBUG:  # en el servidor, con HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True

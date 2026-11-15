@@ -4,7 +4,7 @@
 
 {% block tabla %}
 <form method="get" class="archivo-filtros">
-    {% include "archivo/_rango.html" with etiqueta="Medidas en:" %}
+    {% include "archivo/_rango.html" with etiqueta="Periodo:" %}
     <select name="mostrar" class="form-select form-select-sm" aria-label="Mostrar" onchange="this.form.submit()">
         {% for clave, nombre in opciones_mostrar.items %}<option value="{{ clave }}"{% if clave == mostrar %} selected{% endif %}>Mostrar: {{ nombre }}</option>{% endfor %}
     </select>
@@ -16,8 +16,8 @@
         <thead>
             <tr>
                 <th>Operación madre › detallada</th>
-                <th class="text-end">Estándar <small class="d-block">min/pz</small></th>
-                <th class="text-end">Real promedio <small class="d-block">min/pz</small></th>
+                <th class="text-end">Estándar</th>
+                <th class="text-end">Real promedio</th>
                 <th class="text-end">Pzas / hora <small class="d-block">real</small></th>
                 <th class="text-end">Veces medida</th>
                 <th class="text-end">Diferencia</th>
@@ -29,8 +29,11 @@
             {% for f in filas %}
             <tr class="fila-pedido{% if f.estado == 'FUERA' %} fila-no-terminada{% endif %}">
                 <td data-label="Operación"><div><strong>{{ f.madre }}</strong><small class="archivo-sub">{{ f.nombre }}</small></div></td>
-                <td data-label="Estándar" class="text-end">{% if f.estandar %}{{ f.estandar|floatformat:2 }}{% else %}<span class="text-danger small">sin estándar</span>{% endif %}</td>
-                <td data-label="Real promedio" class="text-end"><strong>{{ f.real|floatformat:2 }}</strong></td>
+                <td data-label="Estándar" class="text-end">
+                    {% if f.estandar %}{{ f.estandar|floatformat:2 }} <small class="archivo-sub">{{ f.unidad }}</small>
+                    {% else %}<span class="text-danger small">sin estándar</span>{% endif %}
+                </td>
+                <td data-label="Real promedio" class="text-end"><strong>{{ f.real|floatformat:2 }}</strong> <small class="archivo-sub">{{ f.unidad }}</small></td>
                 <td data-label="Pzas / hora" class="text-end">{{ f.pzas_hora|default_if_none:"—" }}</td>
                 <td data-label="Veces medida" class="text-end">{{ f.medidas }}</td>
                 <td data-label="Diferencia" class="text-end">
@@ -43,7 +46,8 @@
                     <button type="button" class="btn-outline-inaher btn-sm" data-ventana="{% url 'eficiencia:cambiar_estandar' f.id %}?{{ request.GET.urlencode }}">
                         {% if f.estado == "NUEVO" %}Poner estándar{% else %}Actualizar estándar a{% endif %} {{ f.real|floatformat:2 }}
                     </button>
-                    {% elif f.estado == "FALTAN" %}<small class="text-muted">{{ f.medidas }} de {{ config.minimo_medidas }} mínimas</small>{% endif %}
+                    {% elif f.estado == "FALTAN" %}<small class="text-muted">{{ f.medidas }} de {{ config.minimo_medidas }} mínimas</small>
+                    {% elif f.por_pedido %}<small class="text-muted">tiempo por pedido · se cambia en Catálogos</small>{% endif %}
                 </td>
             </tr>
             {% endfor %}
@@ -54,11 +58,11 @@
 <div class="empty-state">
     <i class="bi bi-stopwatch"></i>
     <h3>No hay tareas medidas en este periodo</h3>
-    <p>Captura Min real en Tareas del día o elige otro rango.</p>
+    <p>Captura Min real en Tareas del día o elige otro periodo.</p>
 </div>
 {% endif %}
 
-<p class="archivo-nota pt-3">OK: dentro de ±{{ config.tolerancia_pct }} % · FUERA: más de {{ config.tolerancia_pct }} % · FALTAN MEDIDAS: menos de {{ config.minimo_medidas }} · NUEVO: sin estándar.</p>
+<p class="archivo-nota pt-3">OK: dentro de ±{{ config.tolerancia_pct }} % · FUERA: más de {{ config.tolerancia_pct }} % · FALTAN MEDIDAS: menos de {{ config.minimo_medidas }} · NUEVO: sin estándar. Empaquetar y Contar y revisar se comparan en minutos por pedido.</p>
 
 {% if cambios %}
 <div class="efic-bitacora">

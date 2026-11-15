@@ -1,6 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
+from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -10,7 +11,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods, require_POST
 
 from archivo.excel import libro_excel
-from archivo.views import botones_rango, con_parametros, leer_rango
+from archivo.views import _texto_rango, botones_rango, con_parametros, leer_rango
 from core.models import Configuracion
 from designaciones.models import ItemDesignacion, Maquina, OperacionDetallada, OperacionMadre, Operario
 from pedidos.views import quien_hace
@@ -20,9 +21,12 @@ from .models import CambioEstandar
 
 MOSTRAR = {"medidas": "medidas", "fuera": "fuera de tolerancia", "listas": "listas"}
 
+# Dirección y Exportar todo: con sesión y con el permiso; si no, 403
+solo_direccion = [login_required, permission_required("eficiencia.ver_direccion", raise_exception=True)]
+
 
 def puede(request, permiso):
-    """Superusuario, o quien el administrador autorice con el permiso en /admin/."""
+    """Superusuario, o quien el administrador autorice con el permiso."""
     return request.user.has_perm(f"eficiencia.{permiso}")
 
 
@@ -33,6 +37,16 @@ def leer_dia(request):
         return timezone.localdate()
 
 
+def leer_periodo(request, hoy):
+    """Un solo control de periodo para Por operación y Dirección; abre en Este mes."""
+    return leer_rango(request, hoy, calculos.rangos_periodo, "mes")
+
+
+def leer_ver(request):
+    ver = request.GET.get("ver", "operador")
+    return ver if ver in calculos.VER_POR else "operador"
+
+
 def leer_filtros(request):
     """Cuatro filtros independientes; vacío = no filtra."""
     elegidos = {clave: request.GET.get(clave, "") for clave in calculos.FILTROS}
@@ -40,10 +54,15 @@ def leer_filtros(request):
     return elegidos, filtros
 
 
+def _vistas(request, ver):
+    return [{"nombre": n, "activo": c == ver, "url": con_parametros(request, ver=c)}
+            for c, (n, _) in calculos.VER_POR.items()]
+
+
 def _contexto_dia(dia, filtros):
-    """Tareas del día y sus tarjetas. Lo comparten la página y el guardado de Min real."""
-    hoy = timezone.localdate()
-    resumen = calculos.resumen_operaciones(hoy - timedelta(days=90), hoy, Configuracion.actual())
+    """Tareas del día y sus tarjetas. Lo comparten las páginas y el guardado de Min real."""
+    _, desde, hasta = calculos.rangos_periodo(timezone.localdate())["mes"]
+    resumen = calculos.resumen_operaciones(desde, hasta, Configuracion.actual())
     fuera = sum(1 for f in resumen if f["estado"] == "FUERA")
     tareas = list(calculos.tareas_del_dia(dia, filtros))
     url_fuera = reverse("eficiencia:operaciones") + "?mostrar=fuera"
@@ -97,7 +116,7 @@ def tareas(request):
 def operaciones(request):
     hoy = timezone.localdate()
     config = Configuracion.actual()
-    rango, desde, hasta = leer_rango(request, hoy)  # abre en los últimos 90 días
+    rango, desde, hasta = leer_periodo(request, hoy)
     filas = calculos.resumen_operaciones(desde, hasta, config)
     mostrar = request.GET.get("mostrar", "medidas")
     if mostrar == "fuera":
@@ -111,7 +130,7 @@ def operaciones(request):
         "tarjetas": calculos.tarjetas_periodo(filas, config, hoy),
         "filas": visibles,
         "rango": rango, "desde": desde, "hasta": hasta,
-        "rangos": botones_rango(request, hoy, rango),
+        "rangos": botones_rango(request, hoy, rango, calculos.rangos_periodo),
         "mostrar": mostrar,
         "opciones_mostrar": MOSTRAR,
         "cambios": CambioEstandar.objects.select_related("operacion")[:5],
@@ -120,8 +139,7 @@ def operaciones(request):
 
 def minutos(request):
     dia = leer_dia(request)
-    ver = request.GET.get("ver", "operador")
-    ver = ver if ver in calculos.VER_POR else "operador"
+    ver = leer_ver(request)
     lista, tarjetas = _contexto_dia(dia, {})
     config = Configuracion.actual()
     grupos, total = calculos.minutos_por(lista, ver, config.turno_minutos)
@@ -135,8 +153,35 @@ def minutos(request):
         "ver_titulo": titulo,
         "nota": nota,
         "con_turno": ver in ("operador", "maquina"),
-        "vistas": [{"nombre": n, "activo": c == ver, "url": con_parametros(request, ver=c)}
-                   for c, (n, _) in calculos.VER_POR.items()],
+        "vistas": _vistas(request, ver),
+    })
+
+
+@solo_direccion[0]
+@solo_direccion[1]
+def direccion(request):
+    """Pestaña Dirección: zona HOY (no cambia con el periodo) y zona PERIODO."""
+    hoy = timezone.localdate()
+    config = Configuracion.actual()
+    rango, desde, hasta = leer_periodo(request, hoy)
+    ver = leer_ver(request)
+    datos = calculos.datos_direccion(hoy, desde, hasta, config)
+    produccion, produccion_total = calculos.minutos_por(
+        datos["tareas_produccion"], ver, datos["turno_periodo"], por_piezas=True,
+    )
+    _, tarjetas = _contexto_dia(hoy, {})
+    return render(request, "eficiencia/direccion.html", {
+        **_encabezado(request, hoy, "direccion"),
+        **datos,
+        "tarjetas": tarjetas,
+        "produccion": produccion,
+        "produccion_total": produccion_total,
+        "ver": ver,
+        "ver_titulo": calculos.VER_POR[ver][0],
+        "con_turno": ver in ("operador", "maquina"),
+        "vistas": _vistas(request, ver),
+        "rango": rango, "desde": desde, "hasta": hasta,
+        "rangos": botones_rango(request, hoy, rango, calculos.rangos_periodo),
     })
 
 
@@ -191,7 +236,7 @@ def cambiar_estandar(request, pk):
             calculos.aplicar_estandar(operacion, nuevo, medidas, quien_hace(request) or "Sin nombre")
             return HttpResponse(status=204)
     else:
-        _, desde, hasta = leer_rango(request, timezone.localdate())
+        _, desde, hasta = leer_periodo(request, timezone.localdate())
         filas = calculos.resumen_operaciones(desde, hasta, Configuracion.actual(), operacion_id=operacion.pk)
         propuesto = filas[0]["real"] if filas else operacion.minutos_estandar
         medidas = filas[0]["medidas"] if filas else 0
@@ -209,7 +254,7 @@ def exportar(request, tabla):
     dia = leer_dia(request)
     config = Configuracion.actual()
     if tabla == "operaciones":
-        _, desde, hasta = leer_rango(request, hoy)
+        _, desde, hasta = leer_periodo(request, hoy)
         lista = [hojas.hoja_operaciones(calculos.resumen_operaciones(desde, hasta, config), desde, hasta)]
     elif tabla == "minutos":
         subtitulo = f"día {dia:%d/%m/%Y} · turno {config.turno_minutos} min"
@@ -218,3 +263,29 @@ def exportar(request, tabla):
         tabla = "tareas"
         lista = [hojas.hoja_tareas(calculos.tareas_del_dia(dia, leer_filtros(request)[1]), dia)]
     return libro_excel(f"eficiencia_{tabla}", lista)
+
+@solo_direccion[0]
+@solo_direccion[1]
+def exportar_todo(request):
+    """Un solo archivo, una hoja por tabla, del día y periodo elegidos y sin filtros de pantalla."""
+    hoy = timezone.localdate()
+    dia = leer_dia(request)
+    config = Configuracion.actual()
+    _, desde, hasta = leer_periodo(request, hoy)
+    datos = calculos.datos_direccion(hoy, desde, hasta, config)
+    tareas_dia = list(calculos.tareas_del_dia(dia))
+    periodo = _texto_rango(desde, hasta)
+    lista = [
+        hojas.hoja_tareas(tareas_dia, dia),
+        hojas.hoja_operaciones(calculos.resumen_operaciones(desde, hasta, config), desde, hasta),
+        *hojas.hojas_minutos(tareas_dia, f"día {dia:%d/%m/%Y} · turno {config.turno_minutos} min",
+                             config.turno_minutos),
+        hojas.hoja_carga(datos["carga"], datos["capacidad_dia"]),
+        hojas.hoja_personas(datos["personas"], periodo),
+        hojas.hoja_costos(datos["costos"], datos["hay_tarifas"]),
+        hojas.hoja_faltan(datos["faltan"], datos["total_operaciones"]),
+        *hojas.hojas_minutos(datos["tareas_produccion"],
+                             f"terminadas {periodo} · {datos['dias_habiles']} días hábiles",
+                             datos["turno_periodo"], prefijo="Producción", por_piezas=True),
+    ]
+    return libro_excel("eficiencia_todo", lista)

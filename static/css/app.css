@@ -3191,3 +3191,153 @@ textarea.form-control {
         min-width: 120px;
     }
 }
+/* ----- Inicio de sesión ----- */
+.topbar-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.topbar-usuario {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.login-card {
+    max-width: 420px;
+    margin: 32px auto;
+    padding: 28px;
+}
+
+.login-cabeza {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.login-cabeza h1 {
+    margin: 0;
+    color: var(--inaher-navy);
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.login-icono {
+    display: grid;
+    flex: 0 0 44px;
+    place-items: center;
+    height: 44px;
+    border-radius: 12px;
+    background: #E6F4F1;
+    color: var(--inaher-teal-dark);
+    font-size: 20px;
+}
+
+.login-card .field-block {
+    margin-bottom: 14px;
+}
+
+/* ----- Eficiencia · Dirección ----- */
+.efic-zona {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.efic-zona-titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 12px;
+    color: var(--inaher-navy);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+}
+
+.efic-zona-titulo small {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.efic-zona-filtros {
+    margin: 0 -16px 14px;
+}
+
+.efic-paneles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.efic-panel {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+.efic-panel-ancho {
+    grid-column: 1 / -1;
+}
+
+.efic-panel > h3 {
+    margin: 0;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--inaher-navy);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.efic-panel .archivo-nota {
+    padding: 10px 14px;
+}
+
+.efic-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.cabe-si { color: #15803D; font-weight: 800; }
+.cabe-no { color: #DC2626; font-weight: 800; }
+
+.tabla-efic tr.efic-hoy td {
+    background: #FFF8E6;
+    color: #92400E;
+}
+
+@media (max-width: 900px) {
+    .efic-paneles {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .efic-zona {
+        padding: 12px 8px;
+    }
+
+    .efic-zona-filtros {
+        margin: 0 -8px 12px;
+    }
+
+    .tabla-efic tr.efic-hoy {
+        background: #FFF8E6;
+    }
+
+    .login-card {
+        margin: 16px auto;
+        padding: 20px;
+    }
+}

@@ -68,32 +68,34 @@ def _texto_rango(desde, hasta):
     fin = f"{hasta:%d/%m/%Y}" if hasta else "…"
     return f"{inicio} – {fin}"
 
-def leer_rango(request, hoy):
-    """Botones 90 días · mes · año · año anterior · todo, o Desde/Hasta a mano. Abre en 90 días."""
+def rangos_archivo(hoy):
+    """Botones del Archivo: clave → (nombre, desde, hasta)."""
+    return {
+        "90": ("90 días", hoy - timedelta(days=90), hoy),
+        "mes": ("Este mes", hoy.replace(day=1), hoy),
+        "anio": ("Este año", hoy.replace(month=1, day=1), hoy),
+        "anterior": (str(hoy.year - 1), date(hoy.year - 1, 1, 1), date(hoy.year - 1, 12, 31)),
+        "todo": ("Todo", None, None),
+    }
+
+def leer_rango(request, hoy, rangos=rangos_archivo, defecto="90"):
+    """Botón de rango o Desde/Hasta a mano (escribir una fecha pasa a "fechas a mano")."""
+    opciones = rangos(hoy)
     clave = request.GET.get("rango")
     if clave is None and not (request.GET.get("desde") or request.GET.get("hasta")):
-        clave = "90"
-    rangos = {
-        "90": (hoy - timedelta(days=90), hoy),
-        "mes": (hoy.replace(day=1), hoy),
-        "anio": (hoy.replace(month=1, day=1), hoy),
-        "anterior": (date(hoy.year - 1, 1, 1), date(hoy.year - 1, 12, 31)),
-        "todo": (None, None),
-    }
-    if clave in rangos:
-        return (clave, *rangos[clave])
+        clave = defecto
+    if clave in opciones:
+        _, desde, hasta = opciones[clave]
+        return clave, desde, hasta
     return "", _fecha(request.GET.get("desde")), _fecha(request.GET.get("hasta"))
 
 
-def botones_rango(request, hoy, activo):
-    nombres = [("90", "90 días"), ("mes", "Este mes"), ("anio", "Este año"),
-               ("anterior", str(hoy.year - 1)), ("todo", "Todo")]
+def botones_rango(request, hoy, activo, rangos=rangos_archivo):
     return [
         {"nombre": nombre, "activo": clave == activo,
          "url": con_parametros(request, quitar=("desde", "hasta", "tarjeta", "q"), rango=clave)}
-        for clave, nombre in nombres
+        for clave, (nombre, _, _) in rangos(hoy).items()
     ]
-
 
 def _pagina(request, consulta):
     paginador = Paginator(consulta, POR_PAGINA)

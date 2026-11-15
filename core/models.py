@@ -12,6 +12,9 @@ class Configuracion(models.Model):
     comida_minutos = models.PositiveIntegerField(
         default=60, validators=[MaxValueValidator(600)], verbose_name="Comida (min)",
     )
+    personas_en_planta = models.PositiveIntegerField(
+        default=4, validators=[MinValueValidator(1), MaxValueValidator(500)], verbose_name="Personas en planta",
+    )
     tolerancia_pct = models.PositiveIntegerField(
         default=15, validators=[MinValueValidator(1), MaxValueValidator(100)], verbose_name="Tolerancia (%)",
     )
@@ -36,3 +39,16 @@ class Configuracion(models.Model):
         inicio = self.turno_inicio.hour * 60 + self.turno_inicio.minute
         fin = self.turno_fin.hour * 60 + self.turno_fin.minute
         return max(fin - inicio - self.comida_minutos, 0)
+class DiaInhabil(models.Model):
+    """Días extra que cierra la planta. Los festivos oficiales se calculan solos."""
+
+    fecha = models.DateField(unique=True, verbose_name="Fecha")
+    motivo = models.CharField(max_length=120, blank=True, default="", verbose_name="Motivo")
+
+    class Meta:
+        ordering = ["fecha"]
+        verbose_name = "Día que no se trabaja"
+        verbose_name_plural = "Días que no se trabaja"
+
+    def __str__(self):
+        return f"{self.fecha:%d/%m/%Y} {self.motivo}".strip()

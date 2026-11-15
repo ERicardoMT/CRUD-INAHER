@@ -12,7 +12,7 @@
     </div>
 
     <div class="archivo-acciones">
-        {% if pestana != "operaciones" %}
+        {% if pestana == "tareas" or pestana == "minutos" %}
         <form method="get" class="efic-dia" aria-label="Día">
             {% if ver %}<input type="hidden" name="ver" value="{{ ver }}">{% endif %}
             <a href="{{ dia_anterior }}" class="btn-outline-inaher btn-sm" aria-label="Día anterior"><i class="bi bi-caret-left-fill"></i></a>
@@ -27,12 +27,22 @@
                 <i class="bi bi-three-dots-vertical"></i> <strong>Opciones</strong> <i class="bi bi-caret-down-fill small"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm menu-opciones">
+                {% if pestana != "direccion" %}
                 <li>
                     <a class="dropdown-item" href="{% url 'eficiencia:exportar' pestana %}?{{ request.GET.urlencode }}">
                         <i class="bi bi-file-earmark-excel text-success"></i> Exportar esta tabla a Excel
                         <small class="d-block text-muted">{% if pestana == "minutos" %}las 4 vistas, cada una en su hoja{% else %}con lo que ves en pantalla{% endif %}</small>
                     </a>
                 </li>
+                {% endif %}
+                {% if perms.eficiencia.ver_direccion %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'eficiencia:exportar_todo' %}?{{ request.GET.urlencode }}">
+                        <i class="bi bi-file-earmark-spreadsheet text-success"></i> Exportar todo a Excel
+                        <small class="d-block text-muted">un archivo, una hoja por tabla, sin filtros de pantalla</small>
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </div>
@@ -45,6 +55,9 @@
         <a href="{% url 'eficiencia:tareas' %}?dia={{ dia|date:'Y-m-d' }}"{% if pestana == "tareas" %} class="is-active" aria-current="page"{% endif %}>Tareas del día</a>
         <a href="{% url 'eficiencia:operaciones' %}"{% if pestana == "operaciones" %} class="is-active" aria-current="page"{% endif %}>Por operación</a>
         <a href="{% url 'eficiencia:minutos' %}?dia={{ dia|date:'Y-m-d' }}"{% if pestana == "minutos" %} class="is-active" aria-current="page"{% endif %}>Minutos del día</a>
+        {% if perms.eficiencia.ver_direccion %}
+        <a href="{% url 'eficiencia:direccion' %}"{% if pestana == "direccion" %} class="is-active" aria-current="page"{% endif %}><i class="bi bi-shield-lock"></i> Dirección</a>
+        {% endif %}
         {% block pestanas_extra %}{% endblock %}
     </nav>
     {% block tabla %}{% endblock %}

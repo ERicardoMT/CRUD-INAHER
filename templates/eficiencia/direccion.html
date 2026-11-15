@@ -1,0 +1,140 @@
+{% extends "eficiencia/_base.html" %}
+
+{% block descripcion %}Solo administración. Todo se calcula con Pedidos, Designación diaria y Archivo; lo único que se captura son tarifas y personas en planta.{% endblock %}
+
+{% block tabla %}
+{# ============ ZONA HOY: nunca cambia con el periodo ============ #}
+<div class="efic-zona">
+    <h2 class="efic-zona-titulo">HOY <small>no cambia con el periodo</small></h2>
+    <div class="efic-paneles">
+
+        <section class="efic-panel efic-panel-ancho">
+            <h3>Carga de la semana · minutos pendientes contra capacidad</h3>
+            <div class="table-responsive">
+                <table class="table-designacion tabla-pedidos tabla-efic align-middle">
+                    <thead>
+                        <tr>
+                            <th>Sale</th><th class="text-end">Pedidos</th><th class="text-end">Min pendientes</th>
+                            <th class="text-end">Min acumulados</th><th class="text-end">Capacidad acumulada</th><th>¿Cabe?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in carga %}
+                        <tr class="fila-pedido">
+                            <td data-label="Sale"><strong>{% if r.es_dia %}{{ r.sale|date:"D d/m" }}{% else %}{{ r.sale }}{% endif %}</strong></td>
+                            <td data-label="Pedidos" class="text-end">{{ r.pedidos }}</td>
+                            <td data-label="Min pendientes" class="text-end">{{ r.pendientes }}</td>
+                            <td data-label="Min acumulados" class="text-end">{{ r.acumulados }}</td>
+                            <td data-label="Capacidad acumulada" class="text-end">{{ r.capacidad|default_if_none:"" }}</td>
+                            <td data-label="¿Cabe?"><span class="{{ r.cabe_clase }}">{{ r.cabe }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="archivo-nota">
+                Personas en planta: <strong>{{ config.personas_en_planta }}</strong> × {{ config.turno_minutos }} min de turno = {{ capacidad_dia }} min por día hábil.
+                Un renglón por día hábil (hoy y los nueve siguientes) más Atrasados y Después. Sin fines de semana ni festivos. No bloquea nada.
+            </p>
+        </section>
+
+        <section class="efic-panel">
+            <h3>Faltan de medir · {{ faltan|length }} de {{ total_operaciones }} operaciones no tienen tiempo</h3>
+            <div class="table-responsive efic-scroll">
+                <table class="table-designacion tabla-pedidos tabla-efic align-middle">
+                    <thead><tr><th>Operación detallada sin tiempo</th><th>Operación madre</th><th class="text-end">Tareas hoy</th></tr></thead>
+                    <tbody>
+                        {% for f in faltan %}
+                        <tr class="fila-pedido{% if f.hoy %} efic-hoy{% endif %}">
+                            <td data-label="Operación">{{ f.nombre }}</td>
+                            <td data-label="Madre">{{ f.madre }}</td>
+                            <td data-label="Tareas hoy" class="text-end">{% if f.hoy %}<strong>{{ f.hoy }}</strong>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-4">Todas las operaciones tienen tiempo.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="archivo-nota">En ámbar, las que hoy están en Designación: suman cero minutos y hacen que la carga se vea más chica de lo que es.</p>
+        </section>
+
+        <section class="efic-panel">
+            <h3>Costo de mano de obra y máquina por pedido</h3>
+            <div class="table-responsive efic-scroll">
+                <table class="table-designacion tabla-pedidos tabla-efic align-middle">
+                    <thead>
+                        <tr><th>Pedido</th><th class="text-end">Min</th><th class="text-end">Mano de obra</th><th class="text-end">Máquina</th><th class="text-end">MO + máquina</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in costos %}
+                        <tr class="fila-pedido">
+                            <td data-label="Pedido"><div><strong>{{ c.numero }}</strong><small class="archivo-sub">{{ c.descripcion|truncatechars:50 }}</small></div></td>
+                            <td data-label="Min" class="text-end">{{ c.minutos }}</td>
+                            <td data-label="Mano de obra" class="text-end">{% if hay_tarifas %}${{ c.mano_obra|floatformat:"0g" }}{% endif %}</td>
+                            <td data-label="Máquina" class="text-end">{% if hay_tarifas %}${{ c.maquina|floatformat:"0g" }}{% endif %}</td>
+                            <td data-label="MO + máquina" class="text-end">{% if hay_tarifas %}<strong>${{ c.total|floatformat:"0g" }}</strong>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">No hay pedidos activos.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="archivo-nota">
+                Minutos estándar × tarifa por hora ÷ 60 (persona y máquina de cada tarea, activas y archivadas). <strong>No incluye material.</strong>
+                {% if not hay_tarifas %}Aún no hay tarifas capturadas: las columnas quedan vacías.{% endif %}
+            </p>
+        </section>
+    </div>
+</div>
+
+{# ============ ZONA PERIODO: un solo selector arriba ============ #}
+<div class="efic-zona">
+    <h2 class="efic-zona-titulo">PERIODO <small>{{ dias_habiles }} día{{ dias_habiles|pluralize }} hábil{{ dias_habiles|pluralize:"es" }}</small></h2>
+    <form method="get" class="archivo-filtros efic-zona-filtros">
+        {% include "archivo/_rango.html" with etiqueta="Periodo:" %}
+        {% if ver %}<input type="hidden" name="ver" value="{{ ver }}">{% endif %}
+    </form>
+
+    <div class="efic-paneles">
+        <section class="efic-panel">
+            <h3>Eficiencia por persona</h3>
+            <div class="table-responsive">
+                <table class="table-designacion tabla-pedidos tabla-efic align-middle">
+                    <thead>
+                        <tr><th>Persona</th><th class="text-end">Tareas medidas</th><th class="text-end">Min estándar</th><th class="text-end">Min real</th><th class="text-end">Eficiencia</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in personas %}
+                        <tr class="fila-pedido">
+                            <td data-label="Persona"><strong>{{ p.nombre }}</strong></td>
+                            <td data-label="Tareas medidas" class="text-end">{{ p.tareas }}</td>
+                            <td data-label="Min estándar" class="text-end">{{ p.estandar }}</td>
+                            <td data-label="Min real" class="text-end">{{ p.real|floatformat:"-1" }}</td>
+                            <td data-label="Eficiencia" class="text-end">{% if p.pct is not None %}<strong class="{{ p.clase }}">{{ p.pct }} %</strong>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="archivo-nota">Solo tareas con minuto real y con estándar. Verde 90 % o más · ámbar 75 a 89 · rojo menos de 75. Es de consulta.</p>
+        </section>
+
+        <section class="efic-panel efic-panel-ancho">
+            <h3>Producción del periodo</h3>
+            <div class="archivo-filtros">
+                <div class="archivo-agrupar">
+                    <span>Ver por:</span>
+                    {% for v in vistas %}<a href="{{ v.url }}"{% if v.activo %} class="is-active" aria-current="true"{% endif %}>{{ v.nombre }}</a>{% endfor %}
+                </div>
+            </div>
+            {% include "eficiencia/_tabla_minutos.html" with grupos=produccion total=produccion_total %}
+            <p class="archivo-nota">
+                Tareas terminadas en el periodo (con ✓ o de pedidos archivados como "ya se terminó"), de más a menos piezas.
+                Libres y % contra turno × {{ dias_habiles }} día{{ dias_habiles|pluralize }} hábil{{ dias_habiles|pluralize:"es" }} = {{ turno_periodo }} min. No es eficiencia.
+            </p>
+        </section>
+    </div>
+</div>
+{% endblock %}

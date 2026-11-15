@@ -1,4 +1,10 @@
 from django import forms
+from django.conf import settings
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
+
+from . import seguridad
+
 from designaciones.models import Operario, Maquina, OperacionMadre, OperacionDetallada
 from .models import Configuracion
 
@@ -50,11 +56,12 @@ class OperacionDetalladaForm(forms.ModelForm):
 class ConfiguracionForm(forms.ModelForm):
     class Meta:
         model = Configuracion
-        fields = ["turno_inicio", "turno_fin", "comida_minutos", "tolerancia_pct", "minimo_medidas"]
+        fields = ["turno_inicio", "turno_fin", "comida_minutos", "personas_en_planta", "tolerancia_pct", "minimo_medidas"]
         widgets = {
             "turno_inicio": forms.TimeInput(attrs={"class": "form-control", "type": "time"}, format="%H:%M"),
             "turno_fin": forms.TimeInput(attrs={"class": "form-control", "type": "time"}, format="%H:%M"),
             "comida_minutos": forms.NumberInput(attrs={"class": "form-control", "min": 0, "max": 600}),
+            "personas_en_planta": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 500}),
             "tolerancia_pct": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 100}),
             "minimo_medidas": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 50}),
         }
@@ -64,4 +71,42 @@ class ConfiguracionForm(forms.ModelForm):
         inicio, fin = datos.get("turno_inicio"), datos.get("turno_fin")
         if inicio and fin and fin <= inicio:
             self.add_error("turno_fin", "El fin del turno debe ser después del inicio.")
+        return datos
+    
+class EntrarForm(AuthenticationForm):
+    """
+    Inicio de sesión. Django compara la contraseña cifrada y consulta con el ORM (parámetros, sin inyección SQL).
+    Aquí se agrega el bloqueo por intentos fallidos y un mensaje que no revela si el usuario existe.
+    """
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Usuario o contraseña incorrectos.",
+        "bloqueado": "Demasiados intentos fallidos. Espera %(minutos)s minutos e inténtalo de nuevo.",
+    }
+
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        self.fields["username"].label = "Usuario"
+        self.fields["username"].widget.attrs.update({
+            "class": "form-control", "autocomplete": "username", "autocapitalize": "none",
+            "spellcheck": "false", "maxlength": 150, "autofocus": True,
+        })
+        self.fields["password"].widget.attrs.update({
+            "class": "form-control", "autocomplete": "current-password", "maxlength": 128,
+        })
+
+    def clean(self):
+        usuario = self.cleaned_data.get("username", "")
+        if seguridad.esta_bloqueado(self.request, usuario):
+            raise ValidationError(
+                self.error_messages["bloqueado"], code="bloqueado",
+                params={"minutos": settings.LOGIN_BLOQUEO_MINUTOS},
+            )
+        try:
+            datos = super().clean()
+        except ValidationError:
+            seguridad.registrar_fallo(self.request, usuario)
+            raise
+        seguridad.limpiar(self.request, usuario)
         return datos
