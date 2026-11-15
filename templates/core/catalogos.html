@@ -100,8 +100,8 @@
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link px-3" data-bs-toggle="pill" data-bs-target="#tab-maquinas">
-                <i class="bi bi-cpu me-1"></i> Máquinas ({{ maquinas.count }})
+            <button class="nav-link px-3" data-bs-toggle="pill" data-bs-target="#tab-config">
+                <i class="bi bi-gear me-1"></i> Turno y eficiencia
             </button>
         </li>
     </ul>
@@ -245,6 +245,22 @@
                     </div>
                     {% endfor %}
                 </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="tab-config">
+            <div class="card border-0 shadow-sm p-3 mb-4 rounded-3">
+                <h5 class="fw-bold mb-1">Turno y eficiencia</h5>
+                <p class="small text-muted">
+                    Turno de <strong>{{ form_config.instance.turno_minutos }} minutos</strong> para todos los operadores y máquinas.
+                    Lo usan Eficiencia › Minutos del día (libres) y Por operación (tolerancia y mínimo de medidas).
+                </p>
+                <form method="post" action="{% url 'core:guardar_configuracion' %}">
+                    {% csrf_token %}
+                    <div class="form-grid">
+                        {% for field in form_config %}{% include "pedidos/_campo.html" %}{% endfor %}
+                    </div>
+                    <div class="form-footer"><button type="submit" class="btn-inaher">Guardar</button></div>
+                </form>
             </div>
         </div>
     </div>

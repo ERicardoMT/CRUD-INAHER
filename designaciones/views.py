@@ -338,7 +338,6 @@ def cargar_ruta(request, designacion_id):
             operacion_detallada=detallada,
             maquina=maquina,
             cantidad=cantidad,
-            minutos=int(round(float(detallada.minutos_estandar or 1) * cantidad))
         )
 
     for partida in partidas:

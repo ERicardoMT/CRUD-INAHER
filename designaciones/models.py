@@ -1,8 +1,18 @@
 from datetime import date
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from pedidos.models import PartidaPedido, Pedido
 
+def clase_eficiencia(pct):
+    """Verde 90 % o más · ámbar 75 a 89 · rojo menos de 75."""
+    if pct is None:
+        return ""
+    if pct >= 90:
+        return "efic-ok"
+    return "efic-media" if pct >= 75 else "efic-baja"
 
 class Operario(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre")
@@ -30,7 +40,11 @@ class Maquina(models.Model):
 
     def __str__(self):
         return self.nombre
-
+    
+    @property
+    def es_manual(self):
+        """Tipo "Manual" (ej. "Manual (mesa)"): no es una máquina, la hacen varias personas. No lleva minutos libres."""
+        return self.tipo.strip().lower() == "manual"
 
 class OperacionMadre(models.Model):
     nombre = models.CharField(max_length=150, unique=True, verbose_name="Operación madre")
@@ -203,6 +217,14 @@ class ItemDesignacion(models.Model):
     fecha_cierre = models.DateField(null=True, blank=True, db_index=True, verbose_name="Fecha de cierre")
     cerrada_al_archivar = models.BooleanField(default=False, verbose_name="✓ al archivar")
 
+    # Eficiencia: único dato que se captura (solo administrador)
+    min_real = models.DecimalField(
+        max_digits=7, decimal_places=1, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.1"))], verbose_name="Min real",
+    )
+    min_real_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Midió")
+    min_real_en = models.DateTimeField(null=True, blank=True, verbose_name="Medido el")
+
     orden = models.PositiveIntegerField(
         default=0,
         verbose_name="Orden",
@@ -236,6 +258,25 @@ class ItemDesignacion(models.Model):
     def producto_cerrado(self):
         """Producto en el historial: la partida si la tiene; si no, el texto de siempre."""
         return self.partida.descripcion if self.partida else self.producto_texto
+  
+    # ----- Eficiencia (solo si se capturó Min real) -----
+    @property
+    def eficiencia(self):
+        """Min estándar ÷ min real, en %. Sin Min real o sin estándar no cuenta."""
+        if not self.min_real or not self.minutos:
+            return None
+        return round(self.minutos * 100 / self.min_real)
+
+    @property
+    def eficiencia_clase(self):
+        return clase_eficiencia(self.eficiencia)
+
+    @property
+    def pzas_hora(self):
+        """Productividad: cantidad ÷ horas reales."""
+        if not self.min_real:
+            return None
+        return round(self.cantidad * 60 / self.min_real)
     
     @property
     def fecha_salida(self):

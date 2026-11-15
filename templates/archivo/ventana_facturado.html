@@ -1,6 +1,6 @@
 {% extends "archivo/_ventana_base.html" %}
 
-{% block titulo %}Facturado{% endblock %}
+{% block titulo %}Facturado · {{ pedido.numero }}{% endblock %}
 
 {% block cuerpo %}
 {% for opcion in form.factura_estado %}

@@ -1,0 +1,73 @@
+{% extends "eficiencia/_base.html" %}
+
+{% block descripcion %}Estándar del catálogo (Estudio de tiempos) contra el promedio de los tiempos reales que se han capturado.{% endblock %}
+
+{% block tabla %}
+<form method="get" class="archivo-filtros">
+    {% include "archivo/_rango.html" with etiqueta="Medidas en:" %}
+    <select name="mostrar" class="form-select form-select-sm" aria-label="Mostrar" onchange="this.form.submit()">
+        {% for clave, nombre in opciones_mostrar.items %}<option value="{{ clave }}"{% if clave == mostrar %} selected{% endif %}>Mostrar: {{ nombre }}</option>{% endfor %}
+    </select>
+</form>
+
+{% if filas %}
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos tabla-efic align-middle">
+        <thead>
+            <tr>
+                <th>Operación madre › detallada</th>
+                <th class="text-end">Estándar <small class="d-block">min/pz</small></th>
+                <th class="text-end">Real promedio <small class="d-block">min/pz</small></th>
+                <th class="text-end">Pzas / hora <small class="d-block">real</small></th>
+                <th class="text-end">Veces medida</th>
+                <th class="text-end">Diferencia</th>
+                <th>Estado</th>
+                <th><span class="visually-hidden">Acción</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in filas %}
+            <tr class="fila-pedido{% if f.estado == 'FUERA' %} fila-no-terminada{% endif %}">
+                <td data-label="Operación"><div><strong>{{ f.madre }}</strong><small class="archivo-sub">{{ f.nombre }}</small></div></td>
+                <td data-label="Estándar" class="text-end">{% if f.estandar %}{{ f.estandar|floatformat:2 }}{% else %}<span class="text-danger small">sin estándar</span>{% endif %}</td>
+                <td data-label="Real promedio" class="text-end"><strong>{{ f.real|floatformat:2 }}</strong></td>
+                <td data-label="Pzas / hora" class="text-end">{{ f.pzas_hora|default_if_none:"—" }}</td>
+                <td data-label="Veces medida" class="text-end">{{ f.medidas }}</td>
+                <td data-label="Diferencia" class="text-end">
+                    {% if f.diferencia is not None %}<strong class="{% if f.estado == 'FUERA' %}text-danger{% else %}text-success{% endif %}">{% if f.diferencia > 0 %}+{% endif %}{{ f.diferencia }} %</strong>
+                    {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+                <td data-label="Estado"><span class="status-badge {{ f.estado_clase }}">{{ f.estado_texto }}</span></td>
+                <td class="text-end">
+                    {% if f.puede_actualizar and puede_cambiar %}
+                    <button type="button" class="btn-outline-inaher btn-sm" data-ventana="{% url 'eficiencia:cambiar_estandar' f.id %}?{{ request.GET.urlencode }}">
+                        {% if f.estado == "NUEVO" %}Poner estándar{% else %}Actualizar estándar a{% endif %} {{ f.real|floatformat:2 }}
+                    </button>
+                    {% elif f.estado == "FALTAN" %}<small class="text-muted">{{ f.medidas }} de {{ config.minimo_medidas }} mínimas</small>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-stopwatch"></i>
+    <h3>No hay tareas medidas en este periodo</h3>
+    <p>Captura Min real en Tareas del día o elige otro rango.</p>
+</div>
+{% endif %}
+
+<p class="archivo-nota pt-3">OK: dentro de ±{{ config.tolerancia_pct }} % · FUERA: más de {{ config.tolerancia_pct }} % · FALTAN MEDIDAS: menos de {{ config.minimo_medidas }} · NUEVO: sin estándar.</p>
+
+{% if cambios %}
+<div class="efic-bitacora">
+    <h3>Últimos cambios de estándar</h3>
+    <ul>
+        {% for c in cambios %}
+        <li>{{ c.fecha|date:"d/m/Y H:i" }} · {{ c.usuario }} · {{ c.operacion.nombre }}: {{ c.anterior|floatformat:2 }} → <strong>{{ c.nuevo|floatformat:2 }}</strong> ({{ c.medidas }} medidas)</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

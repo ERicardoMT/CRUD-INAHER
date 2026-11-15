@@ -1,0 +1,51 @@
+{% extends "eficiencia/_base.html" %}
+
+{% block descripcion %}Las tareas de Designación de ese día. Escribe los minutos reales en las que hayas medido; eficiencia y productividad salen solas.{% endblock %}
+
+{% block tabla %}
+<form method="get" class="archivo-filtros">
+    <input type="hidden" name="dia" value="{{ dia|date:'Y-m-d' }}">
+    {% for s in selects %}
+    <label class="efic-filtro">
+        <span>{{ s.etiqueta }}</span>
+        <select name="{{ s.nombre }}" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">todas</option>
+            {% for valor, texto in s.opciones %}<option value="{{ valor }}"{% if valor|stringformat:"s" == s.elegido %} selected{% endif %}>{{ texto }}</option>{% endfor %}
+        </select>
+    </label>
+    {% endfor %}
+    <small class="text-muted">Cada filtro es independiente; vacío = no filtra.</small>
+</form>
+
+{% csrf_token %}
+{% if not puede_medir %}
+<p class="archivo-aviso">
+    Solo el administrador (o quien él autorice) captura Min real ·
+    <a href="{% url 'admin:login' %}?next={{ request.get_full_path|urlencode }}">Iniciar sesión</a>
+</p>
+{% endif %}
+
+{% if tareas %}
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos tabla-efic align-middle">
+        <thead>
+            <tr>
+                <th>Quién</th><th># P</th><th>Operación</th><th>Máquina</th>
+                <th class="text-end">Cant</th><th class="text-end">Min est</th><th>Min real</th>
+                <th class="text-end">Efic</th><th class="text-end">Pzas / hora</th><th class="text-center">✓</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tareas %}{% include "eficiencia/_fila_tarea.html" %}{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-calendar-x"></i>
+    <h3>No hay tareas en Designación este día</h3>
+    <p>Cambia de día con las flechas o quita algún filtro.</p>
+</div>
+{% endif %}
+<p class="archivo-nota pt-3">Efic = min estándar ÷ min real (verde 90 % o más · ámbar 75 a 89 · rojo menos de 75). Pzas/hora = cantidad ÷ horas reales. Una tarea sin Min real no cuenta para nada.</p>
+{% endblock %}

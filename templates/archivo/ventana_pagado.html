@@ -1,6 +1,6 @@
 {% extends "archivo/_ventana_base.html" %}
 
-{% block titulo %}Pagado{% endblock %}
+{% block titulo %}Pagado · {{ pedido.numero }}{% endblock %}
 
 {% block cuerpo %}
 {% if pedido.pagos.all %}

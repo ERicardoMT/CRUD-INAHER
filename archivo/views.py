@@ -64,8 +64,9 @@ def _fecha(texto):
 def _texto_rango(desde, hasta):
     if not (desde or hasta):
         return "todas las fechas"
-    return f"{desde:%d/%m/%Y}" if desde else "…" + " – " + (f"{hasta:%d/%m/%Y}" if hasta else "…")
-
+    inicio = f"{desde:%d/%m/%Y}" if desde else "…"
+    fin = f"{hasta:%d/%m/%Y}" if hasta else "…"
+    return f"{inicio} – {fin}"
 
 def leer_rango(request, hoy):
     """Botones 90 días · mes · año · año anterior · todo, o Desde/Hasta a mano. Abre en 90 días."""

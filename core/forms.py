@@ -1,6 +1,6 @@
 from django import forms
 from designaciones.models import Operario, Maquina, OperacionMadre, OperacionDetallada
-
+from .models import Configuracion
 
 class OperarioForm(forms.ModelForm):
     class Meta:
@@ -46,3 +46,22 @@ class OperacionDetalladaForm(forms.ModelForm):
             "minutos_estandar": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": 0}),
             "activa": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+        
+class ConfiguracionForm(forms.ModelForm):
+    class Meta:
+        model = Configuracion
+        fields = ["turno_inicio", "turno_fin", "comida_minutos", "tolerancia_pct", "minimo_medidas"]
+        widgets = {
+            "turno_inicio": forms.TimeInput(attrs={"class": "form-control", "type": "time"}, format="%H:%M"),
+            "turno_fin": forms.TimeInput(attrs={"class": "form-control", "type": "time"}, format="%H:%M"),
+            "comida_minutos": forms.NumberInput(attrs={"class": "form-control", "min": 0, "max": 600}),
+            "tolerancia_pct": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 100}),
+            "minimo_medidas": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 50}),
+        }
+
+    def clean(self):
+        datos = super().clean()
+        inicio, fin = datos.get("turno_inicio"), datos.get("turno_fin")
+        if inicio and fin and fin <= inicio:
+            self.add_error("turno_fin", "El fin del turno debe ser después del inicio.")
+        return datos

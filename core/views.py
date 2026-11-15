@@ -8,7 +8,8 @@ from django.views.decorators.http import require_POST
 from pedidos.models import Pedido
 from designaciones.models import Operario, Maquina, OperacionMadre, OperacionDetallada
 from tiempos.models import MedicionTiempo
-from .forms import OperarioForm, MaquinaForm, OperacionMadreForm, OperacionDetalladaForm
+from .forms import ConfiguracionForm, OperarioForm, MaquinaForm, OperacionMadreForm, OperacionDetalladaForm
+from .models import Configuracion
 from django.db.models import ProtectedError
 
 
@@ -61,6 +62,8 @@ def modulo_pendiente(request, slug):
         return redirect("core:catalogos")
     if slug == "historico-reportes":
         return redirect("archivo:pedidos")
+    if slug == "eficiencia":
+        return redirect("eficiencia:tareas")
 
     modulo = next((item for item in MODULOS if item["slug"] == slug), None)
     if modulo is None:
@@ -124,6 +127,7 @@ def catalogos_config(request):
         "form_maquina": MaquinaForm(),
         "form_madre": OperacionMadreForm(),
         "form_detallada": OperacionDetalladaForm(),
+        "form_config": ConfiguracionForm(instance=Configuracion.actual()),
     }
     return render(request, "core/catalogos.html", contexto)
 
@@ -212,4 +216,15 @@ def eliminar_catalogo(request, tipo, pk):
         setattr(item, campo, False)
         item.save(update_fields=[campo])
         messages.info(request, f"“{item}” tiene historial: se dio de baja en lugar de borrarse.")
+    return redirect("core:catalogos")
+
+@require_POST
+def guardar_configuracion(request):
+    form = ConfiguracionForm(request.POST, instance=Configuracion.actual())
+    if form.is_valid():
+        form.save()
+        messages.success(request, f"Turno y eficiencia guardados: turno de {form.instance.turno_minutos} minutos.")
+    else:
+        errores = " ".join(e for lista in form.errors.values() for e in lista)
+        messages.error(request, f"No se guardó: {errores}")
     return redirect("core:catalogos")

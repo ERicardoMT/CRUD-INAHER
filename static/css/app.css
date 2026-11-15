@@ -3071,3 +3071,123 @@ textarea.form-control {
     }
 }
 
+/* ==========================================================
+   EFICIENCIA
+   ========================================================== */
+.tono-green .stat-icon { background: #DCFCE7; color: #166534; }
+.tono-green > strong   { color: #15803D; }
+
+.efic-ok    { color: #15803D; }
+.efic-media { color: #D97706; }
+.efic-baja  { color: #DC2626; }
+
+.efic-dia {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.efic-dia input {
+    width: auto;
+}
+
+.efic-dia-nombre {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.efic-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    color: var(--text-muted);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.efic-min-real {
+    width: 84px;
+    text-align: right;
+}
+
+.archivo-pestanas .efic-turno {
+    margin-left: auto;
+    border-bottom: 0;
+    font-weight: 500;
+}
+
+.efic-barra {
+    width: 100%;
+    min-width: 90px;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #E8EEF4;
+}
+
+.efic-barra span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--inaher-teal);
+}
+
+.efic-barra.is-excedido span {
+    background: #DC2626;
+}
+
+.tabla-efic tr.efic-total td {
+    background: #F8FAFD;
+    color: var(--inaher-navy);
+    font-weight: 800;
+}
+
+.efic-bitacora {
+    padding: 0 16px 14px;
+    font-size: 11px;
+}
+
+.efic-bitacora h3 {
+    margin: 0 0 6px;
+    color: var(--inaher-navy);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.efic-bitacora ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text-muted);
+}
+
+.efic-cambio {
+    font-size: 15px;
+}
+
+@media (max-width: 760px) {
+    .efic-dia {
+        width: 100%;
+    }
+
+    .efic-dia input {
+        flex: 1;
+    }
+
+    .efic-filtro {
+        flex: 1 1 calc(50% - 8px);
+    }
+
+    .archivo-pestanas .efic-turno {
+        margin-left: 0;
+    }
+
+    .efic-min-real {
+        width: 110px;
+    }
+
+    .efic-barra {
+        min-width: 120px;
+    }
+}

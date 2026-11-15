@@ -1,0 +1,24 @@
+<tr class="fila-pedido">
+    <td data-label="Quién"><strong>{{ t.quien.nombre }}</strong></td>
+    <td data-label="# P">
+        {% if t.pedido %}<a href="{% url 'pedidos:detalle' t.pedido.pk %}" class="fw-bold text-primary">{{ t.pedido.numero }}</a>
+        {% else %}<span class="text-muted">stock</span>{% endif %}
+    </td>
+    <td data-label="Operación">{{ t.operacion_detallada.nombre }}</td>
+    <td data-label="Máquina">{{ t.maquina.nombre|default:"—" }}</td>
+    <td data-label="Cant" class="text-end">{{ t.cantidad }}</td>
+    <td data-label="Min est" class="text-end">{{ t.minutos }}</td>
+    <td data-label="Min real">
+        {% if puede_medir %}
+        <input type="text" inputmode="decimal" maxlength="7" class="form-control form-control-sm efic-min-real"
+               value="{% if t.min_real is not None %}{{ t.min_real|floatformat:'-1' }}{% endif %}" placeholder="min"
+               data-url="{% url 'eficiencia:min_real' t.pk %}" aria-label="Min real de {{ t.operacion_detallada.nombre }}">
+        {% elif t.min_real is not None %}{{ t.min_real|floatformat:"-1" }}{% else %}<span class="text-muted">—</span>{% endif %}
+    </td>
+    <td data-label="Efic" class="text-end">
+        {% if t.eficiencia is not None %}<strong class="{{ t.eficiencia_clase }}">{{ t.eficiencia }} %</strong>
+        {% else %}<span class="text-muted">—</span>{% endif %}
+    </td>
+    <td data-label="Pzas / hora" class="text-end">{{ t.pzas_hora|default_if_none:"—" }}</td>
+    <td data-label="✓" class="text-center">{% if t.hecho %}<i class="bi bi-check-lg text-success" title="Palomeada en Designación"></i>{% endif %}</td>
+</tr>
