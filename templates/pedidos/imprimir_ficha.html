@@ -1,16 +1,20 @@
-{% extends "pedidos/imprimir_ficha.html" %}
+{% extends "pedidos/_imprimir_base.html" %}
 
-{% block titulo_doc %}INAHER · Fichas de pedidos{% endblock %}
-{% block pie %}Fichas de pedidos{% endblock %}
-{% block encabezado %}INAHER · Fichas de pedidos{% endblock %}
-{% block sub %}{{ pedidos|length }} pedido{{ pedidos|length|pluralize }} seleccionado{{ pedidos|length|pluralize }} · una ficha por hoja{% endblock %}
+{% block orientacion %}portrait{% endblock %}
+{% block titulo_doc %}INAHER · Pedido {{ pedido.numero }}{% endblock %}
+{% block pie %}Ficha del pedido {{ pedido.numero }}{% endblock %}
+{% block encabezado %}INAHER · Pedido {{ pedido.numero }}{% endblock %}
+{% block sub %}Ficha del pedido · Días y Estado calculados con la fecha de impresión{% endblock %}
+
+{% block estilos %}
+.datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 18px; margin-bottom: 18px; }
+.datos div span { display: block; color: #6B7686; font-size: 7.5pt; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+.datos div strong { font-size: 10.5pt; }
+h2 { margin: 18px 0 6px; color: #203D6B; font-size: 11pt; }
+.notas { white-space: pre-line; }
+.salto { break-before: page; }
+{% endblock %}
 
 {% block cuerpo %}
-{% for pedido in pedidos %}
-<section{% if not forloop.first %} class="salto"{% endif %}>
-    <h2>Pedido {{ pedido.numero }}</h2>
-    {% include "pedidos/_ficha_impresa.html" %}
-</section>
-{% endfor %}
-.salto { break-before: page; }
+{% include "pedidos/_ficha_impresa.html" %}
 {% endblock %}

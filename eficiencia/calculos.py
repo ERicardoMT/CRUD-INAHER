@@ -332,18 +332,18 @@ def costos_por_pedido(pedidos):
         f["pedido"]: f for f in ItemDesignacion.objects.filter(Q_ITEM_VIGENTE, pedido__in=pedidos)
         .exclude(cerrada_al_archivar=True, hecho=False)
         .values("pedido").annotate(
-            minutos=Sum("minutos"),
-            mano_obra=Sum(F("minutos") * F("quien__tarifa_hora"), output_field=dinero),
-            maquina=Sum(F("minutos") * F("maquina__tarifa_hora"), output_field=dinero),
+            min_pedido=Sum("minutos"),
+            costo_mo=Sum(F("minutos") * F("quien__tarifa_hora"), output_field=dinero),
+            costo_maquina=Sum(F("minutos") * F("maquina__tarifa_hora"), output_field=dinero),
         )
     }
     filas = []
     for pedido in pedidos:
         f = sumas.get(pedido.pk, {})
-        mano_obra = (f.get("mano_obra") or Decimal(0)) / 60 if hay_tarifas else None
-        maquina = (f.get("maquina") or Decimal(0)) / 60 if hay_tarifas else None
+        mano_obra = (f.get("costo_mo") or Decimal(0)) / 60 if hay_tarifas else None
+        maquina = (f.get("costo_maquina") or Decimal(0)) / 60 if hay_tarifas else None
         filas.append({
-            "numero": pedido.numero, "descripcion": pedido.descripcion, "minutos": f.get("minutos") or 0,
+            "numero": pedido.numero, "descripcion": pedido.descripcion, "minutos": f.get("min_pedido") or 0,
             "mano_obra": mano_obra, "maquina": maquina,
             "total": mano_obra + maquina if hay_tarifas else None,
         })

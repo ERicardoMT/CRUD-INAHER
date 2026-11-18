@@ -1,6 +1,6 @@
 from datetime import timedelta
 from io import BytesIO
-
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -64,6 +64,7 @@ class ReglasHistoricoTests(TestCase):
 
         self.client.post(reverse("pedidos:archivar"), {
             "pedido_ids": [pedido.pk], "confirmar": "1", "quien": "Denisse",
+            "terminado": "no", "motivo": "CANCELADO",
         })
         pedido.refresh_from_db()
         self.assertTrue(pedido.archivado)
@@ -81,7 +82,19 @@ class ReglasHistoricoTests(TestCase):
 
     def test_desarchivar(self):
         pedido = self.crear_pedido("A4", archivado=True, archivado_sin_terminar=True)
-        self.client.post(reverse("pedidos:desarchivar"), {"pedido_ids": [pedido.pk]})
+        url = reverse("pedidos:desarchivar")
+
+        # Sin permiso: 403 y el pedido sigue archivado
+        respuesta = self.client.post(url, {"pedido_ids": [pedido.pk]})
+        self.assertEqual(respuesta.status_code, 403)
+        pedido.refresh_from_db()
+        self.assertTrue(pedido.archivado)
+
+        # Con el permiso "Puede desarchivar pedidos": regresa a Activos
+        usuario = User.objects.create_user("admin_prueba", password="Clave-segura-123")
+        usuario.user_permissions.add(Permission.objects.get(codename="desarchivar_pedido"))
+        self.client.force_login(usuario)
+        self.client.post(url, {"pedido_ids": [pedido.pk]})
         pedido.refresh_from_db()
         self.assertFalse(pedido.archivado)
         self.assertFalse(pedido.archivado_sin_terminar)
@@ -213,19 +226,22 @@ class ReglasEstatusTests(TestCase):
 
     def test_entrega_parcial_y_completa(self):
         url = reverse("pedidos:registrar_entrega", args=[self.pedido.pk])
+        datos = {"fecha": self.hoy.isoformat(), "paqueteria": "CLIENTE_RECOGE"}
 
-        self.client.post(url, {"fecha": self.hoy.isoformat(), "cantidad": 4})
+        # Partida 1 completa (4 de 4) y partida 2 nada: entrega parcial
+        self.client.post(url, {**datos, f"partida_{self.p1.pk}": 4, f"partida_{self.p2.pk}": 0})
         self.pedido.refresh_from_db()
         self.assertEqual(self.pedido.estado, Pedido.Estado.EN_PROCESO)
         self.assertTrue(self.pedido.entrega_parcial)
         self.assertEqual(self.pedido.cantidad_entregada, 4)
         self.assertIn(self.pedido, Pedido.objects.por_filtro("activos"))
 
-        # No deja entregar de más
-        respuesta = self.client.post(url, {"fecha": self.hoy.isoformat(), "cantidad": 7})
-        self.assertContains(respuesta, "Solo faltan 6 pzas")
+        # No deja entregar más de lo que falta en la partida
+        self.client.post(url, {**datos, f"partida_{self.p2.pk}": 7})
+        self.pedido.refresh_from_db()
+        self.assertEqual(self.pedido.cantidad_entregada, 4)
 
-        self.client.post(url, {"fecha": self.hoy.isoformat(), "cantidad": 6})
+        self.client.post(url, {**datos, f"partida_{self.p2.pk}": 6})
         self.pedido.refresh_from_db()
         self.assertEqual(self.pedido.estado, Pedido.Estado.ENTREGADO)
         self.assertEqual(self.pedido.fecha_entrega, self.hoy)

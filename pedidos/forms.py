@@ -2,7 +2,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from .models import Cliente, Entrega, PartidaPedido, Pedido
+from .models import Cliente, Entrega, PartidaPedido, Pedido, max_5mb
+from .fotos import comprimir_foto
 
 
 def mensaje_numero_ocupado(pedido):
@@ -239,6 +240,14 @@ class EntregaForm(forms.ModelForm):
                 widget=forms.NumberInput(attrs={"class": "form-control", "inputmode": "numeric"}),
             )
             self.filas.append((partida, self[nombre]))
+
+    def clean_acuse(self):
+        """La foto se valida (5 MB máximo) y se comprime antes de guardarse."""
+        archivo = self.cleaned_data.get("acuse")
+        if not archivo or not hasattr(archivo, "content_type"):  # no se subió foto nueva
+            return archivo
+        max_5mb(archivo)
+        return comprimir_foto(archivo)
 
     def clean(self):
         datos = super().clean()

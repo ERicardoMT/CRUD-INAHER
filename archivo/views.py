@@ -17,6 +17,7 @@ from pedidos.views import quien_hace
 
 from .excel import respuesta_excel
 from .forms import FacturaForm, PagoForm
+from django.contrib.auth.decorators import permission_required
 
 POR_PAGINA = 50
 
@@ -283,7 +284,7 @@ def buscar(request):
 
 
 # ---------------------------------------------------------------- seguimiento (ventanas)
-
+@permission_required("pedidos.palomear_seguimiento", raise_exception=True)
 @require_http_methods(["GET", "POST"])
 def facturado(request, pk):
     """FACTURADO: con factura o no pidió factura. Al cambiar el folio, el anterior queda en bitácora."""
@@ -317,7 +318,7 @@ def facturado(request, pk):
             )
     return HttpResponse(status=204)
 
-
+@permission_required("pedidos.palomear_seguimiento", raise_exception=True)
 @require_http_methods(["GET", "POST"])
 def pagado(request, pk):
     """PAGADO: varios pagos (anticipo · abono · liquidación). Queda parcial hasta la liquidación."""
@@ -332,7 +333,7 @@ def pagado(request, pk):
     estado = 400 if request.method == "POST" else 200
     return render(request, "archivo/ventana_pagado.html", {"pedido": pedido, "form": form}, status=estado)
 
-
+@permission_required("pedidos.palomear_seguimiento", raise_exception=True)
 @require_POST
 def quitar_pago(request, pk):
     get_object_or_404(Pago, pk=pk).delete()
@@ -433,7 +434,7 @@ def tareas_cerradas(request):
         "consulta": con_parametros(request),
     })
 
-
+@permission_required("pedidos.exportar_tareas", raise_exception=True)
 def exportar_tareas(request):
     """Tareas cerradas con sus columnas tal como se ven, de todo lo filtrado."""
     tareas, f = filtrar_tareas(request, timezone.localdate())

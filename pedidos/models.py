@@ -318,6 +318,11 @@ class Pedido(models.Model):
         ordering = ["-fecha_creacion"]
         verbose_name = "Pedido"
         verbose_name_plural = "Pedidos"
+        permissions = [
+            ("palomear_seguimiento", "Puede palomear Facturado y Pagado"),
+            ("desarchivar_pedido", "Puede desarchivar pedidos"),
+            ("exportar_tareas", "Puede exportar tareas cerradas"),
+        ]
 
     def __str__(self):
         return f"Pedido {self.numero}"

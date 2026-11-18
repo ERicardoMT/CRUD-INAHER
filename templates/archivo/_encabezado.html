@@ -29,7 +29,11 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm menu-opciones">
                 {% if pestana == "tareas" %}
+                {% if perms.pedidos.exportar_tareas %}
                 <li><a class="dropdown-item" href="{% url 'archivo:exportar_tareas' %}?{{ request.GET.urlencode }}"><i class="bi bi-file-earmark-excel text-success"></i> Exportar tareas cerradas a Excel</a></li>
+                {% else %}
+                <li><span class="dropdown-item-text small text-muted">Exportar tareas: solo administrador</span></li>
+                {% endif %}
                 {% else %}
                 <li><a class="dropdown-item" href="{% url 'archivo:imprimir' %}?{{ request.GET.urlencode }}" target="_blank" rel="noopener"><i class="bi bi-printer"></i> Imprimir listado</a></li>
                 <li>
@@ -39,7 +43,9 @@
                     </a>
                 </li>
                 <li><h6 class="dropdown-header">Pedidos seleccionados <i class="bi bi-check-square"></i></h6></li>
+                {% if perms.pedidos.desarchivar_pedido %}
                 <li><button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:desarchivar' %}')"><i class="bi bi-box-arrow-up"></i> Desarchivar (regresa a Activos)</button></li>
+                {% endif %}
                 <li><button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:imprimir_fichas' %}', true)"><i class="bi bi-printer"></i> Imprimir fichas</button></li>
                 {% endif %}
             </ul>

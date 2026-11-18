@@ -3341,3 +3341,21 @@ textarea.form-control {
         padding: 20px;
     }
 }
+/* ----- Pedidos: buscador ----- */
+.pedidos-buscar input {
+    width: 260px;
+    font-size: 12px;
+}
+
+@media (max-width: 760px) {
+    .pedidos-buscar {
+        flex: 1 1 100%;
+    }
+
+    .pedidos-buscar input {
+        width: 100%;
+    }
+}
+
+.archivo-chip-boton:disabled { cursor: default; }
+.archivo-chip-boton:disabled:hover .archivo-chip { box-shadow: none; }

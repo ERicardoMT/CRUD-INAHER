@@ -24,6 +24,7 @@ from openpyxl.utils import get_column_letter
 from .catalogo import modelos_catalogo
 from .forms import EntregaForm, PartidaFormSet, PedidoForm, mensaje_numero_ocupado
 from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje, texto_seguro
+from django.contrib.auth.decorators import permission_required
 
 
 # Tarjetas de arriba del listado: al hacer clic filtran la tabla.
@@ -76,8 +77,11 @@ def listado_pedidos(request):
     orden = request.GET.get("orden", "fecha_salida")
     orden = orden if orden in ORDENES else "fecha_salida"
 
+    # Con búsqueda: todos los pedidos vigentes (los archivados se buscan en Archivo)
+    q = request.GET.get("q", "").strip()[:60]
+    base = Pedido.objects.vigentes().buscar(q) if q else Pedido.objects.por_filtro(filtro)
     pedidos = list(
-        Pedido.objects.por_filtro(filtro)
+        base
         .con_minutos()
         .select_related("cliente")
         .prefetch_related("partidas", "entregas")
@@ -493,7 +497,7 @@ def archivar_pedidos(request):
     messages.success(request, f"Se archivó {len(pedidos)} pedido(s): {', '.join(p.numero for p in pedidos)}.")
     return volver(request)
 
-
+@permission_required("pedidos.desarchivar_pedido", raise_exception=True)
 @require_POST
 def desarchivar_pedidos(request):
     """Regresa a Activos con su estatus. Facturado y pagado se conservan."""

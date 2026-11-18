@@ -104,6 +104,7 @@
                 <i class="bi bi-printer"></i> Imprimir ficha
             </a>
 
+            {% if not pedido.archivado or perms.pedidos.desarchivar_pedido %}
             <form
                 method="post"
                 action="{% if pedido.archivado %}{% url 'pedidos:desarchivar' %}{% else %}{% url 'pedidos:archivar' %}{% endif %}"
@@ -120,6 +121,7 @@
                     {% endif %}
                 </button>
             </form>
+            {% endif %}
 
             <a href="{% url 'pedidos:editar' pedido.pk %}" class="btn-outline-inaher">
                 <i class="bi bi-pencil"></i> Editar

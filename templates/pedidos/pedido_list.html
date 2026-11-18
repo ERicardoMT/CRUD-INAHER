@@ -38,11 +38,13 @@
 
                 <li><h6 class="dropdown-header">Pedidos seleccionados <i class="bi bi-check-square"></i></h6></li>
                 {% if es_historico %}
+                {% if perms.pedidos.desarchivar_pedido %}
                 <li>
                     <button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:desarchivar' %}')">
                         <i class="bi bi-box-arrow-up"></i> Desarchivar → Pedidos
                     </button>
                 </li>
+                {% endif %}
                 {% else %}
                 <li>
                     <button type="button" class="dropdown-item" onclick="enviarSeleccion('{% url 'pedidos:archivar' %}')">
@@ -90,20 +92,29 @@
     <div class="content-card-header">
         <div>
             <h2>Listado de pedidos</h2>
+            {% if request.GET.q %} · búsqueda “<strong>{{ request.GET.q }}</strong>” <a href="?ver={{ filtro }}">quitar</a>{% endif %}
             <p>Clic en una tarjeta de arriba para filtrar · <strong>{{ filtro_nombre }} ({{ pedidos|length }})</strong> · ordenados por {{ orden_nombre }}</p>
         </div>
 
-        <div class="dropdown">
-            <button class="btn btn-outline-inaher btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Mostrar: <strong>{{ filtro_nombre }}</strong>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                {% for clave, nombre in mostrar.items %}
-                <li>
-                    <a class="dropdown-item{% if clave == filtro %} active{% endif %}" href="?ver={{ clave }}&orden={{ orden }}">{{ nombre }}</a>
-                </li>
-                {% endfor %}
-            </ul>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <form method="get" class="pedidos-buscar" role="search">
+                <input type="hidden" name="ver" value="{{ filtro }}">
+                <input type="hidden" name="orden" value="{{ orden }}">
+                <input type="search" name="q" value="{{ request.GET.q }}" maxlength="60" class="form-control form-control-sm"
+                       placeholder="Buscar # pedido, cotización, OC, cliente…" aria-label="Buscar pedidos">
+            </form>
+            <div class="dropdown">
+                <button class="btn btn-outline-inaher btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    Mostrar: <strong>{{ filtro_nombre }}</strong>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for clave, nombre in mostrar.items %}
+                    <li>
+                        <a class="dropdown-item{% if clave == filtro %} active{% endif %}" href="?ver={{ clave }}&orden={{ orden }}">{{ nombre }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -218,6 +229,7 @@
                                 {% if pedido.estado != "ENTREGADO" %}
                                 <a href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-inaher btn-sm"><i class="bi bi-truck"></i> Registrar entrega</a>
                                 {% endif %}
+                                {% if not pedido.archivado or perms.pedidos.desarchivar_pedido %}
                                 <form method="post" action="{% if pedido.archivado %}{% url 'pedidos:desarchivar' %}{% else %}{% url 'pedidos:archivar' %}{% endif %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="pedido_ids" value="{{ pedido.pk }}">
@@ -228,6 +240,7 @@
                                     <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-archive"></i> Archivar</button>
                                     {% endif %}
                                 </form>
+                                {% endif %}
                                 <a href="{% url 'pedidos:eliminar' pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="btn-outline-danger-custom btn-sm"><i class="bi bi-trash"></i> Eliminar</a>
                             </div>
                         </div>
