@@ -276,6 +276,12 @@ class ItemDesignacion(models.Model):
         default=1,
         verbose_name="Cantidad",
     )
+    piezas_hechas = models.PositiveIntegerField(
+        default=0,
+        blank=True,
+        verbose_name="Piezas hechas",
+        help_text="Las que lleva, acumuladas aunque se trabaje varios días.",
+    )
     minutos = models.PositiveIntegerField(
         default=0,
         verbose_name="Minutos estimados",
@@ -352,6 +358,16 @@ class ItemDesignacion(models.Model):
         if not self.min_real or self.operacion_detallada.es_por_pedido:
             return None
         return round(self.cantidad * 60 / self.min_real)
+    # ----- Por operación (lista de trabajo) -----
+    @property
+    def hechas(self):
+        """Piezas que lleva la tarea. Con ✓ es igual a la cantidad."""
+        return self.cantidad if self.hecho else min(self.piezas_hechas, self.cantidad)
+
+    @property
+    def faltan(self):
+        """Cantidad menos hechas, nunca menor que cero."""
+        return max(self.cantidad - self.hechas, 0)
     
     @property
     def fecha_salida(self):

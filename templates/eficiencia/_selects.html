@@ -1,0 +1,9 @@
+{% for s in selects %}
+<label class="efic-filtro">
+    <span>{{ s.etiqueta }}</span>
+    <select name="{{ s.nombre }}" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">todas</option>
+        {% for valor, texto in s.opciones %}<option value="{{ valor }}"{% if valor|stringformat:"s" == s.elegido %} selected{% endif %}>{{ texto }}</option>{% endfor %}
+    </select>
+</label>
+{% endfor %}

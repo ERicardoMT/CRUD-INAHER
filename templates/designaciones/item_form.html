@@ -85,6 +85,13 @@
                 <label class="form-label fw-semibold">Cantidad *</label>
                 {{ form.cantidad }}
             </div>
+            
+            <div class="form-group">
+                <label class="form-label fw-semibold" for="{{ form.piezas_hechas.id_for_label }}">Piezas hechas</label>
+                {{ form.piezas_hechas }}
+                <small class="text-muted">Las que lleva, aunque se trabaje varios días. Con ✓ cuentan todas.</small>
+                {% if form.piezas_hechas.errors %}<div class="text-danger small">{{ form.piezas_hechas.errors|join:" " }}</div>{% endif %}
+            </div>
 
             <div class="form-group">
                 <label class="form-label fw-semibold">Minutos</label>

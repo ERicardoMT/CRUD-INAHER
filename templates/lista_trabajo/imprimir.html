@@ -1,0 +1,31 @@
+{% extends "pedidos/_imprimir_base.html" %}
+
+{% block titulo_doc %}INAHER · Por operación {{ hoy|date:"d/m/Y" }}{% endblock %}
+{% block pie %}Lista de trabajo del {{ hoy|date:"d/m/Y" }}{% endblock %}
+{% block encabezado %}INAHER · Por operación / máquina / persona{% endblock %}
+{% block impreso_extra %} · <strong>tareas del</strong> {{ hoy|date:"d/m/Y" }}{% endblock %}
+{% block sub %}
+Filtros: {{ filtros_usados }} · {{ mostrar_nombre }} · {{ orden_nombre }}<br>
+<strong>Piezas</strong> {{ totales.piezas }} · <strong>Faltan</strong> {{ totales.faltan }} ·
+<strong>Minutos</strong> {{ totales.minutos }} · <strong>Hechos ✓</strong> {{ totales.hechos }}
+{% endblock %}
+
+{% block estilos %}
+.salto { break-before: page; }
+.maquina-titulo { margin: 4px 0 6px; color: #203D6B; font-size: 12pt; }
+a { color: inherit; text-decoration: none; }
+.status-detenido { color: #A3262A; font-weight: 700; }
+.status-proceso, .estado-proceso, .estado-espera { color: #92400E; font-weight: 700; }
+.status-terminado, .estado-lista { color: #166534; font-weight: 700; }
+{% endblock %}
+
+{% block cuerpo %}
+{% for grupo in maquinas %}
+<section{% if not forloop.first %} class="salto"{% endif %}>
+    <h2 class="maquina-titulo">{{ grupo.maquina }} · {{ grupo.filas|length }} tarea{{ grupo.filas|length|pluralize }}</h2>
+    {% include "lista_trabajo/_tabla.html" with filas=grupo.filas %}
+</section>
+{% empty %}
+<p class="muted">Sin tareas de hoy con esos filtros.</p>
+{% endfor %}
+{% endblock %}

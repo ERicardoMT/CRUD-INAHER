@@ -33,6 +33,12 @@ MODULOS = [
         "icono": "bi-stopwatch",
     },
     {
+        "slug": "por-operacion",
+        "titulo": "Por operación",
+        "descripcion": "Lista de trabajo de hoy por operación, máquina o persona, para imprimir.",
+        "icono": "bi-list-check",
+    },
+    {
         "slug": "catalogos",
         "titulo": "Catálogos / Config",
         "descripcion": "Administra personas, máquinas, operaciones y tiempos estándar.",
@@ -64,6 +70,8 @@ def modulo_pendiente(request, slug):
         return redirect("archivo:pedidos")
     if slug == "eficiencia":
         return redirect("eficiencia:tareas")
+    if slug == "por-operacion":
+        return redirect("lista_trabajo:lista")
 
     modulo = next((item for item in MODULOS if item["slug"] == slug), None)
     if modulo is None:

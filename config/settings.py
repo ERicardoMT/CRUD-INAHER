@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "tiempos",
     "archivo",
     "eficiencia",
+    "lista_trabajo",
 ]
 
 MIDDLEWARE = [

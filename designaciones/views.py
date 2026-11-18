@@ -257,6 +257,7 @@ def nuevo_dia(request, designacion_id):
             maquina=p.maquina,
             detalle=p.detalle,
             cantidad=p.cantidad,
+            piezas_hechas=p.piezas_hechas,
             minutos=p.minutos,
             hecho=False
         )

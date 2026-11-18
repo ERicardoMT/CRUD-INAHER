@@ -69,8 +69,8 @@
                 </a>
 
                 <a
-                    href="{% url 'core:modulo_pendiente' 'eficiencia' %}"
-                    class="sidebar-link{% if request.path == '/modulos/eficiencia/' %} is-active{% endif %}"
+                    href="{% url 'eficiencia:tareas' %}"
+                    class="sidebar-link{% if request.resolver_match.app_name == 'eficiencia' %} is-active{% endif %}"
                 >
                     <i class="bi bi-speedometer2"></i>
                     <span>Eficiencia</span>
@@ -83,6 +83,14 @@
                         <i class="bi bi-stopwatch"></i>
                         <span>Estudio de tiempos</span>
                     </a>
+                    <a
+                        href="{% url 'lista_trabajo:lista' %}"
+                        class="sidebar-link{% if request.resolver_match.app_name == 'lista_trabajo' %} is-active{% endif %}"
+                    >
+                        <i class="bi bi-list-check"></i>
+                        <span>Por operación</span>
+                    </a>
+
             </nav>
 
             <div class="sidebar-section-label">ADMINISTRACIÓN</div>

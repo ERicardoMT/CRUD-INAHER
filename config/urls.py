@@ -14,6 +14,7 @@ urlpatterns = [
     path("estudio-tiempos/", include("tiempos.urls")),
     path("archivo/", include("archivo.urls")),
     path("eficiencia/", include("eficiencia.urls")),
+    path("por-operacion/", include("lista_trabajo.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

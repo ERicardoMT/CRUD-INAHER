@@ -1,0 +1,38 @@
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos tabla-lista align-middle">
+        <thead>
+            <tr>
+                <th>Quién</th><th># P</th><th class="text-center">Paso</th><th>Producto</th>
+                <th>Op. madre</th><th>Op. detallada</th><th>Máquina</th><th>Detalle</th>
+                <th class="text-end">Cant</th><th class="text-end">Min</th><th class="text-center">✓</th>
+                <th class="text-end">Hechas</th><th class="text-end">Faltan</th>
+                <th>Fecha salida</th><th>Alerta</th><th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in filas %}
+            <tr class="fila-pedido{% if t.inicio_maquina %} lista-inicio-maquina{% endif %}">
+                <td data-label="Quién"><strong>{{ t.quien.nombre }}</strong></td>
+                <td data-label="# P">
+                    {% if t.pedido %}<a href="{% url 'pedidos:detalle' t.pedido.pk %}" class="fw-bold text-primary">{{ t.pedido.numero }}</a>
+                    {% else %}<span class="text-muted">stock</span>{% endif %}
+                </td>
+                <td data-label="Paso" class="text-center">{{ t.paso }}</td>
+                <td data-label="Producto">{{ t.producto_cerrado }}</td>
+                <td data-label="Op. madre">{{ t.operacion_madre.nombre }}</td>
+                <td data-label="Op. detallada">{{ t.operacion_detallada.nombre }}</td>
+                <td data-label="Máquina"><strong>{{ t.maquina_nombre }}</strong></td>
+                <td data-label="Detalle">{{ t.detalle }}</td>
+                <td data-label="Cant" class="text-end">{{ t.cantidad }}</td>
+                <td data-label="Min" class="text-end">{% if t.minutos %}{{ t.minutos }}{% endif %}</td>
+                <td data-label="✓" class="text-center">{% if t.hecho %}<span class="text-success fw-bold">✓</span>{% endif %}</td>
+                <td data-label="Hechas" class="text-end">{% if t.hechas %}{{ t.hechas }}{% endif %}</td>
+                <td data-label="Faltan" class="text-end">{{ t.faltan }}</td>
+                <td data-label="Fecha salida">{{ t.pedido.fecha_salida|date:"d/m/y" }}</td>
+                <td data-label="Alerta">{% if t.alerta_texto %}<span class="status-badge {{ t.alerta_clase }}">{{ t.alerta_texto }}</span>{% endif %}</td>
+                <td data-label="Estado"><span class="lista-estado {{ t.estado_clase }}">{{ t.estado_texto }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

@@ -39,6 +39,7 @@ class ItemDesignacionForm(forms.ModelForm):
             "maquina",
             "detalle",
             "cantidad",
+            "piezas_hechas",
             "minutos",
             "hecho",
             "bloqueado_por",
@@ -65,6 +66,7 @@ class ItemDesignacionForm(forms.ModelForm):
                 "placeholder": "Medida, tolerancia, indicación técnica",
             }),
             "cantidad": forms.NumberInput(attrs={"class": "form-control", "min": 1}),
+            "piezas_hechas": forms.NumberInput(attrs={"class": "form-control", "min": 0, "inputmode": "numeric"}),
             "minutos": forms.NumberInput(attrs={
                 "class": "form-control",
                 "placeholder": "Auto según tiempo estándar si se deja 0",
@@ -99,5 +101,10 @@ class ItemDesignacionForm(forms.ModelForm):
         if partida and partida.pedido_id != getattr(pedido, "pk", None):
             self.add_error("partida", "Esa partida no es del pedido elegido.")
         datos["bloqueado_por"] = (datos.get("bloqueado_por") or "").strip()
+        cantidad, hechas = datos.get("cantidad"), datos.get("piezas_hechas")
+        if cantidad and hechas and hechas > cantidad:
+            self.add_error("piezas_hechas", "No pueden ser más que la cantidad.")
+        if "piezas_hechas" in datos:
+            datos["piezas_hechas"] = hechas or 0
         return datos
 

@@ -81,7 +81,7 @@ def _encabezado(request, dia, pestana):
     }
 
 
-def _selects(elegidos):
+def selects_filtros(elegidos):
     """Opciones de los 4 filtros (las dadas de baja salen marcadas)."""
     def baja(activo):
         return "" if activo else " (baja)"
@@ -109,7 +109,7 @@ def tareas(request):
         **_encabezado(request, dia, "tareas"),
         "tareas": lista,
         "tarjetas": tarjetas,
-        "selects": _selects(elegidos),
+        "selects": selects_filtros(elegidos),
     })
 
 
