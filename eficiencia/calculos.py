@@ -245,8 +245,7 @@ def minutos_por(tareas, ver, turno, por_piezas=False):
         grupo["tareas"] += 1
         grupo["piezas"] += tarea.cantidad
         grupo["ocupados"] += tarea.minutos
-        if tarea.hecho:
-            grupo["hechos"] += tarea.minutos
+        grupo["hechos"] += tarea.min_hechos_hoy  # ✓ y avances (regla 10)
 
     filas = list(grupos.values())
     if por_piezas:

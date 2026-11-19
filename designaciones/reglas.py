@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from core.models import Configuracion
+from eficiencia.calendario import Calendario
 
 from .models import DesignacionDia, ItemDesignacion, Maquina, Operario
 
@@ -63,10 +64,7 @@ def siguiente_jornada(actual, hoy=None):
     hoy = hoy or timezone.localdate()
     if actual.fecha < hoy:
         return hoy
-    siguiente = actual.fecha + timedelta(days=1)
-    if siguiente.weekday() == 6:
-        siguiente += timedelta(days=1)
-    return siguiente
+    return Calendario().siguiente_habil(actual.fecha + timedelta(days=1))
 
 
 # ---------------------------------------------------------------- estado y marcas (reglas 3 y 4)

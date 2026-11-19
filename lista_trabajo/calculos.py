@@ -1,20 +1,13 @@
 """Lista de trabajo del día (módulo Por operación). La comparten la pantalla, la impresión y el Excel."""
-from collections import defaultdict
 from datetime import date
 from itertools import groupby
 
-from eficiencia.calculos import tareas_del_dia
+from designaciones import reglas
 
 MOSTRAR = {"todas": "Todas las tareas", "pendientes": "Solo pendientes (sin ✓)"}
 ORDENES = {
     "operacion": "Por máquina y operación (juntar iguales)",
     "urgencia": "Por máquina y urgencia",
-}
-ESTADOS = {
-    "hecha": ("Hecha", "estado-hecha"),
-    "proceso": ("En proceso", "estado-proceso"),
-    "espera": ("Espera paso anterior", "estado-espera"),
-    "lista": ("Lista", "estado-lista"),
 }
 # Mismos colores que Designación diaria: rojo ATRASADO y SALE HOY, ámbar URGENTE, verde EN TIEMPO
 CLASE_ALERTA = {
@@ -24,29 +17,6 @@ CLASE_ALERTA = {
     "EN TIEMPO": "status-terminado",
 }
 SIN_MAQUINA = "Sin máquina"
-
-
-def _espera_paso_anterior(tarea, pendientes):
-    """
-    Otra tarea activa de hoy del mismo pedido, con paso menor y sin ✓.
-    Se compara dentro de la misma partida; una tarea de todo el pedido (ej. Empaquetar) espera a cualquiera.
-    """
-    for otra in pendientes.get(tarea.pedido_id, ()):
-        misma_partida = not (tarea.partida_id and otra.partida_id) or otra.partida_id == tarea.partida_id
-        if otra.pk != tarea.pk and otra.paso < tarea.paso and misma_partida:
-            return True
-    return False
-
-
-def _estado(tarea, pendientes):
-    if tarea.hecho:
-        return "hecha"
-    if tarea.hechas:  # En proceso manda sobre Lista y Espera
-        return "proceso"
-    if tarea.pedido_id and tarea.paso and _espera_paso_anterior(tarea, pendientes):
-        return "espera"
-    return "lista"
-
 
 def _orden_operacion(t):
     """Máquina, operación madre, operación detallada y persona: junta las operaciones iguales."""
@@ -61,18 +31,11 @@ def _orden_urgencia(t):
             t.pedido.numero if t.pedido else "", t.paso)
 
 
-def lista_del_dia(dia, filtros=None, mostrar="todas", orden="operacion"):
-    """Tareas activas de hoy con su estado, filtradas, ordenadas por máquina y con totales."""
-    todas = list(tareas_del_dia(dia).select_related("partida"))  # lo archivado no aparece
-
-    # El estado se calcula con TODAS las tareas de hoy, aunque luego se filtren
-    pendientes = defaultdict(list)
+def lista_del_dia(filtros=None, mostrar="todas", orden="operacion"):
+    """Las mismas tareas activas que Designación diaria, con sus mismos estados (regla 10)."""
+    todas = reglas.preparar(reglas.tareas_activas())  # el estado se calcula con TODAS, aunque luego se filtren
     for t in todas:
-        if not t.hecho and t.pedido_id:
-            pendientes[t.pedido_id].append(t)
-    for t in todas:
-        t.estado_texto, t.estado_clase = ESTADOS[_estado(t, pendientes)]
-        t.alerta_texto = t.pedido.alerta_estado["texto"] if t.pedido else ""
+        t.alerta_texto = t.alerta_info["texto"] if t.alerta_info else ""
         t.alerta_clase = CLASE_ALERTA.get(t.alerta_texto, "status-neutral")
         t.maquina_nombre = t.maquina.nombre if t.maquina else SIN_MAQUINA
 

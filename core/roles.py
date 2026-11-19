@@ -18,7 +18,6 @@ cargue rutas) basta con darle ese permiso a su usuario o a su grupo.
 from functools import wraps
 
 from django.contrib import messages
-from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.shortcuts import redirect
 
@@ -31,17 +30,11 @@ PERMISO = {
     NUEVO_DIA: "designaciones.cerrar_dia",
 }
 
-
-def _sin_cuentas():
-    """Instalación nueva, sin ningún usuario: el sistema se usa como hasta hoy (todo permitido)."""
-    return not get_user_model().objects.exists()
-
-
 def puede(user, accion):
     if accion == VER:
         return True
     if not getattr(user, "is_authenticated", False):
-        return _sin_cuentas()
+        return False
     return user.has_perm(PERMISO[accion])
 
 

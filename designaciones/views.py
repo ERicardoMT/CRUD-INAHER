@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.contrib import messages
 from django.core import serializers
 from django.db import transaction
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -550,6 +550,7 @@ def api_ruta_pedido(request):
     pedido = get_object_or_404(Pedido.objects.prefetch_related("partidas"), pk=pedido_id if pedido_id.isdigit() else 0)
     cargadas = dict(
         ItemDesignacion.objects.filter(pedido=pedido, partida__isnull=False)
+        .filter(reglas.Q_ACTIVA | Q(fecha_cierre__isnull=False))  # sin las copias que deja Nuevo día
         .values_list("partida").annotate(n=Count("pk"))
     )
     alerta = pedido.alerta_estado

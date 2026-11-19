@@ -23,7 +23,7 @@ def _consulta(request):
 def lista(request):
     hoy = timezone.localdate()
     elegidos, filtros, mostrar, orden = _consulta(request)
-    filas, totales = calculos.lista_del_dia(hoy, filtros, mostrar, orden)
+    filas, totales = calculos.lista_del_dia(filtros, mostrar, orden)
     return render(request, "lista_trabajo/lista.html", {
         "hoy": hoy,
         "filas": filas,
@@ -40,7 +40,7 @@ def imprimir(request):
     """Hoja horizontal con lo filtrado: fecha, filtros usados, totales y una hoja por máquina."""
     hoy = timezone.localdate()
     elegidos, filtros, mostrar, orden = _consulta(request)
-    filas, totales = calculos.lista_del_dia(hoy, filtros, mostrar, orden)
+    filas, totales = calculos.lista_del_dia(filtros, mostrar, orden)
     usados = [
         f"{s['etiqueta']}: {dict(s['opciones']).get(int(s['elegido']), '')}"
         for s in selects_filtros(elegidos) if s["elegido"].isdigit()
@@ -59,5 +59,5 @@ def imprimir(request):
 def exportar(request):
     """Lista completa de hoy, sin los filtros de pantalla (misma regla que Eficiencia)."""
     hoy = timezone.localdate()
-    filas, _ = calculos.lista_del_dia(hoy)
+    filas, _ = calculos.lista_del_dia()
     return libro_excel("por_operacion", [calculos.hoja_excel(filas, hoy)])
