@@ -1,0 +1,39 @@
+{# Tarjetas de todo el día (regla 5): el buscador, el orden y ocultar palomeadas no las cambian #}
+<article class="stat-card">
+    <div class="stat-card-top">
+        <span>Tareas del día</span>
+        <span class="stat-icon icon-blue"><i class="bi bi-list-check"></i></span>
+    </div>
+    <strong>{{ tarjetas.tareas }}</strong>
+    <small>{{ tarjetas.con_check }} con ✓ · {{ tarjetas.en_proceso }} en proceso · {{ tarjetas.sin_tiempo }} sin tiempo</small>
+</article>
+
+<article class="stat-card">
+    <div class="stat-card-top">
+        <span>Min asignados</span>
+        <span class="stat-icon icon-blue"><i class="bi bi-clock-history"></i></span>
+    </div>
+    <strong>{{ tarjetas.min_asignados }} <small class="fs-6 text-muted">min</small></strong>
+    <small>sin asignar: {{ tarjetas.sin_asignar_tareas }} tarea{{ tarjetas.sin_asignar_tareas|pluralize }} · {{ tarjetas.sin_asignar_min }} min</small>
+</article>
+
+<article class="stat-card">
+    <div class="stat-card-top">
+        <span>Min hechos</span>
+        <span class="stat-icon icon-green"><i class="bi bi-check-circle"></i></span>
+    </div>
+    <strong class="text-success">{{ tarjetas.min_hechos }} <small class="fs-6 text-muted">min</small></strong>
+    <small>✓ y avances de hoy</small>
+</article>
+
+<article class="stat-card">
+    <div class="stat-card-top">
+        <span>Avance del día</span>
+        <span class="stat-icon icon-teal"><i class="bi bi-speedometer2"></i></span>
+    </div>
+    <strong>{{ tarjetas.avance }}%</strong>
+    <div class="progress mt-2" style="height: 6px;">
+        <div class="progress-bar bg-success" role="progressbar" style="width: {{ tarjetas.avance }}%;"></div>
+    </div>
+    <small class="mt-1 d-block">hechos ÷ asignados</small>
+</article>

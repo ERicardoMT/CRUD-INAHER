@@ -9,94 +9,75 @@
         <div class="eyebrow">CONTROL DIARIO DE PLANTA</div>
         <h1>INAHER · Designación de HOY</h1>
         <p class="text-muted mb-0">
-            Organización diaria de tareas, puestos, tiempos estándar y cumplimiento por operario.
+            {{ hoy|date:"l j \d\e F \d\e Y"|capfirst }} · todas las tareas activas (lo que no se ha archivado).
         </p>
     </div>
 
     <div class="d-flex align-items-center gap-2 flex-wrap">
-        <form method="get" class="d-flex align-items-center gap-2">
-            <input
-                type="date"
-                name="fecha"
-                class="form-control form-control-sm"
-                value="{{ fecha_actual|date:'Y-m-d' }}"
-                onchange="this.form.submit()"
-                style="max-width: 165px;"
-            >
-            {% if not es_hoy %}
-            <a href="{% url 'designaciones:hoy' %}" class="btn-outline-inaher btn-sm">
-                <i class="bi bi-calendar-event"></i> Ir a HOY
-            </a>
-            {% endif %}
-        </form>
+        {% if permisos.editar %}
+        <button type="button" class="btn-outline-inaher" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+            <i class="bi bi-plus-lg"></i> Agregar tarea
+        </button>
+        <button type="button" class="btn-inaher" data-bs-toggle="modal" data-bs-target="#modalCargarRuta">
+            <i class="bi bi-diagram-3"></i> Cargar ruta de pedido
+        </button>
+        {% endif %}
 
         <div class="dropdown">
             <button class="btn btn-outline-inaher dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-grid-fill text-primary"></i> <strong>INAHER</strong>
+                <i class="bi bi-three-dots-vertical"></i> <strong>Opciones</strong>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                <li><h6 class="dropdown-header text-uppercase small">Rutas y Limpieza</h6></li>
+                {% if permisos.editar %}
+                <li><h6 class="dropdown-header text-uppercase small">Tareas marcadas ☑</h6></li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#modalCargarRuta">
-                        <i class="bi bi-diagram-3 text-primary"></i> Cargar ruta (pedido &rarr; operaciones)
-                    </a>
+                    <button type="button" class="dropdown-item d-flex align-items-center gap-2" onclick="abrirAsignar()">
+                        <i class="bi bi-person-check"></i> Asignar persona…
+                    </button>
                 </li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="enviarVaciarItems()">
-                        <i class="bi bi-trash"></i> Vaciar fila(s) seleccionada(s)
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header text-uppercase small">Agrupación y Orden</h6></li>
-                <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=persona">
-                        <i class="bi bi-person"></i> Agrupar por PERSONA
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=operacion">
-                        <i class="bi bi-gear"></i> Agrupar por OPERACIÓN
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=maquina">
-                        <i class="bi bi-cpu"></i> Agrupar por MÁQUINA
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="?fecha={{ fecha_actual|date:'Y-m-d' }}&orden=urgencia">
-                        <i class="bi bi-exclamation-triangle text-warning"></i> Ordenar por URGENCIA
-                    </a>
+                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-danger" onclick="quitarMarcadas()">
+                        <i class="bi bi-trash"></i> Quitar de hoy
+                    </button>
                 </li>
                 <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header text-uppercase small">Vistas</h6></li>
+                {% endif %}
+                {% if permisos.imprimir %}
+                <li><h6 class="dropdown-header text-uppercase small">Todo el día</h6></li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="toggleModoImpresion(true)">
-                        <i class="bi bi-printer"></i> Modo impresión (ocultar resumen)
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'designaciones:imprimir_lista' %}?orden={{ orden }}" target="_blank" rel="noopener">
+                        <i class="bi bi-printer"></i> Imprimir lista
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="toggleModoImpresion(false)">
-                        <i class="bi bi-eye"></i> Modo captura (mostrar todo)
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'designaciones:exportar_excel' %}?orden={{ orden }}">
+                        <i class="bi bi-file-earmark-excel text-success"></i> Exportar a Excel
                     </a>
                 </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form method="post" action="{% url 'designaciones:nuevo_dia' designacion.id %}" onsubmit="return confirm('¿Archivar la jornada actual e iniciar el nuevo día con las tareas pendientes?');">
-                        {% csrf_token %}
-                        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-success fw-semibold">
-                            <i class="bi bi-calendar-plus"></i> Nuevo día (archivar y limpiar)
-                        </button>
-                    </form>
-                </li>
+                {% else %}
+                <li><span class="dropdown-item-text small text-muted">Tu usuario solo puede ver, buscar y ordenar.</span></li>
+                {% endif %}
             </ul>
         </div>
 
-        <button type="button" class="btn-inaher" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
-            <i class="bi bi-plus-lg"></i> Asignar Tarea
+        {% if permisos.nuevo_dia %}
+        <button type="button" class="btn-outline-inaher" data-bs-toggle="modal" data-bs-target="#modalNuevoDia">
+            Nuevo día <i class="bi bi-arrow-right"></i>
         </button>
+        {% endif %}
     </div>
 </div>
+
+{% if deshacer %}
+<div class="alert alert-secondary d-flex align-items-center justify-content-between gap-2 py-2" id="avisoDeshacer" data-segundos="{{ deshacer.segundos }}">
+    <span><i class="bi bi-trash"></i> Se quitaron {{ deshacer.cuantas }} tarea{{ deshacer.cuantas|pluralize }} de hoy.</span>
+    <form method="post" action="{% url 'designaciones:deshacer_quitar' %}" class="m-0">
+        {% csrf_token %}
+        <input type="hidden" name="orden" value="{{ orden }}">
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Deshacer (<span id="segundosDeshacer">{{ deshacer.segundos }}</span> s)</button>
+    </form>
+</div>
+{% endif %}
 
 <div class="vulcanizado-banner mb-4">
     <div class="vulcanizado-header">
@@ -104,243 +85,112 @@
             <span class="fs-5">🔥</span>
             <strong>Vulcanizado del día (Ernesto) — 2 moldes</strong>
         </div>
-        <small class="text-muted">Carga programada de prensa</small>
+        <small class="text-muted">Texto libre: no crea tareas ni suma minutos. Se vacía con Nuevo día.</small>
     </div>
     <form method="post" action="{% url 'designaciones:actualizar_moldes' designacion.id %}" class="vulcanizado-form">
         {% csrf_token %}
+        <input type="hidden" name="orden" value="{{ orden }}">
         <div class="row g-2 align-items-center">
             <div class="col-12 col-md-5">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light text-muted">Molde 1:</span>
-                    <input type="text" name="molde_1" value="{{ designacion.molde_1 }}" class="form-control" placeholder="Ej. IVH-4 / R-4">
+                    <input type="text" name="molde_1" value="{{ designacion.molde_1 }}" maxlength="150" class="form-control" placeholder="Ej. M-338" {% if not permisos.editar %}readonly{% endif %}>
                 </div>
             </div>
             <div class="col-12 col-md-5">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light text-muted">Molde 2:</span>
-                    <input type="text" name="molde_2" value="{{ designacion.molde_2 }}" class="form-control" placeholder="Ej. Nivelador MT-2">
+                    <input type="text" name="molde_2" value="{{ designacion.molde_2 }}" maxlength="150" class="form-control" placeholder="Ej. SPORT" {% if not permisos.editar %}readonly{% endif %}>
                 </div>
             </div>
+            {% if permisos.editar %}
             <div class="col-12 col-md-2">
                 <button type="submit" class="btn-inaher btn-sm w-100">
                     <i class="bi bi-save"></i> Guardar
                 </button>
             </div>
+            {% endif %}
         </div>
     </form>
 </div>
 
-<!-- ================= KPIS GLOBALES ================= -->
-<section class="stats-grid stats-grid-4 mb-4">
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>Minutos Asignados</span>
-            <span class="stat-icon icon-blue"><i class="bi bi-clock-history"></i></span>
-        </div>
-        <strong id="kpiTotalAsignados">{{ designacion.total_minutos_asignados }} <small class="fs-6 text-muted">min</small></strong>
-        <small>Carga total de la jornada</small>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>Minutos Hechos</span>
-            <span class="stat-icon icon-green"><i class="bi bi-check-circle"></i></span>
-        </div>
-        <strong id="kpiTotalHechos" class="text-success">{{ designacion.total_minutos_hechos }} <small class="fs-6 text-muted">min</small></strong>
-        <small>Trabajo reportado concluido (✓)</small>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>Avance Global</span>
-            <span class="stat-icon icon-teal"><i class="bi bi-speedometer2"></i></span>
-        </div>
-        <strong id="kpiAvancePct">{{ designacion.porcentaje_avance }}%</strong>
-        <div class="progress mt-2" style="height: 6px;">
-            <div id="kpiProgressBar" class="progress-bar bg-success" role="progressbar" style="width: {{ designacion.porcentaje_avance }}%;"></div>
-        </div>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>Alertas de Salida</span>
-            <span class="stat-icon icon-blue"><i class="bi bi-exclamation-triangle"></i></span>
-        </div>
-        <div class="d-flex align-items-center gap-2 mt-1">
-            {% if alertas_conteo.atrasados %}
-            <span class="badge bg-danger">{{ alertas_conteo.atrasados }} atrasados</span>
-            {% endif %}
-            {% if alertas_conteo.sale_hoy %}
-            <span class="badge bg-warning text-dark">{{ alertas_conteo.sale_hoy }} salen hoy</span>
-            {% endif %}
-            {% if not alertas_conteo.atrasados and not alertas_conteo.sale_hoy %}
-            <span class="text-success small"><i class="bi bi-check2"></i> Todo en tiempo</span>
-            {% endif %}
-        </div>
-        <small class="mt-2 d-block">Pedidos con compromiso próximo</small>
-    </article>
+<!-- ================= TARJETAS DE TODO EL DÍA ================= -->
+<section class="stats-grid stats-grid-4 mb-4" id="zonaTarjetas">
+    {% include "designaciones/_tarjetas.html" %}
 </section>
 
-<!-- ================= LAYOUT PRINCIPAL (TABLA + RESUMEN OPERARIOS) ================= -->
+<!-- ================= LAYOUT PRINCIPAL (TABLA + CARGA POR PERSONA) ================= -->
 <div class="designacion-grid">
 
-    <!-- COLUMNA PRINCIPAL DE TAREAS -->
     <div class="designacion-main-col">
         <div class="content-card">
             <div class="content-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <h2>Tareas de la jornada</h2>
-                    <p class="mb-0 text-muted small">
-                        Marca la casilla <strong>✓</strong> conforme se concluyan las operaciones.
-                    </p>
-                </div>
+                <nav class="archivo-pestanas" aria-label="Vistas de Designación">
+                    <span class="is-active">Tareas del día</span>
+                    <a href="{% url 'lista_trabajo:lista' %}">Por operación</a>
+                </nav>
 
-                <!-- Filtro por persona -->
-                <select id="filtroOperario" class="form-select form-select-sm" style="max-width: 170px;" aria-label="Filtrar por operario">
-                    <option value="todos">Todos los operarios</option>
-                    {% for op in operarios %}
-                    <option value="{{ op.nombre }}">{{ op.nombre }}</option>
-                    {% endfor %}
-                </select>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="input-group input-group-sm buscador-designacion">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="search" id="buscarTareas" class="form-control" placeholder="Buscar pedido, persona, operación…" aria-label="Buscar tareas">
+                    </div>
+
+                    <form method="get" class="m-0">
+                        <select name="orden" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Ordenar">
+                            {% for clave, valor in ordenes.items %}
+                            <option value="{{ clave }}"{% if clave == orden %} selected{% endif %}>Ordenar: {{ valor.0 }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+
+                    <label class="form-check d-flex align-items-center gap-1 mb-0 small">
+                        <input type="checkbox" class="form-check-input mt-0" id="ocultarPalomeadas">
+                        Ocultar palomeadas
+                    </label>
+                </div>
             </div>
 
-            <!-- FORMULARIO PARA VACIAR FILAS SELECCIONADAS -->
-            <form id="formVaciarItems" method="post" action="{% url 'designaciones:vaciar_items_seleccionados' designacion.id %}">
+            <form id="formSeleccion" method="post" action="">
                 {% csrf_token %}
-                <input type="hidden" name="fecha" value="{{ fecha_actual|date:'Y-m-d' }}">
-
-                <!-- Una sola tabla: en celular cada renglón se vuelve tarjeta (CSS .tabla-tarjetas) -->
-                <div class="table-responsive">
-                    <table class="table-designacion tabla-tarjetas align-middle">
-                        <thead>
-                            <tr>
-                                <th class="col-check"><input type="checkbox" class="form-check-input" onclick="toggleSelectAllItems(this)" aria-label="Seleccionar todas"></th>
-                                <th class="text-center">✓</th>
-                                <th>Quién</th>
-                                <th># Pedido</th>
-                                <th class="text-center">Paso</th>
-                                <th>Producto / Modelo</th>
-                                <th>Operación madre &rsaquo; detallada</th>
-                                <th>Máquina</th>
-                                <th>Detalle / Tolerancia</th>
-                                <th class="text-center">Cant.</th>
-                                <th class="text-center">Min</th>
-                                <th>Salida</th>
-                                <th>Alerta</th>
-                                <th class="text-end">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaItemsBody">
-                            {% for item in items %}
-                            <tr class="item-fila fila-tarjeta {% if item.hecho %}fila-hecha{% endif %}" data-operario="{{ item.quien.nombre }}">
-                                <!-- CASILLA DE SELECCIÓN PARA VACIAR -->
-                                <td class="text-center col-check">
-                                    <input type="checkbox" name="item_ids" value="{{ item.id }}" class="item-select-check form-check-input" aria-label="Seleccionar tarea">
-                                </td>
-
-                                <!-- CHECKBOX HECHO (✓) -->
-                                <td class="text-center">
-                                    <button
-                                        type="button"
-                                        class="btn-check-toggle {% if item.hecho %}is-checked{% endif %}"
-                                        onclick="toggleItemHecho({{ item.id }}, this)"
-                                        title="Marcar como concluido"
-                                    >
-                                        <i class="bi {% if item.hecho %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} fs-5"></i>
-                                    </button>
-                                </td>
-
-                                <td data-label="Quién">
-                                    <strong class="badge-operario">{{ item.quien.nombre }}</strong>
-                                </td>
-
-                                <td data-label="# Pedido">
-                                    {% if item.es_stock %}
-                                    <span class="badge bg-secondary">STOCK</span>
-                                    {% elif item.pedido %}
-                                    <a href="{% url 'pedidos:detalle' item.pedido.id %}" class="fw-semibold text-primary">#{{ item.pedido.numero }}</a>
-                                    {% else %}
-                                    <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-
-                                <td class="text-center" data-label="Paso">
-                                    <span class="badge-paso">{{ item.paso }}</span>
-                                </td>
-
-                                <td data-label="Producto">
-                                    <div class="cell-producto" title="{{ item.producto_texto }}">{{ item.producto_texto }}</div>
-                                </td>
-
-                                <td data-label="Operación">
-                                    <div>
-                                        <div class="fw-medium text-dark">{{ item.operacion_madre.nombre }}</div>
-                                        <small class="text-muted">{{ item.operacion_detallada.nombre }}</small>
-                                    </div>
-                                </td>
-
-                                <td data-label="Máquina">
-                                    {% if item.maquina %}
-                                    <span class="text-muted small"><i class="bi bi-gear"></i> {{ item.maquina.nombre }}</span>
-                                    {% else %}
-                                    <span class="text-muted small">—</span>
-                                    {% endif %}
-                                </td>
-
-                                <td data-label="Detalle">
-                                    <span class="text-muted small">{{ item.detalle|default:"—" }}</span>
-                                </td>
-
-                                <td class="text-center" data-label="Cant.">
-                                    <span class="badge-pill-num">{{ item.cantidad }} pz</span>
-                                </td>
-
-                                <td class="text-center" data-label="Min">
-                                    <span class="badge-pill-num">{{ item.minutos }} min</span>
-                                </td>
-
-                                <td data-label="Salida">
-                                    {% if item.fecha_salida %}
-                                    <span class="text-secondary fw-semibold">{{ item.fecha_salida|date:"d/m/y" }}</span>
-                                    {% else %}
-                                    <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
-
-                                <td data-label="Alerta">
-                                    <span class="status-badge {{ item.alerta.clase }}">{{ item.alerta.texto }}</span>
-                                </td>
-
-                                <td class="text-end col-mas">
-                                    <div class="d-flex align-items-center justify-content-end gap-1">
-                                        <a href="{% url 'designaciones:editar_item' item.id %}" class="btn-action-icon text-primary" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button type="submit" form="formEliminar{{ item.id }}" class="btn-action-icon text-danger border-0 bg-transparent" title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="14" class="text-center py-4 text-muted">
-                                    <i class="bi bi-clipboard2-plus fs-2 d-block mb-2"></i>
-                                    No hay tareas asignadas para esta fecha aún. Haz clic en <strong>Asignar Tarea</strong> o <strong>INAHER &rarr; Cargar ruta</strong> para comenzar.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <input type="hidden" name="orden" value="{{ orden }}">
+                <input type="hidden" name="quien" id="quienSeleccion" value="">
             </form>
 
-            <!-- Formularios de eliminar fuera del form de "vaciar" (HTML no permite forms anidados) -->
-            {% for item in items %}
-            <form id="formEliminar{{ item.id }}" method="post" action="{% url 'designaciones:eliminar_item' item.id %}" onsubmit="return confirm('¿Eliminar esta tarea de la jornada?');" hidden>
-                {% csrf_token %}
-            </form>
-            {% endfor %}
+            <div class="table-responsive">
+                <table class="table-designacion tabla-tarjetas align-middle tabla-designacion-v2">
+                    <thead>
+                        <tr>
+                            <th class="col-check"><input type="checkbox" class="form-check-input" onclick="toggleSelectAllItems(this)" aria-label="Marcar todas"></th>
+                            <th>Quién</th>
+                            <th># P</th>
+                            <th class="text-center">Paso</th>
+                            <th>Producto</th>
+                            <th>Operación madre &rsaquo; detallada</th>
+                            <th>Máquina</th>
+                            <th>Detalle <small class="d-block fw-normal text-muted">medida · tolerancia</small></th>
+                            <th class="text-center">Cant</th>
+                            <th class="text-center">Min</th>
+                            <th class="text-center">✓</th>
+                            <th class="text-center">Hechas</th>
+                            <th>Sale</th>
+                            <th>Estado</th>
+                            <th class="text-end"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaItemsBody">
+                        {% include "designaciones/_filas.html" %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="leyenda-designacion">
+                <span><i class="leyenda-caja caja-captura"></i> azul: se captura</span>
+                <span><i class="leyenda-caja caja-sola"></i> gris: se llena solo</span>
+                <span><i class="leyenda-caja caja-naranja"></i> naranja: revisar</span>
+                <span><i class="leyenda-caja caja-rojo"></i> rojo: falta escoger</span>
+                <span class="ms-auto" id="conteoVisible">{{ tareas|length }} tareas · {{ tarjetas.sin_asignar_tareas }} sin asignar</span>
+            </div>
         </div>
     </div>
 
@@ -348,37 +198,14 @@
         <div class="content-card sticky-top-card">
             <div class="content-card-header">
                 <div>
-                    <h2>Resumen por persona</h2>
-                    <p>Minutos asignados vs hechos</p>
+                    <h2>Carga por persona</h2>
+                    <p>Min asignados · turno {{ turno }} min</p>
                 </div>
             </div>
 
             <div class="p-3">
-                <div class="operarios-resumen-list">
-                    {% for op in resumen_operarios %}
-                    <div class="operario-resumen-item mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <strong class="operario-name">{{ op.operario.nombre }}</strong>
-                            <span class="small fw-semibold">
-                                <span class="text-success">{{ op.min_hechos }}</span> / {{ op.min_asignados }} min
-                            </span>
-                        </div>
-
-                        <div class="progress" style="height: 6px;">
-                            <div
-                                class="progress-bar {% if op.porcentaje == 100 %}bg-success{% elif op.porcentaje > 50 %}bg-info{% else %}bg-primary{% endif %}"
-                                role="progressbar"
-                                style="width: {{ op.porcentaje }}%;"
-                                title="{{ op.porcentaje }}%"
-                            ></div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center mt-1">
-                            <small class="text-muted">{{ op.tareas_hechas }} de {{ op.tareas_total }} tareas</small>
-                            <small class="fw-semibold {% if op.porcentaje == 100 %}text-success{% else %}text-muted{% endif %}">{{ op.porcentaje }}%</small>
-                        </div>
-                    </div>
-                    {% endfor %}
+                <div class="operarios-resumen-list" id="zonaCarga">
+                    {% include "designaciones/_carga.html" %}
                 </div>
             </div>
         </div>
@@ -386,86 +213,77 @@
 
 </div>
 
+{% if permisos.editar %}
+<!-- ================= MODAL: AGREGAR TAREA ================= -->
 <div class="modal fade" id="modalNuevaTarea" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-plus-circle text-primary me-1"></i> Asignar tarea a la jornada
+                    <i class="bi bi-plus-circle text-primary me-1"></i> Agregar tarea
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
-            <form method="post" action="{% url 'designaciones:agregar_item' designacion.id %}" class="modal-form-scroll">
+            <form method="post" action="{% url 'designaciones:agregar_item' %}" class="modal-form-scroll">
                 {% csrf_token %}
+                <input type="hidden" name="orden" value="{{ orden }}">
                 <div class="modal-body">
+                    <p class="small text-muted">Para lo que no viene de una ruta (stock, vulcanizado, Chemlok…). Obligatorias: operación madre y detallada.</p>
                     <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-semibold" for="{{ form_item.quien.id_for_label }}">Quién (Operario) *</label>
-                            {{ form_item.quien }}
-                        </div>
-                        <div class="col-12 col-md-5">
-                            <label class="form-label fw-semibold" for="{{ form_item.pedido.id_for_label }}"># Pedido</label>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label" for="{{ form_item.pedido.id_for_label }}">Pedido <small class="text-muted">· opcional (vacío = STOCK)</small></label>
                             {{ form_item.pedido }}
                         </div>
-                        <div class="col-12 col-md-3 order-md-last">
+                        <div class="col-12 col-md-6">
                             <label class="form-label" for="{{ form_item.partida.id_for_label }}">Partida</label>
                             {{ form_item.partida }}
                         </div>
-                        <div class="col-12 col-md-3">
-                            <label class="form-label fw-semibold" for="{{ form_item.paso.id_for_label }}">Paso *</label>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="{{ form_item.paso.id_for_label }}">Paso</label>
                             {{ form_item.paso }}
                         </div>
-                        <div class="col-12">
-                            <div class="form-check form-switch">
-                                {{ form_item.es_stock }}
-                                <label class="form-check-label" for="{{ form_item.es_stock.id_for_label }}">
-                                    Es producción para Stock (sin pedido asociado)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-12" id="boxDescripcionManual">
-                            <label class="form-label" for="{{ form_item.descripcion_manual.id_for_label }}">Producto / Modelo</label>
-                            {{ form_item.descripcion_manual }}
-                            <small class="text-muted">Si seleccionas un pedido arriba, este campo se llena solo.</small>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="{{ form_item.quien.id_for_label }}">Quién</label>
+                            {{ form_item.quien }}
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold" for="{{ form_item.operacion_madre.id_for_label }}">Operación madre *</label>
                             {{ form_item.operacion_madre }}
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold" for="{{ form_item.operacion_detallada.id_for_label }}">Operación detallada *</label>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" for="{{ form_item.operacion_detallada.id_for_label }}">Operación detallada * <small class="text-muted fw-normal">· solo las de esa madre</small></label>
                             {{ form_item.operacion_detallada }}
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label" for="{{ form_item.maquina.id_for_label }}">Máquina</label>
+                            <label class="form-label" for="{{ form_item.maquina.id_for_label }}">Máquina <small class="text-muted">· las de su tipo</small></label>
                             {{ form_item.maquina }}
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label" for="{{ form_item.detalle.id_for_label }}">Detalle (medida · tolerancia)</label>
-                            {{ form_item.detalle }}
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold" for="{{ form_item.cantidad.id_for_label }}">Cantidad *</label>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label" for="{{ form_item.cantidad.id_for_label }}">Cantidad</label>
                             {{ form_item.cantidad }}
                         </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold" for="{{ form_item.minutos.id_for_label }}">Minutos calculados</label>
-                            {{ form_item.minutos }}
-                            <small class="text-muted">Se calcula automáticamente con el estándar (Cant × Min/pz).</small>
+                        <div class="col-6 col-md-3 d-none" id="boxMinEstimado">
+                            <label class="form-label fw-semibold" for="{{ form_item.min_estimado_pz.id_for_label }}">Min estimado / pz *</label>
+                            {{ form_item.min_estimado_pz }}
                         </div>
                         <div class="col-12">
-                            <label class="form-label" for="{{ form_item.bloqueado_por.id_for_label }}"><i class="bi bi-slash-circle text-warning"></i> Bloqueada por material</label>
-                            {{ form_item.bloqueado_por }}
-                            <small class="text-muted">Si se llena, el pedido se marca DETENIDO solo.</small>
+                            <label class="form-label" for="{{ form_item.detalle.id_for_label }}">Detalle <small class="text-muted">· medida, material, para qué es</small></label>
+                            {{ form_item.detalle }}
+                        </div>
+                        <div class="col-12">
+                            <a href="{% url 'core:catalogos' %}#operaciones" target="_blank" rel="noopener" class="small fw-semibold">
+                                <i class="bi bi-plus"></i> Nueva operación
+                            </a>
+                            <small class="text-muted">si no está en la lista (se abre Catálogos en otra pestaña). Para algo temporal usa <strong>Tarea especial</strong>, con min estimados por pieza.</small>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cerrar</button>
                     <button type="submit" class="btn-inaher">
-                        <i class="bi bi-save"></i> Guardar tarea
+                        <i class="bi bi-plus-lg"></i> Agregar
                     </button>
                 </div>
             </form>
@@ -473,211 +291,140 @@
     </div>
 </div>
 
-<!-- ================= MODAL: CARGAR RUTA (motor de rutas INAHER) ================= -->
-<div
-    class="modal fade"
-    id="modalCargarRuta"
-    tabindex="-1"
-    aria-hidden="true"
-    data-json-url="{% static 'designaciones/data/datos_rutas_inaher.json' %}"
->
+<!-- ================= MODAL: ASIGNAR PERSONA ================= -->
+<div class="modal fade" id="modalAsignar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar persona</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-2"><span id="cuantasAsignar">0</span> tarea(s) marcada(s).</p>
+                <select class="form-select" id="quienAsignar" aria-label="Persona">
+                    <option value="">sin asignar</option>
+                    {% for op in operarios %}<option value="{{ op.pk }}">{{ op.nombre }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-inaher" onclick="confirmarAsignar()">Asignar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL: CARGAR RUTA DE PEDIDO (motor de rutas, una llamada por partida) ================= -->
+<div class="modal fade" id="modalCargarRuta" tabindex="-1" aria-hidden="true"
+     data-json-url="{% static 'designaciones/data/datos_rutas_inaher.json' %}"
+     data-url-pedido="{% url 'designaciones:api_ruta_pedido' %}"
+     data-url-minutos="{% url 'designaciones:api_minutos_ruta' %}"
+     data-url-guardar="{% url 'designaciones:cargar_ruta' %}"
+     data-csrf="{{ csrf_token }}">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
         <div class="modal-content">
-
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title">
                         <i class="bi bi-diagram-3 text-primary me-2"></i>
-                        Cargar ruta de producción
+                        Cargar ruta de pedido
                     </h5>
-                    <small class="text-muted">Análisis del pedido y generación de operaciones</small>
+                    <small class="text-muted" id="pasoRuta">paso 1 de 3 · pedido y partidas</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <div class="modal-body">
-                <div class="mb-3">
-                    <label for="pedidoRuta" class="form-label fw-semibold">Seleccionar pedido *</label>
-
-                    <select id="pedidoRuta" class="form-select" required>
-                        <option value="">-- Elige el pedido --</option>
-                        {% for p in pedidos_activos %}
-                        <option
-                            value="{{ p.id }}"
-                            data-numero="{{ p.numero }}"
-                            data-descripcion="{{ p.descripcion }}"
-                            data-cantidad="{{ p.cantidad }}"
-                        >
-                            #{{ p.numero }} - {{ p.descripcion|truncatechars:65 }} ({{ p.cantidad }} pz)
-                        </option>
-                        {% endfor %}
-                    </select>
-
-                    <small class="text-muted">El motor utilizará la descripción y cantidad registradas en el pedido.</small>
-                </div>
-
-                <button type="button" id="btnAnalizarRuta" class="btn-inaher" disabled>
-                    <i class="bi bi-lightning-charge"></i>
-                    Analizar y generar ruta
-                </button>
-
                 <div id="estadoMotorRuta" class="alert alert-secondary py-2" role="status" aria-live="polite">
-                    Cargando motor de rutas...
+                    Cargando motor de rutas…
                 </div>
 
-                <div id="panelPreguntasRuta"></div>
+                <!-- Paso 1 · pedido y partidas -->
+                <div id="rutaPaso1">
+                    <div class="row g-2 align-items-end mb-3">
+                        <div class="col-12 col-md-6">
+                            <label for="pedidoRuta" class="form-label fw-semibold">Pedido</label>
+                            <select id="pedidoRuta" class="form-select">
+                                <option value="">— elige el pedido —</option>
+                                {% for p in pedidos_ruta %}
+                                <option value="{{ p.pk }}">{{ p.numero }} · {{ p.descripcion|truncatechars:60 }}{% if p.tareas %} · ya tiene ruta{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Primero los que no tienen ruta cargada, por fecha de salida.</small>
+                        </div>
+                        <div class="col-12 col-md-6 small text-muted" id="infoPedidoRuta"></div>
+                    </div>
+                    <div id="partidasRuta"></div>
+                </div>
 
-                <div id="vistaPreviaRuta" class="mt-3"></div>
+                <!-- Paso 2 · preguntas -->
+                <div id="rutaPaso2" class="d-none"></div>
+
+                <!-- Paso 3 · vista previa -->
+                <div id="rutaPaso3" class="d-none"></div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cerrar</button>
-                <button
-                    type="button"
-                    id="btnConfirmarRuta"
-                    class="btn-inaher"
-                    disabled
-                    title="El guardado se habilitará después de validar la integración con Django."
-                >
-                    <i class="bi bi-check-circle"></i>
-                    Confirmar ruta
-                </button>
+                <button type="button" class="btn-outline-inaher" id="btnRutaAtras" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-inaher" id="btnRutaSiguiente" disabled>Siguiente</button>
             </div>
-
         </div>
     </div>
 </div>
+{% endif %}
+
+{% if permisos.nuevo_dia %}
+<!-- ================= MODAL: NUEVO DÍA (regla 9) ================= -->
+<div class="modal fade" id="modalNuevoDia" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="{% url 'designaciones:nuevo_dia' %}" class="modal-content">
+            {% csrf_token %}
+            <input type="hidden" name="orden" value="{{ orden }}">
+            <div class="modal-header">
+                <h5 class="modal-title">Cerrar el {{ designacion.fecha|date:"l d/m/Y" }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body nuevo-dia-resumen">
+                <div class="nd-fila">
+                    <strong>{{ resumen_dia.con_check|length }}</strong>
+                    <div>tareas con ✓<small>Se archivan y salen de Designación.</small></div>
+                </div>
+                <div class="nd-fila">
+                    <strong>{{ resumen_dia.con_avance|length }}</strong>
+                    <div>tareas con avance y sin ✓
+                        <small>Se archiva lo de hoy y se quedan para mañana con lo que falta.
+                        {% for t in resumen_dia.con_avance|slice:":3" %}<span class="badge bg-light text-dark border">{{ t.hechas }} de {{ t.cantidad }}</span> {% endfor %}</small>
+                    </div>
+                </div>
+                <div class="nd-fila">
+                    <strong>{{ resumen_dia.sin_avance|length }}</strong>
+                    <div>tareas sin avance<small>Se quedan igual para mañana, con su persona, máquina y detalle.</small></div>
+                </div>
+                <div class="nd-fila">
+                    <strong>{{ resumen_dia.con_min_real|length }}</strong>
+                    <div>tareas con Min real<small>El Min real capturado en Eficiencia se guarda con lo archivado.</small></div>
+                </div>
+                <p class="small text-muted mb-0 mt-2">También se vacían los 2 moldes del día. La jornada siguiente es el {{ siguiente_fecha|date:"l d/m/Y" }}.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline-inaher" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn-inaher">Cerrar el día</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'designaciones/js/motor_rutas_inaher.js' %}"></script>
 <script src="{% static 'designaciones/js/cargar_ruta.js' %}"></script>
-<script src="{% static 'designaciones/js/partidas_tarea.js' %}"></script>
-<script>
-function toggleItemHecho(itemId, btnElem) {
-    fetch(`/designacion/item/toggle/${itemId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) return;
-
-        const row = btnElem.closest('tr');
-        row.classList.toggle('fila-hecha', data.hecho);
-        btnElem.classList.toggle('is-checked', data.hecho);
-        btnElem.innerHTML = data.hecho
-            ? '<i class="bi bi-check-circle-fill text-success fs-5"></i>'
-            : '<i class="bi bi-circle text-muted fs-5"></i>';
-
-        document.getElementById('kpiTotalHechos').innerHTML = `${data.total_hechos} <small class="fs-6 text-muted">min</small>`;
-        document.getElementById('kpiAvancePct').innerText = `${data.porcentaje_avance}%`;
-        document.getElementById('kpiProgressBar').style.width = `${data.porcentaje_avance}%`;
-    })
-    .catch(err => console.error(err));
-}
-
-function toggleSelectAllItems(master) {
-    document.querySelectorAll('.item-select-check').forEach(cb => cb.checked = master.checked);
-}
-
-function enviarVaciarItems() {
-    const checks = document.querySelectorAll('.item-select-check:checked');
-    if (checks.length === 0) {
-        alert("Selecciona al menos una fila marcando la casilla de la izquierda.");
-        return;
-    }
-    if (confirm(`¿Estás seguro de vaciar las ${checks.length} fila(s) seleccionada(s)?`)) {
-        document.getElementById('formVaciarItems').submit();
-    }
-}
-
-function toggleModoImpresion(activar) {
-    ['.designacion-side-col', '.vulcanizado-banner', '.stats-grid'].forEach(selector => {
-        const elem = document.querySelector(selector);
-        if (elem) elem.classList.toggle('d-none', activar);
-    });
-}
-
-document.getElementById('filtroOperario').addEventListener('change', function () {
-    const valor = this.value;
-    document.querySelectorAll('#tablaItemsBody .item-fila').forEach(tr => {
-        tr.hidden = !(valor === 'todos' || tr.dataset.operario === valor);
-    });
-});
-
-document.addEventListener('DOMContentLoaded', function () {
-    const selectMadre = document.getElementById('id_operacion_madre');
-    const selectDetallada = document.getElementById('id_operacion_detallada');
-    const selectMaquina = document.getElementById('id_maquina');
-    const inputCantidad = document.getElementById('id_cantidad');
-    const inputMinutos = document.getElementById('id_minutos');
-    const selectPedido = document.getElementById('id_pedido');
-    const inputDesc = document.getElementById('id_descripcion_manual');
-
-    let currentMinPz = 0;
-
-    function recalcularMinutos() {
-        const cant = parseInt(inputCantidad.value) || 1;
-        if (currentMinPz > 0) {
-            inputMinutos.value = Math.round(currentMinPz * cant);
-        }
-    }
-
-    if (inputCantidad) {
-        inputCantidad.addEventListener('input', recalcularMinutos);
-    }
-
-    if (selectMadre && selectDetallada) {
-        selectMadre.addEventListener('change', function () {
-            const madreId = this.value;
-            if (!madreId) return;
-
-            fetch(`/designacion/api/operaciones-detalladas/?madre_id=${madreId}`)
-                .then(r => r.json())
-                .then(data => {
-                    selectDetallada.innerHTML = '<option value="">---------</option>';
-                    data.detalles.forEach(d => {
-                        const opt = document.createElement('option');
-                        opt.value = d.id;
-                        opt.textContent = d.nombre;
-                        opt.dataset.minPz = d.minutos_estandar;
-                        opt.dataset.maquina = d.maquina_sugerida_id || '';
-                        selectDetallada.appendChild(opt);
-                    });
-                });
-        });
-
-        selectDetallada.addEventListener('change', function () {
-            const opt = this.options[this.selectedIndex];
-            if (opt && opt.dataset.minPz) {
-                currentMinPz = parseFloat(opt.dataset.minPz) || 0;
-                recalcularMinutos();
-            }
-            if (opt && opt.dataset.maquina && selectMaquina) {
-                selectMaquina.value = opt.dataset.maquina;
-            }
-        });
-    }
-
-    if (selectPedido) {
-        selectPedido.addEventListener('change', function () {
-            const pedidoId = this.value;
-            if (!pedidoId) return;
-            fetch(`/designacion/api/pedido-info/?pedido_id=${pedidoId}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.descripcion && inputDesc) inputDesc.value = data.descripcion;
-                    if (data.cantidad && inputCantidad) {
-                        inputCantidad.value = data.cantidad;
-                        recalcularMinutos();
-                    }
-                });
-        });
-    }
-});
-</script>
+<script src="{% static 'designaciones/js/agregar_tarea.js' %}"></script>
+<script src="{% static 'designaciones/js/designacion_tabla.js' %}"
+        data-csrf="{{ csrf_token }}"
+        data-orden="{{ orden }}"
+        data-url-campo="{% url 'designaciones:guardar_campo' 0 %}"
+        data-url-check="{% url 'designaciones:toggle_hecho' 0 %}"
+        data-url-quitar="{% url 'designaciones:quitar_seleccionadas' %}"
+        data-url-asignar="{% url 'designaciones:asignar_persona' %}"></script>
 {% endblock %}

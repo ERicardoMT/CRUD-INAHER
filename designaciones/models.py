@@ -1,11 +1,42 @@
 from datetime import date
-from decimal import Decimal
+import re
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F
 from django.utils import timezone
 from pedidos.models import PartidaPedido, Pedido
+
+def redondear(valor):
+    """
+    Como ROUND() de la hoja: el medio minuto sube (40.5 → 41).
+    round() de Python redondea al par (40.5 → 40), por eso no se usa.
+    """
+    return int(Decimal(str(valor)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+# Operación del catálogo para tareas temporales (regla 6): el tiempo vive en la tarea
+TAREA_ESPECIAL = ("Tarea especial", "Tarea especial (ver Detalle)")
+MAQUINA_MANUAL = "Tarea manual"
+MATERIALES = ("fierro-galv", "inox-304")
+
+
+def material_de_texto(texto):
+    """inox si el texto lo dice (inox, acero 304/316); si no, fierro-galv. Igual que el motor de rutas."""
+    t = (texto or "").lower()
+    if re.search(r"inox|acero 30[46]|t-?30[46]|ss ?30[46]", t):
+        return "inox-304"
+    return "fierro-galv"
+
+
+def material_de_operacion(nombre):
+    """fierro-galv o inox-304 si el nombre de la operación lo trae; si no, None (operación sin material)."""
+    for material in MATERIALES:
+        if material in (nombre or ""):
+            return material
+    return None
+
 
 def clase_eficiencia(pct):
     """Verde 90 % o más · ámbar 75 a 89 · rojo menos de 75."""
@@ -68,6 +99,43 @@ class OperacionMadre(models.Model):
     def __str__(self):
         return self.nombre
 
+    @property
+    def tipos(self):
+        """Tipos de máquina (o máquinas concretas) en orden de preferencia: "Torno CNC / Torno convencional"."""
+        return [t.strip() for t in (self.tipo_maquina or "").split("/") if t.strip()]
+
+    def opciones_maquina(self, maquinas=None):
+        """
+        Máquinas válidas para esta operación, en orden de preferencia (regla 3).
+        Un token puede ser una máquina concreta o un tipo. Sin tipos capturados: todas las activas.
+        """
+        maquinas = list(maquinas if maquinas is not None else Maquina.objects.filter(activa=True))
+        tipos = self.tipos
+        if not tipos:
+            return maquinas
+        por_nombre = {m.nombre.lower(): m for m in maquinas}
+        opciones = []
+        for token in tipos:
+            clave = token.lower()
+            candidatas = [por_nombre[clave]] if clave in por_nombre else [m for m in maquinas if m.tipo.strip().lower() == clave]
+            for m in candidatas:
+                if m not in opciones:
+                    opciones.append(m)
+        return opciones
+
+    def maquina_sola(self, maquinas=None):
+        """La primera preferencia si es una máquina concreta o un tipo con una sola máquina; si no, None."""
+        tipos = self.tipos
+        maquinas = list(maquinas if maquinas is not None else Maquina.objects.filter(activa=True))
+        if not tipos:
+            return maquinas[0] if len(maquinas) == 1 else None
+        primero = tipos[0].lower()
+        concreta = [m for m in maquinas if m.nombre.lower() == primero]
+        if concreta:
+            return concreta[0]
+        del_tipo = [m for m in maquinas if m.tipo.strip().lower() == primero]
+        return del_tipo[0] if len(del_tipo) == 1 else None
+
 
 class OperacionDetallada(models.Model):
     madre = models.ForeignKey(
@@ -85,9 +153,10 @@ class OperacionDetallada(models.Model):
         related_name="operaciones",
         verbose_name="Máquina sugerida",
     )
+    # 4 decimales: el min/pz se usa completo, sin recortarle decimales (2.025, no 2.03), como la hoja
     minutos_estandar = models.DecimalField(
-        max_digits=7,
-        decimal_places=2,
+        max_digits=10,
+        decimal_places=4,
         default=0.0,
         verbose_name="Minutos estándar por pieza",
     )
@@ -106,16 +175,30 @@ class OperacionDetallada(models.Model):
         """Tiempo fijo o por escalones del catálogo (manda sobre el estudio). None si la operación no tiene."""
         fijo = getattr(self, "tiempo_fijo", None)
         if fijo:
-            return round(fijo.minutos if fijo.por_pedido else fijo.minutos * cantidad)
+            return redondear(fijo.minutos if fijo.por_pedido else fijo.minutos * cantidad)
         for escalon in self.escalones.all():  # ordenados por "hasta"; el último sin tope = "más de"
             if escalon.hasta is None or cantidad <= escalon.hasta:
-                return round(escalon.minutos)
+                return redondear(escalon.minutos)
         return None
 
     def minutos_para(self, cantidad):
         """Normal: min/pz del estudio × cantidad. Sin tiempo: 0."""
         fijos = self.minutos_fijos(cantidad)
-        return fijos if fijos is not None else round(self.minutos_estandar * cantidad)
+        return fijos if fijos is not None else redondear(self.minutos_estandar * cantidad)
+
+    @property
+    def es_tarea_especial(self):
+        return (self.madre.nombre, self.nombre) == TAREA_ESPECIAL
+
+    @property
+    def sin_tiempo(self):
+        """Ni estudio, ni tiempo fijo, ni escalones: se muestra una raya y suma cero."""
+        return (not self.minutos_estandar and not getattr(self, "tiempo_fijo", None)
+                and not self.escalones.all() and not self.es_tarea_especial)
+
+    @property
+    def material(self):
+        return material_de_operacion(self.nombre)
 
     @property
     def es_por_pedido(self):
@@ -208,8 +291,11 @@ class ItemDesignacion(models.Model):
     quien = models.ForeignKey(
         Operario,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="items_designados",
         verbose_name="Quién",
+        help_text="Vacío = sin asignar: la tarea existe pero sus minutos no cuentan en ninguna persona.",
     )
     pedido = models.ForeignKey(
         Pedido,
@@ -282,13 +368,41 @@ class ItemDesignacion(models.Model):
         verbose_name="Piezas hechas",
         help_text="Las que lleva, acumuladas aunque se trabaje varios días.",
     )
+    # Hechas que ya traía al último Nuevo día: Min de hoy = min/pz × (Cant − esto)
+    piezas_base = models.PositiveIntegerField(default=0, verbose_name="Hechas al iniciar el día")
+    # Hechas que tenía antes de palomear: al quitar la ✓ regresa a este valor (regla 4)
+    piezas_antes_check = models.PositiveIntegerField(default=0, verbose_name="Hechas antes de la ✓")
+    cantidad_manual = models.BooleanField(
+        default=False, verbose_name="Cant cambiada a mano",
+        help_text="Si se cambió aquí, ya no sigue a la cantidad de la partida.",
+    )
+    min_estimado_pz = models.DecimalField(
+        max_digits=7, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.01"))],
+        verbose_name="Min estimado por pieza",
+        help_text="Solo Tarea especial: Min = esto × Cant.",
+    )
     minutos = models.PositiveIntegerField(
         default=0,
         verbose_name="Minutos estimados",
     )
+    min_restantes = models.PositiveIntegerField(default=0, verbose_name="Min restantes")
     hecho = models.BooleanField(
         default=False,
         verbose_name="Completado (✓)",
+    )
+    hecho_en = models.DateTimeField(null=True, blank=True, verbose_name="✓ puesta el")
+    hecho_por = models.CharField(max_length=150, blank=True, default="", verbose_name="✓ puesta por")
+    hechas_en = models.DateTimeField(null=True, blank=True, verbose_name="Hechas capturadas el")
+    hechas_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Hechas capturadas por")
+
+    class Cierre(models.TextChoices):
+        CHECK = "CHECK", "✓"
+        AVANCE = "AVANCE", "Avance"
+
+    cierre = models.CharField(
+        max_length=10, choices=Cierre.choices, blank=True, default="",
+        verbose_name="Cómo se cerró en Nuevo día",
     )
 
     fecha_cierre = models.DateField(null=True, blank=True, db_index=True, verbose_name="Fecha de cierre")
@@ -311,19 +425,139 @@ class ItemDesignacion(models.Model):
         ordering = ["orden", "id"]
         verbose_name = "Tarea de designación"
         verbose_name_plural = "Tareas de designación"
+        permissions = [
+            ("editar_designacion", "Puede cargar rutas, agregar, editar, asignar y quitar tareas"),
+            ("palomear_designacion", "Puede poner ✓ y Hechas en Designación"),
+            ("cerrar_dia", "Puede cerrar el día (Nuevo día)"),
+            ("imprimir_designacion", "Puede imprimir y exportar Designación"),
+        ]
 
     def __str__(self):
-        return f"{self.quien.nombre} - Paso {self.paso} ({self.operacion_detallada.nombre})"
+        quien = self.quien.nombre if self.quien_id else "Sin asignar"
+        return f"{quien} - Paso {self.paso} ({self.operacion_detallada.nombre})"
+
+    # ----- Reglas 2 y 4: Min, Hechas, Faltan, Min restantes -----
+    @property
+    def es_activa(self):
+        """Activa = sigue en Designación (no archivada por Nuevo día ni por archivar el pedido)."""
+        return not self.fecha_cierre and not self.cerrada_al_archivar
+
+    @property
+    def es_especial(self):
+        return self.operacion_detallada.es_tarea_especial
+
+    @property
+    def es_por_pedido(self):
+        return self.operacion_detallada.es_por_pedido
+
+    @property
+    def lleva_hechas(self):
+        """Empaquetar y Contar y revisar (por pedido), tarea especial y tareas sin cantidad: solo ✓."""
+        return bool(self.cantidad) and not self.es_por_pedido and not self.es_especial
+
+    @property
+    def sin_tiempo(self):
+        """Raya en Min: la operación no tiene tiempo y la tarea suma cero (sale en Faltan de medir)."""
+        return self.operacion_detallada.sin_tiempo and not self.min_estimado_pz and not self.minutos
+
+    def _min_por_pieza(self):
+        if self.es_especial:
+            return self.min_estimado_pz or Decimal(0)
+        return self.operacion_detallada.minutos_estandar or Decimal(0)
+
+    def calcular_minutos(self):
+        """
+        Regla 2. Por pedido (tiempo fijo o escalones): sin multiplicar.
+        Normal: min/pz × piezas, piezas = Cant − hechas al último Nuevo día.
+        Tarea especial: min estimado × Cant (sin piezas: 1).
+        """
+        piezas = max(self.cantidad - self.piezas_base, 0)
+        if self.es_especial:
+            return redondear(self._min_por_pieza() * (self.cantidad or 1))
+        fijos = self.operacion_detallada.minutos_fijos(self.cantidad)
+        if fijos is not None:
+            return fijos
+        return redondear(self._min_por_pieza() * piezas)
+
+    def calcular_restantes(self):
+        """min/pz × Faltan, redondeado. Con ✓: 0. Sin avance desde el último Nuevo día: igual a Min."""
+        if self.hecho:
+            return 0
+        if not self.lleva_hechas or self.piezas_hechas <= self.piezas_base:
+            return self.minutos
+        return min(redondear(self._min_por_pieza() * self.faltan), self.minutos)
 
     def save(self, *args, **kwargs):
-        # Minuto estándar (regla D): tiempo fijo o escalones mandan; si no, min/pz × cantidad (sin tiempo = 0)
-        if kwargs.get("update_fields") is None and self.operacion_detallada_id:
-            fijos = self.operacion_detallada.minutos_fijos(self.cantidad)
-            if fijos is not None:
-                self.minutos = fijos
-            elif not self.minutos:
-                self.minutos = self.operacion_detallada.minutos_para(self.cantidad)
+        # Min se recalcula solo en las tareas activas; lo archivado no cambia (regla 2)
+        if kwargs.get("update_fields") is None and self.operacion_detallada_id and self.es_activa:
+            self.minutos = self.calcular_minutos()
+        if self.es_activa:
+            self.min_restantes = self.calcular_restantes()
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = list({*kwargs["update_fields"], "min_restantes"})
         super().save(*args, **kwargs)
+
+    def poner_check(self, valor, quien=""):
+        """✓ y Hechas van juntas: palomear pone Hechas = Cant; quitarla regresa Hechas a lo que tenía."""
+        if valor == self.hecho:
+            return
+        ahora = timezone.now()
+        if valor:
+            self.piezas_antes_check = self.piezas_hechas
+            self.piezas_hechas = self.cantidad
+        else:
+            self.piezas_hechas = min(self.piezas_antes_check, self.cantidad)
+        self.hecho = valor
+        self.hecho_en, self.hecho_por = (ahora, quien) if valor else (None, "")
+        self.save(update_fields=["hecho", "piezas_hechas", "piezas_antes_check", "hecho_en", "hecho_por"])
+
+    def poner_hechas(self, valor, quien=""):
+        """Hechas al total pone la ✓ sola; si baja, la ✓ se quita. Guarda cuándo y quién."""
+        valor = max(0, min(int(valor), self.cantidad))
+        self.piezas_hechas = valor
+        self.hechas_en, self.hechas_por = timezone.now(), quien
+        completa = bool(self.cantidad) and valor >= self.cantidad
+        if completa and not self.hecho:
+            self.hecho, self.hecho_en, self.hecho_por = True, self.hechas_en, quien
+            self.piezas_antes_check = valor
+        elif not completa and self.hecho:
+            self.hecho, self.hecho_en, self.hecho_por = False, None, ""
+        self.save(update_fields=["piezas_hechas", "hecho", "hecho_en", "hecho_por",
+                                 "hechas_en", "hechas_por", "piezas_antes_check"])
+
+    @property
+    def hechas_hoy(self):
+        """Piezas hechas desde el último Nuevo día."""
+        return max(self.hechas - self.piezas_base, 0)
+
+    @property
+    def min_hechos_hoy(self):
+        """Min − Min restantes. Con ✓: igual a Min."""
+        return max(self.minutos - self.min_restantes, 0)
+
+    @property
+    def piezas_dia(self):
+        """En el Archivo: piezas de ese día (el renglón ya cerrado)."""
+        return self.hechas_hoy if self.lleva_hechas else self.cantidad
+
+    @property
+    def tiene_avance(self):
+        return not self.hecho and self.lleva_hechas and self.piezas_hechas > self.piezas_base
+
+    @property
+    def material_partida(self):
+        return material_de_texto(self.partida.descripcion) if self.partida_id else None
+
+    @property
+    def aviso_material(self):
+        """Naranja en operación: el material de la operación no es el de la partida (no aplica sin pedido)."""
+        if not self.partida_id:
+            return None
+        op = self.operacion_detallada.material
+        partida = self.material_partida
+        if op and partida and op != partida:
+            return f"La operación es {op} y la partida es {partida}"
+        return None
 
     @property
     def producto_texto(self):
@@ -361,7 +595,7 @@ class ItemDesignacion(models.Model):
     # ----- Por operación (lista de trabajo) -----
     @property
     def hechas(self):
-        """Piezas que lleva la tarea. Con ✓ es igual a la cantidad."""
+        """Piezas que lleva la tarea (acumuladas). Con ✓ es igual a la cantidad."""
         return self.cantidad if self.hecho else min(self.piezas_hechas, self.cantidad)
 
     @property

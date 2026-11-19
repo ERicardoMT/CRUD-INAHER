@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 from io import BytesIO
 from django.contrib.auth.models import Permission, User
@@ -188,10 +189,16 @@ class ReglasEstatusTests(PruebaConSesion):
 
     def setUp(self):
         super().setUp()
+        self.usuario.user_permissions.add(*Permission.objects.filter(
+            codename__in=["palomear_designacion", "editar_designacion"],
+        ))
         self.hoy = timezone.localdate()
         self.operario = Operario.objects.create(nombre="Ángel")
         self.madre = OperacionMadre.objects.create(nombre="Cortar")
-        self.detallada = OperacionDetallada.objects.create(madre=self.madre, nombre="Cortar varilla")
+        # 1 min/pz: los minutos de cada tarea salen de su cantidad (regla 2 de Designación)
+        self.detallada = OperacionDetallada.objects.create(
+            madre=self.madre, nombre="Cortar varilla", minutos_estandar=1,
+        )
         self.dia = DesignacionDia.objects.create(fecha=self.hoy)
         self.pedido = Pedido.objects.create(numero="R1", fecha_salida=self.hoy + timedelta(days=5))
         self.p1 = PartidaPedido.objects.create(pedido=self.pedido, cantidad=4, descripcion="REBO 400")
@@ -202,7 +209,7 @@ class ReglasEstatusTests(PruebaConSesion):
         return ItemDesignacion.objects.create(
             designacion=self.dia, quien=self.operario, pedido=self.pedido, partida=partida,
             operacion_madre=self.madre, operacion_detallada=self.detallada,
-            minutos=minutos, hecho=hecho, bloqueado_por=bloqueado_por,
+            cantidad=minutos, hecho=hecho, bloqueado_por=bloqueado_por,
         )
 
     def toggle(self, item):
@@ -327,14 +334,26 @@ class ReglasEstatusTests(PruebaConSesion):
         self.assertEqual((pedido.min_total, pedido.min_restante, pedido.pct_avance), (110, 80, 27))
 
     def test_ruta_carga_por_partida_y_empaquetar_una_vez(self):
+        """La vista previa del motor (una llamada por partida) se guarda con un solo Empaquetar."""
+        paso = lambda n: {"orden": n, "madre": "Cortar", "detallada": "Cortar varilla", "maquina": ""}  # noqa: E731
         self.client.post(
-            reverse("designaciones:cargar_ruta", args=[self.dia.pk]),
-            {"pedido_id": self.pedido.pk, "operario_id": self.operario.pk, "familia": "MT"},
+            reverse("designaciones:cargar_ruta"),
+            json.dumps({
+                "pedido_id": self.pedido.pk,
+                "partidas": [
+                    {"partida_id": self.p1.pk, "pasos": [paso(n) for n in range(1, 6)]},
+                    {"partida_id": self.p2.pk, "pasos": [paso(n) for n in range(1, 6)]},
+                ],
+                "empaquetar": {"madre": "Empaquetar", "detallada": "Empaquetar pedido chico", "maquina": ""},
+            }),
+            content_type="application/json",
         )
         tareas = ItemDesignacion.objects.filter(pedido=self.pedido)
         self.assertEqual(tareas.filter(operacion_madre__nombre="Empaquetar").count(), 1)
         self.assertEqual(tareas.filter(partida=self.p1).count(), 5)
         self.assertEqual(tareas.filter(partida=self.p2).count(), 5)
+
+
 class CorreccionesFichaPedidoTests(PruebaConSesion):
 
     def setUp(self):

@@ -1,0 +1,19 @@
+{# Carga por persona (regla 5): todas las personas activas. Libres = turno − asignados #}
+{% for fila in carga %}
+<div class="operario-resumen-item mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <strong class="operario-name">{{ fila.operario.nombre }}</strong>
+        <span class="small fw-semibold">{{ fila.asignados }} min</span>
+    </div>
+    <div class="progress" style="height: 6px;">
+        <div class="progress-bar {% if fila.pct == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar"
+             style="width: {{ fila.pct }}%;" title="{{ fila.pct }}%"></div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-1">
+        <small class="text-muted">hechos {{ fila.hechos }}</small>
+        <small class="fw-semibold {% if fila.libres < 0 %}text-danger{% else %}text-muted{% endif %}">libres {{ fila.libres }}</small>
+    </div>
+</div>
+{% empty %}
+<p class="text-muted small mb-0">No hay personas activas en Catálogos.</p>
+{% endfor %}

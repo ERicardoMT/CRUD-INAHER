@@ -439,9 +439,10 @@ def exportar_tareas(request):
     """Tareas cerradas con sus columnas tal como se ven, de todo lo filtrado."""
     tareas, f = filtrar_tareas(request, timezone.localdate())
     filas = [
-        [t.fecha_cierre, t.quien.nombre, t.pedido.numero if t.pedido else "", t.paso, t.producto_cerrado,
-         t.operacion_madre.nombre, t.operacion_detallada.nombre, t.maquina.nombre if t.maquina else "",
-         t.cantidad, t.minutos, "✓ al archivar" if t.cerrada_al_archivar else "✓ operador"]
+        [t.fecha_cierre, t.quien.nombre if t.quien_id else "sin asignar", t.pedido.numero if t.pedido else "",
+         t.paso, t.producto_cerrado, t.operacion_madre.nombre, t.operacion_detallada.nombre,
+         t.maquina.nombre if t.maquina else "", t.piezas_dia, t.minutos,
+         "✓ al archivar" if t.cerrada_al_archivar else ("avance" if t.cierre == "AVANCE" else "✓ operador")]
         for t in tareas.iterator(chunk_size=1000)
     ]
     return respuesta_excel(

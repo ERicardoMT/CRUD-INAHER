@@ -1,5 +1,5 @@
 <tr class="fila-pedido">
-    <td data-label="Quién"><strong>{{ t.quien.nombre }}</strong></td>
+    <td data-label="Quién"><strong>{{ t.quien.nombre|default:"sin asignar" }}</strong></td>
     <td data-label="# P">
         {% if t.pedido %}<a href="{% url 'pedidos:detalle' t.pedido.pk %}" class="fw-bold text-primary">{{ t.pedido.numero }}</a>
         {% else %}<span class="text-muted">stock</span>{% endif %}

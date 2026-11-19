@@ -67,7 +67,7 @@
                 {% for t in pagina %}
                 <tr class="fila-pedido">
                     <td data-label="Fecha" class="text-nowrap">{{ t.fecha_cierre|date:"d/m/y" }}</td>
-                    <td data-label="Quién"><div>{{ t.quien.nombre }}{% if not t.quien.activo %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
+                    <td data-label="Quién"><div>{{ t.quien.nombre|default:"sin asignar" }}{% if t.quien and not t.quien.activo %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
                     <td data-label="# P">
                         {% if t.pedido %}<a href="{% url 'pedidos:detalle' t.pedido.pk %}?next={{ request.get_full_path|urlencode }}" class="fw-bold text-primary">{{ t.pedido.numero }}</a>
                         {% else %}<span class="text-muted">stock</span>{% endif %}
@@ -76,10 +76,11 @@
                     <td data-label="Producto">{{ t.producto_cerrado }}</td>
                     <td data-label="Operación"><div>{{ t.operacion_madre.nombre }} › {{ t.operacion_detallada.nombre }}{% if not t.operacion_madre.activa %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
                     <td data-label="Máquina"><div>{{ t.maquina.nombre|default:"—" }}{% if t.maquina and not t.maquina.activa %}<small class="archivo-sub">(baja)</small>{% endif %}</div></td>
-                    <td data-label="Cant" class="text-end">{{ t.cantidad }}</td>
+                    <td data-label="Cant" class="text-end">{{ t.piezas_dia }}</td>
                     <td data-label="Min est" class="text-end">{{ t.minutos }}</td>
                     <td data-label="Cerrada">
                         {% if t.cerrada_al_archivar %}<span class="archivo-chip is-neutral"><i class="bi bi-check-lg"></i>al archivar</span>
+                        {% elif t.cierre == "AVANCE" %}<span class="archivo-chip is-neutral"><i class="bi bi-hourglass-split"></i>avance</span>
                         {% else %}<span class="archivo-chip is-ok"><i class="bi bi-check-lg"></i>operador</span>{% endif %}
                     </td>
                 </tr>

@@ -11,7 +11,7 @@ def hoja_tareas(tareas, dia):
         "encabezados": ["Fecha", "Quién", "# P", "Paso", "Operación madre", "Operación detallada", "Máquina",
                         "Cant", "Min est", "Min real", "Efic %", "Pzas/hora", "✓"],
         "filas": [
-            [dia, t.quien.nombre, t.pedido.numero if t.pedido else "stock", t.paso, t.operacion_madre.nombre,
+            [dia, t.quien.nombre if t.quien_id else "sin asignar", t.pedido.numero if t.pedido else "stock", t.paso, t.operacion_madre.nombre,
              t.operacion_detallada.nombre, t.maquina.nombre if t.maquina else "", t.cantidad, t.minutos,
              t.min_real, t.eficiencia, t.pzas_hora, "✓" if t.hecho else ""]
             for t in tareas

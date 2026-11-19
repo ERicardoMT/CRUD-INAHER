@@ -7,13 +7,13 @@
 <div class="page-heading">
     <div>
         <div class="eyebrow">DESIGNACIÓN DIARIA</div>
-        <h1>Editar tarea de la jornada</h1>
+        <h1>Editar tarea</h1>
         <p class="text-muted mb-0">
-            Modifica la asignación de operación, puesto o cantidad.
+            Operación, pedido, paso o bloqueo. Quién, máquina, detalle, Cant, ✓ y Hechas también se cambian en el renglón.
         </p>
     </div>
 
-    <a href="{% url 'designaciones:hoy' %}?fecha={{ designacion.fecha|date:'Y-m-d' }}" class="btn-outline-inaher">
+    <a href="{% url 'designaciones:hoy' %}" class="btn-outline-inaher">
         <i class="bi bi-arrow-left"></i> Volver a la designación
     </a>
 </div>
@@ -23,99 +23,39 @@
         <h2>Información de la tarea</h2>
     </div>
 
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|striptags }}</div>{% endif %}
+
     <form method="post">
         {% csrf_token %}
         <div class="form-grid">
-            <div class="form-group">
-                <label class="form-label fw-semibold">Quién (Operario) *</label>
-                {{ form.quien }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label fw-semibold"># Pedido</label>
-                {{ form.pedido }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="{{ form.partida.id_for_label }}">Partida</label>
-                {{ form.partida }}
-                {% if form.partida.errors %}<div class="field-error">{{ form.partida.errors|striptags }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label fw-semibold">Paso *</label>
-                {{ form.paso }}
-            </div>
-
+            {% for campo in form %}
+            {% if campo.name == "bloqueado_por" %}
             <div class="form-group field-wide">
-                <div class="form-check form-switch mt-2">
-                    {{ form.es_stock }}
-                    <label class="form-check-label" for="{{ form.es_stock.id_for_label }}">
-                        Es producción para Stock
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-group field-wide">
-                <label class="form-label">Producto / Modelo</label>
-                {{ form.descripcion_manual }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label fw-semibold">Operación madre *</label>
-                {{ form.operacion_madre }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label fw-semibold">Operación detallada *</label>
-                {{ form.operacion_detallada }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Máquina</label>
-                {{ form.maquina }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Detalle (medida · tolerancia)</label>
-                {{ form.detalle }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label fw-semibold">Cantidad *</label>
-                {{ form.cantidad }}
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label fw-semibold" for="{{ form.piezas_hechas.id_for_label }}">Piezas hechas</label>
-                {{ form.piezas_hechas }}
-                <small class="text-muted">Las que lleva, aunque se trabaje varios días. Con ✓ cuentan todas.</small>
-                {% if form.piezas_hechas.errors %}<div class="text-danger small">{{ form.piezas_hechas.errors|join:" " }}</div>{% endif %}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label fw-semibold">Minutos</label>
-                {{ form.minutos }}
-            </div>
-
-            <div class="form-group field-wide">
-                <label class="form-label" for="{{ form.bloqueado_por.id_for_label }}"><i class="bi bi-slash-circle text-warning"></i> Bloqueada por material</label>
-                {{ form.bloqueado_por }}
+                <label class="form-label" for="{{ campo.id_for_label }}"><i class="bi bi-slash-circle text-warning"></i> Bloqueada por material</label>
+                {{ campo }}
                 <small class="text-muted">Si se llena, el pedido se marca DETENIDO solo; al vaciarlo se libera (salvo que lo hayan detenido a mano).</small>
             </div>
-
-            <div class="form-group field-wide">
-                <div class="form-check form-switch">
-                    {{ form.hecho }}
-                    <label class="form-check-label" for="{{ form.hecho.id_for_label }}">
-                        Marcar como concluido (✓)
-                    </label>
-                </div>
+            {% elif campo.name == "min_estimado_pz" %}
+            <div class="form-group{% if not item.es_especial %} d-none{% endif %}" id="boxMinEstimado">
+                <label class="form-label fw-semibold" for="{{ campo.id_for_label }}">Min estimado por pieza *</label>
+                {{ campo }}
+                <small class="text-muted">Solo Tarea especial: Min = esto × Cant.</small>
+                {% if campo.errors %}<div class="field-error">{{ campo.errors|striptags }}</div>{% endif %}
             </div>
+            {% else %}
+            <div class="form-group{% if campo.name == 'detalle' or campo.name == 'operacion_detallada' %} field-wide{% endif %}">
+                <label class="form-label{% if campo.field.required %} fw-semibold{% endif %}" for="{{ campo.id_for_label }}">
+                    {{ campo.label }}{% if campo.field.required %} *{% endif %}
+                </label>
+                {{ campo }}
+                {% if campo.errors %}<div class="field-error">{{ campo.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
         </div>
 
         <div class="form-footer mt-4">
-            <a href="{% url 'designaciones:hoy' %}?fecha={{ designacion.fecha|date:'Y-m-d' }}" class="btn-outline-inaher">
+            <a href="{% url 'designaciones:hoy' %}" class="btn-outline-inaher">
                 Cancelar
             </a>
             <button type="submit" class="btn-inaher">
@@ -127,6 +67,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'designaciones/js/partidas_tarea.js' %}"></script>
+<script src="{% static 'designaciones/js/agregar_tarea.js' %}"></script>
 {% endblock %}
-

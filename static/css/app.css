@@ -3617,3 +3617,98 @@ textarea.form-control {
         border-top: 3px solid var(--inaher-navy);
     }
 }
+
+/* ===== Designación diaria v2 ===== */
+.tabla-designacion-v2 td.celda-captura {
+    background: #F4F8FE;
+}
+
+.tabla-designacion-v2 td.celda-sola {
+    background: #F7F8FA;
+    color: var(--text-muted);
+}
+
+.tabla-designacion-v2 .form-select-sm,
+.tabla-designacion-v2 .form-control-sm {
+    min-width: 0;
+    font-size: 12px;
+}
+
+.tabla-designacion-v2 select[data-campo="quien"] { min-width: 110px; }
+.tabla-designacion-v2 select[data-campo="maquina"] { min-width: 150px; }
+.tabla-designacion-v2 input[data-campo="detalle"] { min-width: 140px; }
+.tabla-designacion-v2 .input-num { width: 64px; margin: 0 auto; text-align: center; }
+
+.tabla-designacion-v2 select.sin-asignar {
+    border-style: dashed;
+    color: var(--text-muted);
+}
+
+.tabla-designacion-v2 .fila-hecha td {
+    opacity: 0.6;
+}
+
+.tabla-designacion-v2 td.marca-naranja,
+.tabla-designacion-v2 .form-select.marca-naranja {
+    background: #FFEDD5;
+}
+
+.tabla-designacion-v2 .form-select.marca-rojo,
+.js-maquina-ruta.marca-rojo {
+    border-color: #DC2626;
+    background-color: #FEF2F2;
+    color: #B91C1C;
+}
+
+.aviso-naranja { color: #C2410C; font-weight: 600; }
+.aviso-rojo { color: #B91C1C; font-weight: 600; }
+
+.nota-pedido { font-style: italic; }
+
+.buscador-designacion { max-width: 260px; }
+
+.leyenda-designacion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.leyenda-caja {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    vertical-align: -2px;
+}
+
+.caja-captura { background: #F4F8FE; }
+.caja-sola { background: #F7F8FA; }
+.caja-naranja { background: #FFEDD5; }
+.caja-rojo { background: #FEF2F2; border-color: #DC2626; }
+
+.nuevo-dia-resumen .nd-fila {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.nuevo-dia-resumen .nd-fila > strong {
+    color: var(--inaher-navy);
+    font-size: 24px;
+    line-height: 1;
+}
+
+.nuevo-dia-resumen .nd-fila small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 11px;
+}

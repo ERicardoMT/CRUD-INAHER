@@ -105,7 +105,7 @@ def catalogos_config(request):
             badge_clase = "status-neutral"
             badge_texto = "0 muestras"
 
-        mediana_calculada = round(statistics.median(tiempos), 2) if tiempos else float(op.minutos_estandar)
+        mediana_calculada = round(statistics.median(tiempos), 4) if tiempos else float(op.minutos_estandar)
 
         ops_con_metricas.append({
             "objeto": op,
@@ -176,7 +176,7 @@ def recalcular_tiempos_config(request):
         mediciones = MedicionTiempo.objects.filter(operacion_detallada=op, muestra_piezas__gt=0)
         tiempos = [float(m.minutos_muestra_decimal) for m in mediciones if m.minutos_muestra_decimal > 0]
         if tiempos:
-            mediana = Decimal(str(round(statistics.median(tiempos), 2)))
+            mediana = Decimal(str(round(statistics.median(tiempos), 4)))
             if op.minutos_estandar != mediana:
                 op.minutos_estandar = mediana
                 op.save(update_fields=["minutos_estandar"])

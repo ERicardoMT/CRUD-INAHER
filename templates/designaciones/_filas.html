@@ -1,0 +1,113 @@
+{# Una tarea por renglón. Azul = se captura · gris = se llena solo (página 2 del documento) #}
+{% for t in tareas %}
+<tr class="item-fila fila-tarjeta{% if t.hecho %} fila-hecha{% endif %}" data-id="{{ t.pk }}" data-hecho="{{ t.hecho|yesno:'1,0' }}"
+    data-buscar="{{ t.texto_busqueda }}">
+    <td class="text-center col-check">
+        <input type="checkbox" name="item_ids" value="{{ t.pk }}" form="formSeleccion" class="item-select-check form-check-input" aria-label="Marcar tarea">
+    </td>
+
+    <td data-label="Quién" class="celda-captura">
+        {% if permisos.editar %}
+        <select class="form-select form-select-sm js-campo{% if not t.quien_id %} sin-asignar{% endif %}" data-campo="quien" aria-label="Quién">
+            <option value="">sin asignar</option>
+            {% for op in operarios %}<option value="{{ op.pk }}"{% if op.pk == t.quien_id %} selected{% endif %}>{{ op.nombre }}</option>{% endfor %}
+        </select>
+        {% else %}
+        <strong class="badge-operario">{{ t.quien.nombre|default:"sin asignar" }}</strong>
+        {% endif %}
+    </td>
+
+    <td data-label="# P">
+        {% if t.pedido %}
+        <a href="{% url 'pedidos:detalle' t.pedido.pk %}" class="fw-semibold text-primary">{{ t.pedido.numero }}</a>
+        {% else %}
+        <span class="badge bg-secondary">STOCK</span>
+        {% endif %}
+    </td>
+
+    <td class="text-center celda-sola" data-label="Paso">{% if t.paso %}<span class="badge-paso">{{ t.paso }}</span>{% endif %}</td>
+
+    <td data-label="Producto" class="celda-sola">
+        <div class="cell-producto" title="{{ t.producto }}">{{ t.producto }}</div>
+        {% if t.partida_texto %}<small class="text-muted d-block">{{ t.partida_texto }}</small>{% endif %}
+        {% if t.notas_pedido %}<small class="text-muted d-block nota-pedido">📝 {{ t.notas_pedido|truncatechars:60 }}</small>{% endif %}
+    </td>
+
+    <td data-label="Operación" class="celda-captura{% if t.marca_operacion %} marca-naranja{% endif %}">
+        <div class="fw-medium text-dark">{{ t.operacion_madre.nombre }}</div>
+        <small class="text-muted">{{ t.operacion_detallada.nombre }}</small>
+        {% if t.marca_operacion %}<small class="d-block aviso-naranja"><i class="bi bi-exclamation-triangle"></i> {{ t.marca_operacion }}</small>{% endif %}
+    </td>
+
+    <td data-label="Máquina" class="celda-captura">
+        {% if permisos.editar %}
+        <select class="form-select form-select-sm js-campo{% if t.marca_maquina %} marca-{{ t.marca_maquina }}{% endif %}" data-campo="maquina" aria-label="Máquina"
+                title="{% if t.marca_maquina == 'rojo' %}Falta escoger máquina{% elif t.marca_maquina == 'naranja' %}La máquina no es de los tipos de la operación{% endif %}">
+            <option value="">Elegir máquina</option>
+            {% for m in t.opciones_maquina %}<option value="{{ m.pk }}"{% if m.pk == t.maquina_id %} selected{% endif %}>{{ m.nombre }}</option>{% endfor %}
+            {% if t.maquina and t.maquina not in t.opciones_maquina %}<option value="{{ t.maquina_id }}" selected>{{ t.maquina.nombre }}</option>{% endif %}
+        </select>
+        {% else %}
+        <span class="small{% if t.marca_maquina %} aviso-{{ t.marca_maquina }}{% endif %}">{{ t.maquina.nombre|default:"Elegir máquina" }}</span>
+        {% endif %}
+    </td>
+
+    <td data-label="Detalle" class="celda-captura">
+        {% if permisos.editar %}
+        <input type="text" class="form-control form-control-sm js-campo" data-campo="detalle" value="{{ t.detalle }}" maxlength="255" placeholder="medida · tolerancia" aria-label="Detalle">
+        {% else %}
+        <span class="text-muted small">{{ t.detalle|default:"—" }}</span>
+        {% endif %}
+    </td>
+
+    <td class="text-center celda-captura" data-label="Cant">
+        {% if permisos.editar %}
+        <input type="number" class="form-control form-control-sm js-campo input-num" data-campo="cantidad" value="{{ t.cantidad }}" min="{{ t.hechas }}" inputmode="numeric" aria-label="Cantidad">
+        {% else %}{{ t.cantidad }}{% endif %}
+    </td>
+
+    <td class="text-center celda-sola" data-label="Min">
+        {% if t.sin_tiempo %}<span class="text-muted" title="La operación todavía no tiene tiempo: suma cero">—</span>
+        {% else %}<strong>{{ t.minutos }}</strong>{% if t.es_por_pedido %}<small class="d-block text-muted">por pedido</small>{% endif %}{% endif %}
+    </td>
+
+    <td class="text-center celda-captura" data-label="✓">
+        {% if permisos.palomear %}
+        <input type="checkbox" class="form-check-input js-check" {% if t.hecho %}checked{% endif %} aria-label="Tarea terminada">
+        {% elif t.hecho %}<span class="text-success fw-bold">✓</span>{% endif %}
+    </td>
+
+    <td class="text-center celda-captura" data-label="Hechas">
+        {% if not t.lleva_hechas %}
+        <span class="text-muted">—</span>
+        {% elif permisos.palomear %}
+        <input type="number" class="form-control form-control-sm js-campo input-num" data-campo="piezas_hechas" value="{% if t.hechas %}{{ t.hechas }}{% endif %}" min="0" max="{{ t.cantidad }}" inputmode="numeric" aria-label="Hechas">
+        {% if t.hechas and not t.hecho %}<small class="d-block text-muted">de {{ t.cantidad }}</small>{% endif %}
+        {% else %}{{ t.hechas }}{% endif %}
+    </td>
+
+    <td data-label="Sale" class="celda-sola">
+        {% if t.pedido and t.pedido.fecha_salida %}
+        <span class="text-secondary fw-semibold small d-block">{{ t.pedido.fecha_salida|date:"d/m/y" }}</span>
+        {% if t.alerta_info %}<span class="status-badge {{ t.alerta_info.clase }}">{{ t.alerta_info.texto }}</span>{% endif %}
+        {% else %}<span class="text-muted">—</span>{% endif %}
+    </td>
+
+    <td data-label="Estado" class="celda-sola"><span class="lista-estado {{ t.estado_clase }}">{{ t.estado_texto }}</span></td>
+
+    <td class="text-end col-mas">
+        {% if permisos.editar %}
+        <a href="{% url 'designaciones:editar_item' t.pk %}" class="btn-action-icon text-primary" title="Editar operación, pedido o bloqueo">
+            <i class="bi bi-pencil"></i>
+        </a>
+        {% endif %}
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="15" class="text-center py-4 text-muted">
+        <i class="bi bi-clipboard2-plus fs-2 d-block mb-2"></i>
+        No hay tareas activas. Usa <strong>Cargar ruta de pedido</strong> o <strong>Agregar tarea</strong> para comenzar.
+    </td>
+</tr>
+{% endfor %}

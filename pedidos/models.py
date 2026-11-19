@@ -16,6 +16,7 @@ import unicodedata
 Q_ITEM_VIGENTE = Q(hecho=True) | Q(designacion__cerrada=False)
 Q_ITEM_VIGENTE_REL = Q(items_designacion__hecho=True) | Q(items_designacion__designacion__cerrada=False)
 Q_ITEM_PENDIENTE_REL = Q(items_designacion__hecho=False, items_designacion__designacion__cerrada=False)
+Q_ITEM_PENDIENTE = Q(hecho=False, designacion__cerrada=False)
 
 
 def porcentaje(parte, total):
@@ -111,10 +112,14 @@ class PedidoQuerySet(models.QuerySet):
         return filtros.get(clave, filtros["activos"])()
 
     def con_minutos(self):
-        """Min total / Min restante de la ruta cargada en Designación."""
+        """
+        Min total / Min restante de la ruta cargada en Designación.
+        Min restante = suma de Min restantes de sus tareas (min/pz × piezas que faltan),
+        así el % de avance cuenta las piezas hechas aunque la tarea no tenga ✓.
+        """
         return self.annotate(
             min_total=Coalesce(Sum("items_designacion__minutos", filter=Q_ITEM_VIGENTE_REL), 0),
-            min_restante=Coalesce(Sum("items_designacion__minutos", filter=Q_ITEM_PENDIENTE_REL), 0),
+            min_restante=Coalesce(Sum("items_designacion__min_restantes", filter=Q_ITEM_PENDIENTE_REL), 0),
         )
 
     def entregados_cobrables(self):
@@ -386,20 +391,20 @@ class Pedido(models.Model):
 
     def avance_partidas(self):
         """
-        % por partida = minutos con ✓ ÷ minutos de todas sus tareas.
-        Tareas sin partida (p. ej. Empaquetar, que cuenta una vez) solo suman al pedido.
+        % por partida = minutos hechos ÷ minutos de todas sus tareas, contando los avances
+        (piezas hechas sin ✓). Tareas sin partida (p. ej. Empaquetar) solo suman al pedido.
         """
         datos = {
             fila["partida_id"]: fila
             for fila in self.items_designacion.filter(Q_ITEM_VIGENTE, partida__isnull=False)
             .values("partida_id")
-            .annotate(total=Sum("minutos"), hechos=Sum("minutos", filter=Q(hecho=True)))
+            .annotate(total=Sum("minutos"), restantes=Sum("min_restantes", filter=Q_ITEM_PENDIENTE))
         }
         resultado = []
         for partida in self.partidas.all():
             fila = datos.get(partida.pk)
             total = (fila or {}).get("total") or 0
-            hechos = (fila or {}).get("hechos") or 0
+            hechos = total - ((fila or {}).get("restantes") or 0)
             resultado.append({
                 "partida": partida,
                 "min_total": total,
@@ -417,6 +422,22 @@ class Pedido(models.Model):
             self.descripcion = " y ".join(f"{p.cantidad} {p.descripcion}" for p in partidas)
         self.save(update_fields=["cantidad", "descripcion", "fecha_actualizacion"])
         self.actualizar_busqueda()
+        self.sincronizar_cantidades_tareas()
+
+    def sincronizar_cantidades_tareas(self):
+        """
+        Designación, regla 1: la Cant de cada tarea activa sigue a su partida
+        (Empaquetar y demás tareas de todo el pedido: el total), salvo que se haya cambiado a mano.
+        """
+        cantidades = {p.pk: p.cantidad for p in self.partidas.all()}
+        activas = self.items_designacion.filter(
+            designacion__cerrada=False, fecha_cierre__isnull=True, cerrada_al_archivar=False, cantidad_manual=False,
+        ).select_related("operacion_detallada__madre", "operacion_detallada__tiempo_fijo")
+        for tarea in activas:
+            nueva = cantidades.get(tarea.partida_id, self.cantidad) if tarea.partida_id else self.cantidad
+            if nueva != tarea.cantidad and nueva >= tarea.hechas:
+                tarea.cantidad = nueva
+                tarea.save()  # recalcula Min y Min restantes
 
     def establecer_estado(self, nuevo, guardar=True):
         """
@@ -436,8 +457,9 @@ class Pedido(models.Model):
 
     def sincronizar_estatus(self):
         """
-        Estatus automático con las ✓ de la designación:
-        EN ESPERA → EN PROCESO con la primera ✓; → TERMINADO cuando todas tienen ✓;
+        Estatus automático con las ✓ y los avances de la designación:
+        EN ESPERA → EN PROCESO con la primera ✓ o el primer avance (Hechas > 0);
+        → TERMINADO cuando todas las tareas de todas sus partidas tienen ✓;
         si se quita una ✓ a un TERMINADO regresa a EN PROCESO. ENTREGADO no se toca.
         """
         if self.estado == self.Estado.ENTREGADO:
@@ -445,10 +467,11 @@ class Pedido(models.Model):
         tareas = self.items_designacion.filter(Q_ITEM_VIGENTE)
         hechas = tareas.filter(hecho=True).count()
         total = tareas.count()
+        con_avance = tareas.filter(Q_ITEM_PENDIENTE, piezas_hechas__gt=0).exists()
 
         if total and hechas == total:
             nuevo = self.Estado.TERMINADO
-        elif hechas:
+        elif hechas or con_avance:
             nuevo = self.Estado.EN_PROCESO
         elif self.estado == self.Estado.TERMINADO:
             nuevo = self.Estado.EN_PROCESO

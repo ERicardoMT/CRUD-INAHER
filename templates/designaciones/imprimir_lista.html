@@ -1,0 +1,50 @@
+{% extends "pedidos/_imprimir_base.html" %}
+
+{% block titulo_doc %}INAHER · Designación diaria{% endblock %}
+{% block pie %}Designación diaria{% endblock %}
+{% block encabezado %}INAHER · Designación diaria{% endblock %}
+{% block impreso_extra %} · <strong>orden:</strong> {{ orden_nombre }}{% endblock %}
+{% block sub %}{{ tareas|length }} tareas activas · Estado y Sale calculados con la fecha de impresión · la lista por máquina se imprime en Por operación{% endblock %}
+
+{% block cuerpo %}
+<table>
+    <thead>
+        <tr>
+            <th>Quién</th>
+            <th># P</th>
+            <th class="num">Paso</th>
+            <th>Producto</th>
+            <th>Operación madre › detallada</th>
+            <th>Máquina</th>
+            <th>Detalle</th>
+            <th class="num">Cant</th>
+            <th class="num">Min</th>
+            <th class="c">✓</th>
+            <th class="num">Hechas</th>
+            <th>Sale</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in tareas %}
+        <tr>
+            <td>{{ t.quien.nombre|default:"sin asignar" }}</td>
+            <td class="nowrap"><strong>{% if t.pedido %}{{ t.pedido.numero }}{% else %}STOCK{% endif %}</strong></td>
+            <td class="num">{% if t.paso %}{{ t.paso }}{% endif %}</td>
+            <td>{{ t.producto }}{% if t.partida_texto %}<div class="muted">{{ t.partida_texto }}</div>{% endif %}</td>
+            <td><strong>{{ t.operacion_madre.nombre }}</strong> › {{ t.operacion_detallada.nombre }}</td>
+            <td>{{ t.maquina.nombre|default:"—" }}</td>
+            <td>{{ t.detalle }}</td>
+            <td class="num">{{ t.cantidad }}</td>
+            <td class="num">{% if t.sin_tiempo %}—{% else %}{{ t.minutos }}{% endif %}</td>
+            <td class="c">{% if t.hecho %}✓{% endif %}</td>
+            <td class="num">{% if t.lleva_hechas %}{{ t.hechas }}{% else %}—{% endif %}</td>
+            <td class="nowrap">{% if t.alerta_info %}{{ t.pedido.fecha_salida|date:"d/m/y" }} <span class="tag{% if t.alerta_info.texto == 'ATRASADO' %} rojo{% endif %}">{{ t.alerta_info.texto }}</span>{% endif %}</td>
+            <td>{{ t.estado_texto }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="13" class="c muted">No hay tareas activas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -51,7 +51,7 @@ def _estado(tarea, pendientes):
 def _orden_operacion(t):
     """Máquina, operación madre, operación detallada y persona: junta las operaciones iguales."""
     return (t.maquina_id is None, t.maquina_nombre.lower(), t.operacion_madre.nombre.lower(),
-            t.operacion_detallada.nombre.lower(), t.quien.nombre.lower())
+            t.operacion_detallada.nombre.lower(), t.quien.nombre.lower() if t.quien_id else "")
 
 
 def _orden_urgencia(t):
@@ -128,7 +128,7 @@ def hoja_excel(filas, dia):
         "encabezados": ["Quién", "# Pedido", "Paso", "Producto", "Op. madre", "Op. detallada", "Máquina", "Detalle",
                         "Cant", "Min", "✓", "Hechas", "Faltan", "Fecha salida", "Alerta", "Estado"],
         "filas": [
-            [t.quien.nombre, _numero(t.pedido.numero) if t.pedido else "", t.paso, t.producto_cerrado,
+            [t.quien.nombre if t.quien_id else "sin asignar", _numero(t.pedido.numero) if t.pedido else "", t.paso, t.producto_cerrado,
              t.operacion_madre.nombre, t.operacion_detallada.nombre, t.maquina_nombre, t.detalle,
              t.cantidad, t.minutos, "✓" if t.hecho else "", t.hechas, t.faltan,
              t.pedido.fecha_salida if t.pedido else None, t.alerta_texto, t.estado_texto]
