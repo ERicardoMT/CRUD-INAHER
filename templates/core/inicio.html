@@ -22,43 +22,16 @@
 </div>
 
 <section class="stats-grid">
-
-    <article class="stat-card">
+    {% for t in tarjetas %}
+    <a href="{% url 'pedidos:lista' %}?ver={{ t.clave }}" class="stat-card stat-card-link">
         <div class="stat-card-top">
-            <span>Pedidos registrados</span>
-            <span class="stat-icon icon-blue">
-                <i class="bi bi-clipboard-data"></i>
-            </span>
+            <span>{{ t.titulo }}</span>
+            <span class="stat-icon {{ t.color }}"><i class="bi {{ t.icono }}"></i></span>
         </div>
-
-        <strong>{{ total_pedidos }}</strong>
-        <small>Registros locales de prueba</small>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>En proceso</span>
-            <span class="stat-icon icon-teal">
-                <i class="bi bi-arrow-repeat"></i>
-            </span>
-        </div>
-
-        <strong>{{ pedidos_en_proceso }}</strong>
-        <small>Pedidos con estado en proceso</small>
-    </article>
-
-    <article class="stat-card">
-        <div class="stat-card-top">
-            <span>Terminados</span>
-            <span class="stat-icon icon-green">
-                <i class="bi bi-check2-circle"></i>
-            </span>
-        </div>
-
-        <strong>{{ pedidos_terminados }}</strong>
-        <small>Pedidos marcados como terminados</small>
-    </article>
-
+        <strong>{{ t.valor }}</strong>
+        <small>{{ t.texto }}</small>
+    </a>
+    {% endfor %}
 </section>
 
 <section class="section-heading">

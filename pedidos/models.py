@@ -106,6 +106,7 @@ class PedidoQuerySet(models.QuerySet):
             "entregados": lambda: self.vigentes().filter(estado=Pedido.Estado.ENTREGADO),
             "todos": lambda: self.vigentes(),
             "historico": lambda: self.filter(archivado=True),
+            "en_proceso": lambda: self.vigentes().filter(estado=Pedido.Estado.EN_PROCESO),
         }
         return filtros.get(clave, filtros["activos"])()
 

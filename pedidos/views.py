@@ -42,6 +42,7 @@ TARJETAS = [
 # Selector "Mostrar" del listado
 MOSTRAR = {
     "activos": "Activos",
+    "en_proceso": "En proceso",
     "terminados": "Terminados",
     "entregados": "Entregados",
     "todos": "Todos",

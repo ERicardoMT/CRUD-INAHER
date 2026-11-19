@@ -52,16 +52,18 @@ MODULOS = [
     },
 ]
 
+TARJETAS_INICIO = [
+    {"clave": "todos", "titulo": "Pedidos registrados", "texto": "Todos los pedidos vigentes",
+     "icono": "bi-clipboard-data", "color": "icon-blue"},
+    {"clave": "en_proceso", "titulo": "En proceso", "texto": "Pedidos con estado en proceso",
+     "icono": "bi-arrow-repeat", "color": "icon-teal"},
+    {"clave": "terminados", "titulo": "Terminados", "texto": "Pedidos marcados como terminados",
+     "icono": "bi-check2-circle", "color": "icon-green"},
+]
 
 def inicio(request):
-    contexto = {
-        "total_pedidos": Pedido.objects.vigentes().count(),
-        "pedidos_en_proceso": Pedido.objects.vigentes().filter(estado=Pedido.Estado.EN_PROCESO).count(),
-        "pedidos_terminados": Pedido.objects.vigentes().filter(estado=Pedido.Estado.TERMINADO).count(),
-        "modulos": MODULOS,
-    }
-    return render(request, "core/inicio.html", contexto)
-
+    tarjetas = [{**t, "valor": Pedido.objects.por_filtro(t["clave"]).count()} for t in TARJETAS_INICIO]
+    return render(request, "core/inicio.html", {"tarjetas": tarjetas, "modulos": MODULOS})
 
 def modulo_pendiente(request, slug):
     if slug == "catalogos":

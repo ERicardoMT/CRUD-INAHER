@@ -3,10 +3,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from django.contrib.auth.decorators import login_not_required
 
 urlpatterns = [
     # El login del admin pasa por el nuestro (tiene bloqueo por intentos fallidos)
-    path("admin/login/", RedirectView.as_view(pattern_name="core:entrar", query_string=True)),
+    path("admin/login/", login_not_required(RedirectView.as_view(pattern_name="core:entrar", query_string=True))),
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
     path("pedidos/", include("pedidos.urls")),

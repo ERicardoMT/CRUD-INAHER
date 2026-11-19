@@ -1,28 +1,76 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Entrar | INAHER{% endblock %}
+{% block title %}Iniciar sesión | INAHER{% endblock %}
 
-{% block content %}
-<section class="content-card login-card">
-    <div class="login-cabeza">
-        <span class="login-icono"><i class="bi bi-shield-lock"></i></span>
-        <div>
-            <h1>Entrar</h1>
-            <p class="text-muted small mb-0">Para captura de Min real, cambio de estándar y la pestaña Dirección.</p>
+{% block pagina %}
+<main class="login-pagina">
+    <a href="{% url 'core:inicio' %}" class="login-volver"><i class="bi bi-arrow-left"></i> Volver al sistema</a>
+
+    <section class="login-tarjeta" aria-labelledby="login-titulo">
+        <header class="login-encabezado">
+            <img src="{% static 'img/INAHER-logo.png' %}" alt="INAHER" class="login-logo" width="220" height="86">
+            <span class="login-etiqueta"><i class="bi bi-shield-lock"></i> Acceso de administración</span>
+        </header>
+
+        <div class="login-cuerpo">
+            <h1 id="login-titulo">Iniciar sesión</h1>
+            <p class="login-ayuda">Solo se pide para tareas de administración: Min real, cambio de estándar, Dirección, Facturado / Pagado y desarchivar.</p>
+
+            {% for mensaje in messages %}
+            <div class="alert alert-info py-2 small" role="alert">{{ mensaje }}</div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small" role="alert"><i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors|join:" " }}</div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <label class="login-label" for="{{ form.username.id_for_label }}">Usuario</label>
+                <div class="login-campo">
+                    <i class="bi bi-person" aria-hidden="true"></i>
+                    {{ form.username }}
+                </div>
+                {% if form.username.errors %}<div class="login-error">{{ form.username.errors|join:" " }}</div>{% endif %}
+
+                <label class="login-label" for="{{ form.password.id_for_label }}">Contraseña</label>
+                <div class="login-campo">
+                    <i class="bi bi-lock" aria-hidden="true"></i>
+                    {{ form.password }}
+                    <button type="button" class="login-ver" data-ver-clave aria-label="Mostrar contraseña" aria-pressed="false">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                {% if form.password.errors %}<div class="login-error">{{ form.password.errors|join:" " }}</div>{% endif %}
+
+                <button type="submit" class="btn-inaher login-boton">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </button>
+            </form>
         </div>
-    </div>
 
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger py-2 small" role="alert">{{ form.non_field_errors|join:" " }}</div>
-        {% endif %}
-        {% include "pedidos/_campo.html" with field=form.username %}
-        {% include "pedidos/_campo.html" with field=form.password %}
-        <button type="submit" class="btn-inaher w-100 justify-content-center">
-            <i class="bi bi-box-arrow-in-right"></i> Entrar
-        </button>
-    </form>
-</section>
+        <footer class="login-pie">
+            <i class="bi bi-info-circle"></i> Después de 5 intentos fallidos el acceso se bloquea 15 minutos.
+        </footer>
+    </section>
+
+    <p class="login-firma">INAHER · Sistema de designación diaria</p>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mostrar u ocultar la contraseña
+    document.querySelector("[data-ver-clave]")?.addEventListener("click", (evento) => {
+        const boton = evento.currentTarget;
+        const campo = boton.parentElement.querySelector("input");
+        const visible = campo.type === "text";
+        campo.type = visible ? "password" : "text";
+        boton.setAttribute("aria-pressed", String(!visible));
+        boton.setAttribute("aria-label", visible ? "Mostrar contraseña" : "Ocultar contraseña");
+        boton.querySelector("i").className = visible ? "bi bi-eye" : "bi bi-eye-slash";
+    });
+</script>
 {% endblock %}

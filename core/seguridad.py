@@ -31,3 +31,34 @@ def registrar_fallo(request, usuario):
 
 def limpiar(request, usuario):
     cache.delete_many([clave for clave, _ in _contadores(request, usuario)])
+    
+class CabecerasSeguridad:
+    """
+    Cabeceras extra en todas las respuestas:
+    - CSP: el navegador solo carga scripts, estilos e imágenes de este sitio y del CDN de Bootstrap.
+      Bloquea scripts de otros dominios, plugins, cambiar la dirección base y mandar formularios a otro sitio.
+    - Permissions-Policy: apaga permisos que el sistema no usa (ubicación, micrófono, pagos, USB).
+    """
+
+    CSP = "; ".join([
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "font-src 'self' https://cdn.jsdelivr.net data:",
+        "img-src 'self' data: blob:",
+        "connect-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ])
+    PERMISOS = "camera=(self), geolocation=(), microphone=(), payment=(), usb=()"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        respuesta = self.get_response(request)
+        respuesta.setdefault("Content-Security-Policy", self.CSP)
+        respuesta.setdefault("Permissions-Policy", self.PERMISOS)
+        return respuesta

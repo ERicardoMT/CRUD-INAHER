@@ -57,7 +57,8 @@
 
         <div class="quien-campo">
             <label for="quien" class="form-label">¿Quién archiva?</label>
-            <input type="text" id="quien" name="quien" value="{{ quien }}" class="form-control" maxlength="150" required placeholder="Tu nombre">
+            <input type="text" id="quien" name="quien" value="{{ quien }}" class="form-control" maxlength="150" required placeholder="Tu nombre" 
+            {% if user.is_authenticated %}readonly{% endif %} >
         </div>
 
         <div class="form-footer">

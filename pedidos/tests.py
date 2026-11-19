@@ -17,10 +17,23 @@ from designaciones.models import (
 from .forms import PedidoForm, PartidaFormSet
 from .models import MovimientoPedido, PartidaPedido, Pedido
 
-
-class ReglasHistoricoTests(TestCase):
+class PruebaConSesion(TestCase):
+    """Con login obligatorio, cada prueba entra con un usuario normal (sin permisos especiales)."""
 
     def setUp(self):
+        self.usuario = User.objects.create_user("prueba", password="Clave-segura-123")
+        self.client.force_login(self.usuario)
+
+    def entrar_como(self, nombre):
+        """Para la bitácora: queda registrado el usuario con sesión, no un nombre escrito."""
+        usuario = User.objects.create_user(nombre.lower(), password="Clave-segura-123", first_name=nombre)
+        self.client.force_login(usuario)
+
+
+class ReglasHistoricoTests(PruebaConSesion):
+
+    def setUp(self):
+        super().setUp()
         self.hoy = timezone.localdate()
         self.operario = Operario.objects.create(nombre="Ángel")
         self.madre = OperacionMadre.objects.create(nombre="Cortar")
@@ -62,8 +75,9 @@ class ReglasHistoricoTests(TestCase):
         pedido.refresh_from_db()
         self.assertFalse(pedido.archivado)
 
+        self.entrar_como("Denisse")
         self.client.post(reverse("pedidos:archivar"), {
-            "pedido_ids": [pedido.pk], "confirmar": "1", "quien": "Denisse",
+            "pedido_ids": [pedido.pk], "confirmar": "1",
             "terminado": "no", "motivo": "CANCELADO",
         })
         pedido.refresh_from_db()
@@ -101,16 +115,14 @@ class ReglasHistoricoTests(TestCase):
         self.assertEqual(MovimientoPedido.objects.get().accion, MovimientoPedido.Accion.DESARCHIVADO)
 
     # ----- Eliminar -----
-    def test_eliminar_sin_avance_pide_quien_y_registra_bitacora(self):
+    def test_eliminar_sin_avance_registra_bitacora(self):
         pedido = self.crear_pedido("E1")
         tarea = self.crear_tarea(pedido, hecho=False)
         url = reverse("pedidos:eliminar", args=[pedido.pk])
 
-        # Sin nombre no elimina
-        self.client.post(url, {"confirmar": "1"})
-        self.assertTrue(Pedido.objects.filter(pk=pedido.pk).exists())
-
-        self.client.post(url, {"confirmar": "1", "quien": "Denisse"})
+        # Queda en la bitácora el usuario con sesión, aunque escriban otro nombre
+        self.entrar_como("Denisse")
+        self.client.post(url, {"confirmar": "1", "quien": "Otro nombre"})
         self.assertFalse(Pedido.objects.filter(pk=pedido.pk).exists())
         self.assertFalse(ItemDesignacion.objects.filter(pk=tarea.pk).exists())
         mov = MovimientoPedido.objects.get()
@@ -124,7 +136,7 @@ class ReglasHistoricoTests(TestCase):
         respuesta = self.client.get(url)
         self.assertContains(respuesta, "Archivar en su lugar")
 
-        self.client.post(url, {"confirmar": "1", "quien": "Denisse"})
+        self.client.post(url, {"confirmar": "1"})
         self.assertTrue(Pedido.objects.filter(pk=pedido.pk).exists())
         self.assertFalse(MovimientoPedido.objects.exists())
 
@@ -171,10 +183,11 @@ class ReglasHistoricoTests(TestCase):
         self.assertContains(ficha, "REBO 400")
 
 
-class ReglasEstatusTests(TestCase):
+class ReglasEstatusTests(PruebaConSesion):
     """Reglas de estatus (lista), DETENIDO (bandera), estado por fecha y avance."""
 
     def setUp(self):
+        super().setUp()
         self.hoy = timezone.localdate()
         self.operario = Operario.objects.create(nombre="Ángel")
         self.madre = OperacionMadre.objects.create(nombre="Cortar")
@@ -322,9 +335,10 @@ class ReglasEstatusTests(TestCase):
         self.assertEqual(tareas.filter(operacion_madre__nombre="Empaquetar").count(), 1)
         self.assertEqual(tareas.filter(partida=self.p1).count(), 5)
         self.assertEqual(tareas.filter(partida=self.p2).count(), 5)
-class CorreccionesFichaPedidoTests(TestCase):
+class CorreccionesFichaPedidoTests(PruebaConSesion):
 
     def setUp(self):
+        super().setUp()
         self.hoy = timezone.localdate()
 
         self.operario = Operario.objects.create(
@@ -429,7 +443,7 @@ class CorreccionesFichaPedidoTests(TestCase):
         self.assertContains(respuesta, "Cortar varilla")
         self.assertContains(respuesta, "Completada")
 
-class PedidoFichaPaginaTests(TestCase):
+class PedidoFichaPaginaTests(PruebaConSesion):
 
     def crear_pedido(self, numero):
         pedido = Pedido.objects.create(
