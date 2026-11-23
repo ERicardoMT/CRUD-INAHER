@@ -1,4 +1,5 @@
 from django import forms
+from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
@@ -42,14 +43,20 @@ class OperacionMadreForm(forms.ModelForm):
 
 
 class OperacionDetalladaForm(forms.ModelForm):
+    """Alta de operación: el minuto que se escribe aquí queda como su tiempo fijo (Estudio de tiempos, regla 10)."""
+
+    min_estimado = forms.DecimalField(
+        label="Min estimado por pieza", required=False, min_value=Decimal("0.01"), max_digits=7, decimal_places=2,
+        widget=forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0.01", "placeholder": "opcional"}),
+    )
+
     class Meta:
         model = OperacionDetallada
-        fields = ["madre", "nombre", "maquina_sugerida", "minutos_estandar", "activa"]
+        fields = ["madre", "nombre", "maquina_sugerida", "activa"]
         widgets = {
             "madre": forms.Select(attrs={"class": "form-select"}),
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nombre detallado de la operación"}),
             "maquina_sugerida": forms.Select(attrs={"class": "form-select"}),
-            "minutos_estandar": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": 0}),
             "activa": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
         

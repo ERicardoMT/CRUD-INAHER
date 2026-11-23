@@ -6,17 +6,17 @@
 <p class="mb-0 fw-semibold">{{ operacion.nombre }}</p>
 <p class="small text-muted">{{ operacion.madre.nombre }}</p>
 <p class="efic-cambio">
-    {% if operacion.minutos_estandar %}<s>{{ operacion.minutos_estandar|floatformat:2 }}</s>{% else %}<span class="text-danger">sin estándar</span>{% endif %}
+    {% if operacion.usa_hoy %}<s>{{ operacion.usa_hoy|floatformat:2 }}</s>{% else %}<span class="text-danger">sin estándar</span>{% endif %}
     → <strong>{{ propuesto|floatformat:2 }} min/pz</strong>
     <small class="text-muted">(promedio de {{ medidas }} medida{{ medidas|pluralize }})</small>
 </p>
 <div class="field-block{% if error %} has-errors{% endif %}">
-    <label for="nuevo" class="form-label">Nuevo estándar (min/pz)</label>
+    <label for="nuevo" class="form-label">Tiempo aprobado (min/pz)</label>
     <input type="text" inputmode="decimal" id="nuevo" name="nuevo" value="{{ propuesto|floatformat:2 }}" maxlength="8" class="form-control" autofocus>
     {% if error %}<div class="field-error">{{ error }}</div>{% endif %}
 </div>
 <input type="hidden" name="medidas" value="{{ medidas }}">
-<p class="small text-muted mt-2 mb-0">Cambia el catálogo: los pedidos activos recalculan sus minutos; los archivados conservan los suyos. Queda en bitácora quién y cuándo.</p>
+<p class="small text-muted mt-2 mb-0">Se guarda como tiempo aprobado en Estudio de tiempos: manda sobre el tiempo fijo y la mediana. Las tareas activas recalculan sus minutos; lo archivado no cambia. Queda en bitácora.</p>
 {% endblock %}
 
-{% block boton %}Cambiar estándar{% endblock %}
+{% block boton %}Aprobar tiempo{% endblock %}

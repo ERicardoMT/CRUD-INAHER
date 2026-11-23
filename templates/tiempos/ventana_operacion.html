@@ -1,0 +1,53 @@
+<div class="modal-header">
+    <div>
+        <h2 class="modal-title fs-6 fw-bold">{{ operacion.nombre }}</h2>
+        <small class="text-muted">{{ operacion.madre.nombre }}</small>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+<div class="modal-body">
+    <div class="table-responsive">
+        <table class="table-designacion tabla-pedidos tabla-estudio align-middle">
+            <thead>
+                <tr>
+                    <th>Fecha</th><th>Midió · operador</th><th>Muestra</th><th class="text-end">Min/pz</th>
+                    <th>Mediana de las otras</th><th class="text-center">Diferencia</th><th class="text-center">Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in detalle.mediciones %}
+                <tr class="fila-pedido{% if m.excluida %} fila-excluida{% endif %}">
+                    <td data-label="Fecha">{{ m.fecha|date:"d/m/y" }}</td>
+                    <td data-label="Midió · operador">{{ m.quien_midio|default:"—" }} · {{ m.operador.nombre|default:"—" }}</td>
+                    <td data-label="Muestra">{{ m.muestra_piezas }} pzas · {{ m.muestra_tiempo_total }}</td>
+                    <td data-label="Min/pz" class="text-end"><strong{% if m.excluida %} class="text-decoration-line-through"{% endif %}>{{ m.min_pz }}</strong></td>
+                    <td data-label="Mediana de las otras">
+                        {% if m.mediana_otras is not None %}<strong>{{ m.mediana_otras|floatformat:2 }}</strong> <small class="text-muted">de {{ m.otras|join:" · " }}</small>{% else %}—{% endif %}
+                    </td>
+                    <td data-label="Diferencia" class="text-center">
+                        {% if m.desvio is not None %}<span class="status-badge {% if m.alerta %}status-detenido{% else %}status-terminado{% endif %}">{{ m.desvio_texto }}</span>{% else %}—{% endif %}
+                    </td>
+                    <td data-label="Resultado" class="text-center">
+                        {% if m.excluida %}<span class="status-badge status-detenido">excluida</span>
+                        {% elif m.alerta %}<span class="status-badge status-proceso">revisar</span>
+                        {% else %}<span class="status-badge status-terminado">entra</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="estudio-resumen-op">
+        Mediana de las válidas <strong class="fs-5">{{ detalle.mediana|floatformat:2|default:"—" }}</strong>
+        min por {% if operacion.es_por_pedido %}pedido{% else %}pieza{% endif %} ·
+        <strong>{{ detalle.validas }} muestra{{ detalle.validas|pluralize }} válida{{ detalle.validas|pluralize }} de {{ detalle.mediciones|length }}</strong>
+        <span class="status-badge {{ detalle.fuente.clase }}">{{ detalle.fuente.texto }}</span>
+    </div>
+    <p class="small text-muted mt-2 mb-0">Límite: una muestra se excluye si se aleja más de {{ desvio }} % de la mediana de las otras y la operación tiene 3 o más mediciones.</p>
+</div>
+<div class="modal-footer">
+    {% if perms.tiempos.administrar_estudio %}
+    <button type="button" class="btn-outline-inaher" data-ventana="{% url 'tiempos:aprobar' operacion.pk %}">Aprobar tiempo…</button>
+    {% endif %}
+    <button type="button" class="btn-inaher" data-bs-dismiss="modal">Cerrar</button>
+</div>

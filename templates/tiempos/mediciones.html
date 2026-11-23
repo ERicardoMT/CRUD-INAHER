@@ -1,0 +1,130 @@
+{% extends "tiempos/_base.html" %}
+
+{% block tabla %}
+<form method="get" class="archivo-filtros">
+    <div class="archivo-buscador" role="search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="q" value="{{ q }}" maxlength="80" class="form-control"
+               placeholder="Buscar operación, modelo, operador…" aria-label="Buscar mediciones">
+    </div>
+    <select name="ver" class="form-select form-select-sm" aria-label="Ver" onchange="this.form.submit()">
+        {% for clave, nombre in opciones_ver.items %}<option value="{{ clave }}"{% if clave == ver %} selected{% endif %}>Ver: {{ nombre }}</option>{% endfor %}
+    </select>
+    {% include "archivo/_rango.html" with etiqueta="Periodo:" %}
+    <span class="estudio-parametros">
+        Tolerancia <strong>{{ config.estudio_tolerancia_pct }} %</strong> · Desvío máximo entre muestras <strong>{{ config.estudio_desvio_pct }} %</strong>
+        {% if perms.tiempos.administrar_estudio %}
+        <button type="button" class="btn-action-icon border-0 bg-transparent" data-ventana="{% url 'tiempos:parametros' %}" aria-label="Cambiar tolerancia y desvío"><i class="bi bi-pencil"></i></button>
+        {% endif %}
+    </span>
+</form>
+
+{% if pagina.object_list %}
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos tabla-estudio align-middle">
+        <thead>
+            <tr>
+                <th>Fecha</th><th>Midió</th><th>Operador</th><th>Modelo</th>
+                <th>Operación madre › detallada</th><th>Máquina</th><th>Medida</th><th class="text-center">Mat.</th>
+                <th class="text-center">1 pza<small class="d-block">min:seg</small></th>
+                <th class="text-center">Muestra<small class="d-block">piezas</small></th>
+                <th class="text-center">Total<small class="d-block">min:seg</small></th>
+                <th class="text-end">Teórico<small class="d-block">min</small></th>
+                <th class="text-center">% dif.</th>
+                <th class="text-end">Min/pz<small class="d-block">muestra</small></th>
+                <th class="text-end">Usa HOY</th>
+                <th>Alerta de muestra</th>
+                <th class="text-center">Foto</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in pagina.object_list %}
+            <tr class="fila-pedido{% if m.excluida %} fila-excluida{% endif %}">
+                <td data-label="Fecha">{{ m.fecha|date:"d/m/y" }}</td>
+                <td data-label="Midió">{{ m.quien_midio|default:"—" }}</td>
+                <td data-label="Operador">{{ m.operador.nombre|default:"—" }}</td>
+                <td data-label="Modelo">{{ m.modelos_texto|default:"—" }}</td>
+                <td data-label="Operación" class="{% if m.es_nueva %}celda-nueva{% elif m.material_contradice %}marca-naranja{% endif %}">
+                    <strong class="d-block">{{ m.operacion_madre.nombre|default:"—" }}</strong>
+                    <small class="text-muted">{{ m.operacion_nombre }}</small>
+                    {% if m.es_nueva %}
+                    <small class="d-block aviso-amarillo"><i class="bi bi-exclamation-triangle"></i> No está en el catálogo de esa operación madre</small>
+                    {% elif m.material_contradice %}
+                    <small class="d-block aviso-naranja"><i class="bi bi-exclamation-triangle"></i> La operación dice {{ m.operacion_detallada.material }} y el material dice {{ m.get_material_display }}</small>
+                    {% endif %}
+                </td>
+                <td data-label="Máquina">{{ m.maquina.nombre|default:"—" }}</td>
+                <td data-label="Medida">{{ m.medida|default:"—" }}</td>
+                <td data-label="Mat." class="text-center{% if m.material_contradice %} marca-naranja{% endif %}">
+                    {% if m.material %}<span class="badge-pill-num">{{ m.get_material_display }}</span>{% else %}—{% endif %}
+                </td>
+                <td data-label="1 pza" class="text-center">{{ m.tiempo_1_pieza|default:"—" }}</td>
+                <td data-label="Muestra" class="text-center">{{ m.muestra_piezas }}</td>
+                <td data-label="Total" class="text-center">{{ m.muestra_tiempo_total }}</td>
+                <td data-label="Teórico" class="text-end celda-sola">{{ m.teorico|default_if_none:"—" }}</td>
+                <td data-label="% dif." class="text-center celda-sola">
+                    {% if m.pct_dif is not None %}<span class="status-badge {% if m.fuera %}status-detenido{% else %}status-terminado{% endif %}">{{ m.pct_texto }}</span>{% else %}—{% endif %}
+                </td>
+                <td data-label="Min/pz" class="text-end celda-sola">
+                    <strong{% if m.excluida %} class="text-decoration-line-through"{% endif %}>{{ m.min_pz }}</strong>
+                    {% if m.es_empaquetar %}<small class="d-block text-muted">por pedido</small>{% endif %}
+                </td>
+                <td data-label="Usa HOY" class="text-end celda-sola">
+                    {% if m.es_nueva %}<span class="status-badge status-proceso">NUEVA</span>
+                    {% elif m.usa_hoy %}
+                    <strong class="{% if m.usa_hoy_dentro %}efic-ok{% else %}efic-baja{% endif %}">{{ m.usa_hoy|floatformat:2 }}</strong>
+                    {% if m.usa_hoy_origen != "mediana" %}<small class="d-block text-muted">{{ m.usa_hoy_origen }}</small>{% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td data-label="Alerta">
+                    {% if m.alerta %}<span class="status-badge {% if m.excluida %}status-detenido{% else %}status-proceso{% endif %}"><i class="bi bi-exclamation-triangle"></i> {{ m.alerta_texto }}</span>{% endif %}
+                </td>
+                <td data-label="Foto" class="text-center">
+                    {% if m.foto %}<a href="{{ m.foto.url }}" target="_blank" rel="noopener" aria-label="Ver foto"><i class="bi bi-image"></i></a>
+                    {% elif m.foto_url %}<a href="{{ m.foto_url }}" target="_blank" rel="noopener noreferrer" aria-label="Ver foto"><i class="bi bi-link-45deg"></i></a>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="text-end">
+                    {% if perms.tiempos.administrar_estudio %}
+                    <div class="dropdown">
+                        <button class="btn-action-icon border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opciones de la medición">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><button type="button" class="dropdown-item" data-ventana="{% url 'tiempos:editar' m.pk %}"><i class="bi bi-pencil"></i> Editar</button></li>
+                            <li><button type="button" class="dropdown-item text-danger" data-ventana="{% url 'tiempos:borrar' m.pk %}"><i class="bi bi-trash"></i> Borrar</button></li>
+                            {% if m.es_nueva %}
+                            <li>
+                                <form method="post" action="{% url 'tiempos:agregar_nueva' m.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item"><i class="bi bi-plus-circle"></i> Agregar al catálogo</button>
+                                </form>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="leyenda-designacion">
+    <span><i class="leyenda-caja"></i> blanco: se captura</span>
+    <span><i class="leyenda-caja caja-sola"></i> gris: se calcula solo</span>
+    <span><i class="leyenda-caja caja-verde"></i> verde: dentro de tolerancia</span>
+    <span><i class="leyenda-caja caja-rojo"></i> rojo: fuera</span>
+    <span><i class="leyenda-caja caja-amarillo"></i> amarillo: nueva o por revisar</span>
+    <span><i class="leyenda-caja caja-naranja"></i> naranja: material no coincide</span>
+</div>
+{% include "archivo/_paginacion.html" with nombre="mediciones · más recientes primero" %}
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-stopwatch"></i>
+    <h3>Sin mediciones con esos filtros</h3>
+    <p>Cambia el filtro o el periodo{% if perms.tiempos.administrar_estudio %}, o captura una con <strong>Nueva medición</strong>{% endif %}.</p>
+</div>
+{% endif %}
+{% endblock %}

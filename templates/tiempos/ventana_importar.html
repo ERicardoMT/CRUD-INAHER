@@ -1,0 +1,31 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Importar mediciones{% endblock %}
+
+{% block cuerpo %}
+{% if error %}<div class="alert alert-danger py-2 small">{{ error }}</div>{% endif %}
+<div class="field-block">
+    <label class="form-label" for="libro">Libro de Excel (.xlsx) <span class="text-danger">*</span></label>
+    <input type="file" id="libro" name="libro" accept=".xlsx" class="form-control">
+    <div class="field-help">
+        El libro «Estudio de tiempos INAHER (Frida y Axel)» tal como está, o un Excel exportado de aquí.
+        Se lee la pestaña «Estudio de tiempos»: encabezados en la fila 5 (columnas A a R) y mediciones desde la fila 6.
+    </div>
+</div>
+<p class="small text-muted mt-2 mb-0">Antes de guardar se enseña un resumen. Lo que ya está no se duplica y lo que se borró aquí no regresa.</p>
+
+{% if importaciones %}
+<h3 class="fs-6 fw-bold mt-3">Últimas importaciones</h3>
+<ul class="list-unstyled small mb-0">
+    {% for i in importaciones %}
+    <li class="d-flex align-items-center justify-content-between gap-2 py-1 border-bottom">
+        <span>{{ i.fecha|date:"d/m/y H:i" }} · {{ i.archivo }} · {{ i.cargadas }} mediciones · {{ i.usuario }}</span>
+        <button type="submit" class="btn btn-link btn-sm text-danger p-0" formaction="{% url 'tiempos:deshacer_importacion' i.pk %}"
+                onclick="return confirm('¿Quitar las {{ i.cargadas }} mediciones de esta carga?');">Deshacer</button>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}
+
+{% block boton %}Revisar el archivo{% endblock %}

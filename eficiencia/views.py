@@ -238,7 +238,7 @@ def cambiar_estandar(request, pk):
     else:
         _, desde, hasta = leer_periodo(request, timezone.localdate())
         filas = calculos.resumen_operaciones(desde, hasta, Configuracion.actual(), operacion_id=operacion.pk)
-        propuesto = filas[0]["real"] if filas else operacion.minutos_estandar
+        propuesto = filas[0]["real"] if filas else operacion.usa_hoy
         medidas = filas[0]["medidas"] if filas else 0
 
     return render(request, "eficiencia/ventana_estandar.html", {

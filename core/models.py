@@ -21,6 +21,12 @@ class Configuracion(models.Model):
     minimo_medidas = models.PositiveIntegerField(
         default=3, validators=[MinValueValidator(1), MaxValueValidator(50)], verbose_name="Mínimo de medidas",
     )
+    estudio_tolerancia_pct = models.PositiveIntegerField(
+        default=10, validators=[MinValueValidator(1), MaxValueValidator(100)], verbose_name="Tolerancia (%)",
+    )
+    estudio_desvio_pct = models.PositiveIntegerField(
+        default=50, validators=[MinValueValidator(1), MaxValueValidator(500)], verbose_name="Desvío máximo entre muestras (%)",
+    )
 
     class Meta:
         verbose_name = "Configuración"

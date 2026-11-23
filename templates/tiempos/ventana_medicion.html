@@ -1,0 +1,49 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}{% if form.instance.pk %}Editar medición{% else %}Nueva medición{% endif %}{% endblock %}
+
+{% block cuerpo %}
+<div class="row g-3" data-medicion data-api="{% url 'designaciones:api_operaciones_detalladas' %}"
+     data-empaquetar="{{ madre_empaquetar|default_if_none:'' }}" data-nueva="{{ nueva }}" data-tolerancia="{{ tolerancia }}">
+    <div class="col-6 col-md-4">{% include "pedidos/_campo.html" with field=form.fecha %}</div>
+    <div class="col-6 col-md-4">{% include "pedidos/_campo.html" with field=form.quien_midio nota="opcional" %}</div>
+    <datalist id="lista-midio">{% for nombre in midieron %}<option value="{{ nombre }}">{% endfor %}</datalist>
+    <div class="col-12 col-md-4">{% include "pedidos/_campo.html" with field=form.operador %}</div>
+
+    <div class="col-12">{% include "pedidos/_campo.html" with field=form.operacion_madre %}</div>
+    <div class="col-12">{% include "pedidos/_campo.html" with field=form.detallada nota="solo las de esa madre" %}</div>
+    <div class="col-12" data-nueva-caja hidden>
+        {% include "pedidos/_campo.html" with field=form.detallada_nueva nota="queda NUEVA: no alimenta ningún tiempo hasta que se agregue al catálogo" %}
+    </div>
+
+    <div class="col-12 col-md-4">{% include "pedidos/_campo.html" with field=form.maquina nota="las de su tipo" %}</div>
+    <div class="col-6 col-md-3" data-sin-empaque>{% include "pedidos/_campo.html" with field=form.modelo_pieza nota="opcional" %}</div>
+    <div class="col-6 col-md-2">{% include "pedidos/_campo.html" with field=form.medida %}</div>
+    <div class="col-12 col-md-3">{% include "pedidos/_campo.html" with field=form.material nota="se llena solo" %}</div>
+
+    <div class="col-12" data-solo-empaque hidden>
+        <div data-modelos>
+            {% for modelo, piezas in form.modelos_filas %}{% include "tiempos/_fila_modelo.html" %}{% endfor %}
+        </div>
+        <template data-fila-modelo>{% include "tiempos/_fila_modelo.html" with modelo="" piezas="" %}</template>
+        <button type="button" class="btn-outline-inaher btn-sm mt-2" data-agregar-modelo><i class="bi bi-plus-lg"></i> Agregar modelo</button>
+    </div>
+
+    <div class="col-4" data-sin-empaque>{% include "pedidos/_campo.html" with field=form.tiempo_1_pieza nota="opcional" %}</div>
+    <div class="col-4">{% include "pedidos/_campo.html" with field=form.muestra_piezas nota="*" %}</div>
+    <div class="col-4">{% include "pedidos/_campo.html" with field=form.muestra_tiempo_total %}</div>
+
+    <div class="col-12">
+        <div class="estudio-resultado">
+            <div data-sin-empaque><small>Teórico (min)</small><strong data-resultado="teorico">—</strong></div>
+            <div data-sin-empaque><small>Diferencia</small><strong data-resultado="dif">—</strong></div>
+            <div><small data-sin-empaque>Min/pz muestra</small><small data-solo-empaque hidden>Min por pedido</small><strong data-resultado="minpz">—</strong></div>
+            <div data-solo-empaque hidden><small>Min por pieza</small><strong data-resultado="minpieza">—</strong></div>
+            <div><small>Hoy se usa</small><strong data-resultado="hoy">—</strong><small data-resultado="origen"></small></div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-5">{% include "pedidos/_campo.html" with field=form.foto nota="toma o sube una foto · 5 MB máximo" %}</div>
+    <div class="col-12 col-md-7">{% include "pedidos/_campo.html" with field=form.observaciones %}</div>
+</div>
+{% endblock %}

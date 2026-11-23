@@ -12,33 +12,6 @@
                 Orden de decisión: Operación madre › Operación detallada › Máquina
             </p>
         </div>
-
-        <div class="d-flex align-items-center gap-2">
-            <div class="dropdown">
-                <button class="btn btn-outline-inaher dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-grid-fill text-primary"></i> <strong>INAHER</strong>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                    <li><h6 class="dropdown-header text-uppercase small text-muted">Configuración</h6></li>
-                    <li>
-                        <form method="post" action="{% url 'core:agregar_nuevas_config' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
-                                <i class="bi bi-plus-circle text-primary"></i> Agregar NUEVAS del estudio a Config
-                            </button>
-                        </form>
-                    </li>
-                    <li>
-                        <form method="post" action="{% url 'core:recalcular_tiempos_config' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
-                                <i class="bi bi-calculator text-success"></i> Recalcular tiempos estándar (Mediana)
-                            </button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -67,21 +40,6 @@
             </div>
         </div>
     </div>
-
-    {% if kpis.nuevas_pendientes > 0 %}
-    <div class="alert alert-warning d-flex align-items-center justify-content-between mb-4 shadow-sm" role="alert">
-        <div>
-            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            Hay <strong>{{ kpis.nuevas_pendientes }} operaciones medidas</strong> en el estudio que no están en Config.
-        </div>
-        <form method="post" action="{% url 'core:agregar_nuevas_config' %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-warning btn-sm fw-bold">
-                Agregar a Config ahora
-            </button>
-        </form>
-    </div>
-    {% endif %}
 
     <ul class="nav nav-pills mb-3 gap-2" id="configTabs" role="tablist">
         <li class="nav-item">
@@ -123,7 +81,7 @@
                                 <th>Op. Madre</th>
                                 <th>Op. Detallada</th>
                                 <th>Máquina Sugerida</th>
-                                <th class="text-center"># Muestras</th>
+                                <th class="text-center">De dónde sale</th>
                                 <th class="text-end">Min/pz (Usa HOY)</th>
                                 <th class="text-end">Acciones</th>
                             </tr>
@@ -135,9 +93,9 @@
                                 <td>{{ item.objeto.nombre }}</td>
                                 <td>{{ item.objeto.maquina_sugerida.nombre|default:"—" }}</td>
                                 <td class="text-center">
-                                    <span class="badge {{ item.badge_clase }}">{{ item.badge_texto }}</span>
+                                    {% if item.fila %}<span class="status-badge {{ item.fila.fuente.clase }}">{{ item.fila.fuente.texto }}</span>{% else %}—{% endif %}
                                 </td>
-                                <td class="text-end fw-bold text-success">{{ item.objeto.minutos_estandar }} min</td>
+                                <td class="text-end fw-bold text-success">{{ item.objeto.usa_hoy|floatformat:2|default:"—" }}</td>
                                 <td class="text-end">
                                     <form method="post" action="{% url 'core:eliminar_catalogo' 'detallada' item.objeto.id %}" class="d-inline" onsubmit="return confirm('¿Eliminar operación?');">
                                         {% csrf_token %}
@@ -158,8 +116,8 @@
                         <div class="small text-muted fw-bold">{{ item.objeto.madre.nombre }}</div>
                         <div class="fw-bold fs-6 my-1">{{ item.objeto.nombre }}</div>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span class="badge {{ item.badge_clase }}">{{ item.badge_texto }}</span>
-                            <span class="fw-bold text-success">{{ item.objeto.minutos_estandar }} min/pz</span>
+                          {% if item.fila %}<span class="status-badge {{ item.fila.fuente.clase }}">{{ item.fila.fuente.texto }}</span>{% endif %}
+                          <span class="fw-bold text-success">{{ item.objeto.usa_hoy|floatformat:2|default:"—" }}</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -317,7 +275,7 @@
                 <div class="mb-3"><label class="form-label">Operación Madre</label>{{ form_detallada.madre }}</div>
                 <div class="mb-3"><label class="form-label">Nombre Detallado</label>{{ form_detallada.nombre }}</div>
                 <div class="mb-3"><label class="form-label">Máquina Sugerida</label>{{ form_detallada.maquina_sugerida }}</div>
-                <div class="mb-3"><label class="form-label">Minutos Estándar por Pieza</label>{{ form_detallada.minutos_estandar }}</div>
+                <div class="mb-3"><label class="form-label">Min estimado por pieza <small class="text-muted">opcional · queda como tiempo fijo</small></label>{{ form_detallada.min_estimado }}</div>
             </div>
             <div class="modal-footer"><button type="submit" class="btn btn-primary">Guardar</button></div>
         </form>

@@ -4,11 +4,12 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-def _llenar_hoja(hoja, titulo, subtitulo, encabezados, filas, anchos, ahora, columnas_fecha=()):
+def _llenar_hoja(hoja, titulo, subtitulo, encabezados, filas, anchos, ahora, columnas_fecha=(), fila_encabezados=4):
     hoja.append([f"INAHER · {titulo}"])
     hoja["A1"].font = Font(bold=True, size=14)
     hoja.append([f"Exportado: {ahora:%d/%m/%Y %H:%M} · {subtitulo}"])
-    hoja.append([])
+    for _ in range(fila_encabezados - 3):
+        hoja.append([])
     hoja.append(encabezados)
     fila_encabezado = hoja.max_row
     for celda in hoja[fila_encabezado]:

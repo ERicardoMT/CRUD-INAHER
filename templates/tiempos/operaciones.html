@@ -1,0 +1,127 @@
+{% extends "tiempos/_base.html" %}
+
+{% block url_exportar %}{% url 'tiempos:exportar_operaciones' %}{% endblock %}
+
+{% block tabla %}
+<form method="get" class="archivo-filtros">
+    <div class="archivo-rango" role="group" aria-label="Filtros rápidos">
+        {% for b in botones %}<a href="{{ b.url }}"{% if b.activo %} class="is-active" aria-current="true"{% endif %}>{{ b.nombre }} {{ b.n }}</a>{% endfor %}
+    </div>
+    <input type="hidden" name="filtro" value="{{ filtro }}">
+    <div class="archivo-buscador" role="search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="q" value="{{ q }}" maxlength="80" class="form-control" placeholder="Buscar operación…" aria-label="Buscar operación">
+    </div>
+    <select name="orden" class="form-select form-select-sm" aria-label="Ordenar" onchange="this.form.submit()">
+        {% for clave, nombre in ordenes.items %}<option value="{{ clave }}"{% if clave == orden %} selected{% endif %}>Ordenar: {{ nombre }}</option>{% endfor %}
+    </select>
+</form>
+
+{% if pagina.object_list %}
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos tabla-estudio align-middle">
+        <thead>
+            <tr>
+                <th>Operación madre › detallada</th>
+                <th class="text-center">Mediciones<small class="d-block">válidas de total</small></th>
+                <th class="text-end">Mediana<small class="d-block">de las válidas</small></th>
+                <th class="text-end">Tiempo fijo<small class="d-block">lo escribe Marcos</small></th>
+                <th class="text-end">Aprobado<small class="d-block">lo escribe Marcos</small></th>
+                <th class="text-end">Usa HOY</th>
+                <th>De dónde sale</th>
+                <th class="text-center">Tareas activas</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in pagina.object_list %}{% with op=f.operacion %}
+            <tr class="fila-pedido">
+                <td data-label="Operación"><strong class="d-block">{{ op.madre.nombre }}</strong><small class="text-muted">{{ op.nombre }}</small></td>
+                <td data-label="Mediciones" class="text-center celda-sola">
+                    {% if f.total %}<strong>{{ f.validas }}</strong> de {{ f.total }}
+                    {% if f.excluidas %}<small class="d-block text-muted">{{ f.excluidas }} excluida{{ f.excluidas|pluralize }}</small>
+                    {% elif f.revisar %}<small class="d-block text-muted">{{ f.revisar }} por revisar</small>{% endif %}
+                    {% else %}<span class="text-muted">0</span>{% endif %}
+                </td>
+                <td data-label="Mediana" class="text-end celda-sola">
+                    {% if f.mediana is not None %}{{ f.mediana|floatformat:2 }}{% if op.es_por_pedido %}<small class="d-block text-muted">por pedido</small>{% endif %}{% else %}—{% endif %}
+                </td>
+                <td data-label="Tiempo fijo" class="text-end celda-captura">
+                    {% if f.escalones %}{% for e in f.escalones %}{{ e.minutos|floatformat:"-2" }}{% if not forloop.last %} · {% endif %}{% endfor %}<small class="d-block text-muted">por escalones</small>
+                    {% elif f.fijo %}{{ f.fijo.minutos|floatformat:"-2" }}<small class="d-block text-muted">{% if f.fijo.por_pedido %}por pedido{% else %}por pieza{% endif %}</small>
+                    {% else %}—{% endif %}
+                </td>
+                <td data-label="Aprobado" class="text-end celda-captura">{{ op.minutos_aprobado|floatformat:"-2"|default:"—" }}</td>
+                <td data-label="Usa HOY" class="text-end celda-sola">
+                    {% if f.usa_hoy %}<strong>{{ f.usa_hoy|floatformat:2 }}</strong>
+                    {% elif f.escalones %}{% with ultimo=f.escalones|last %}<strong>{{ f.escalones.0.minutos|floatformat:"-2" }} a {{ ultimo.minutos|floatformat:"-2" }}</strong>{% endwith %}
+                    {% else %}—{% endif %}
+                    {% if f.usa_hoy or f.escalones %}<small class="d-block text-muted">min por {% if op.es_por_pedido %}pedido{% else %}pieza{% endif %}</small>{% endif %}
+                </td>
+                <td data-label="De dónde sale">
+                    <span class="status-badge {{ f.fuente.clase }}">{{ f.fuente.texto }}</span>
+                    {% if op.minutos_aprobado %}<small class="d-block text-muted">{{ op.aprobado_por }} · {{ op.aprobado_en|date:"d/m/y" }}</small>{% endif %}
+                </td>
+                <td data-label="Tareas activas" class="text-center">{{ f.tareas }}</td>
+                <td class="text-end text-nowrap">
+                    {% if f.total %}
+                    <button type="button" class="btn btn-link btn-sm p-0" data-ventana="{% url 'tiempos:operacion' op.pk %}">Ver mediciones</button>
+                    {% elif perms.tiempos.administrar_estudio %}
+                    <button type="button" class="btn btn-link btn-sm p-0" data-ventana="{% url 'tiempos:nueva' %}?operacion_madre={{ op.madre_id }}&detallada={{ op.pk }}">Medir</button>
+                    {% endif %}
+                    {% if perms.tiempos.administrar_estudio %}
+                    <div class="dropdown d-inline-block">
+                        <button class="btn-action-icon border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opciones de la operación">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><button type="button" class="dropdown-item" data-ventana="{% url 'tiempos:aprobar' op.pk %}"><i class="bi bi-patch-check"></i> Aprobar tiempo</button></li>
+                            <li><button type="button" class="dropdown-item" data-ventana="{% url 'tiempos:tiempo_fijo' op.pk %}"><i class="bi bi-pin-angle"></i> Tiempo fijo</button></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endwith %}{% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="leyenda-designacion">
+    <span><i class="leyenda-caja caja-captura"></i> azul: lo escribe Marcos</span>
+    <span><i class="leyenda-caja caja-sola"></i> gris: se calcula solo</span>
+</div>
+{% include "archivo/_paginacion.html" with nombre="operaciones" %}
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-diagram-3"></i>
+    <h3>Sin operaciones con esos filtros</h3>
+    <p>Cambia el filtro o la búsqueda.</p>
+</div>
+{% endif %}
+
+{% if empaquetar %}
+<h2 class="estudio-subtitulo">Empaquetar por modelo</h2>
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos tabla-estudio align-middle">
+        <thead>
+            <tr>
+                <th>Modelo</th><th class="text-center">Pedidos medidos</th><th class="text-center">Piezas</th>
+                <th class="text-end">Min por pedido</th><th class="text-end">Min por pieza</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in empaquetar %}
+            <tr class="fila-pedido">
+                <td data-label="Modelo"><strong>{{ e.modelo }}</strong></td>
+                <td data-label="Pedidos" class="text-center">{{ e.pedidos }}</td>
+                <td data-label="Piezas" class="text-center">{{ e.piezas }}</td>
+                <td data-label="Min por pedido" class="text-end">{{ e.por_pedido|floatformat:2 }}</td>
+                <td data-label="Min por pieza" class="text-end">{{ e.por_pieza|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="archivo-nota px-3 pb-3">Con dos o más pedidos del mismo modelo se muestra la mediana. Lo que usa HOY no cambia: tiempo fijo por tamaño de pedido.</p>
+{% endif %}
+{% endblock %}

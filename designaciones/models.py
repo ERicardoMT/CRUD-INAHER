@@ -20,6 +20,7 @@ def redondear(valor):
 TAREA_ESPECIAL = ("Tarea especial", "Tarea especial (ver Detalle)")
 MAQUINA_MANUAL = "Tarea manual"
 MATERIALES = ("fierro-galv", "inox-304")
+MADRE_EMPAQUETAR = "Empaquetar"
 
 
 def material_de_texto(texto):
@@ -153,13 +154,22 @@ class OperacionDetallada(models.Model):
         related_name="operaciones",
         verbose_name="Máquina sugerida",
     )
-    # 4 decimales: el min/pz se usa completo, sin recortarle decimales (2.025, no 2.03), como la hoja
+    # Mediana de las mediciones válidas del Estudio de tiempos (se calcula sola).
+    # 4 decimales: se usa completa, sin recortarle decimales (2.025, no 2.03), como la hoja
     minutos_estandar = models.DecimalField(
         max_digits=10,
         decimal_places=4,
         default=0.0,
-        verbose_name="Minutos estándar por pieza",
+        verbose_name="Mediana del estudio (min/pz)",
     )
+    # Aprobado por Marcos (Estudio de tiempos, regla 6): manda sobre el tiempo fijo y la mediana
+    minutos_aprobado = models.DecimalField(
+        max_digits=10, decimal_places=4, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.0001"))], verbose_name="Min aprobado",
+    )
+    aprobado_motivo = models.CharField(max_length=200, blank=True, default="", verbose_name="Motivo")
+    aprobado_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Aprobó")
+    aprobado_en = models.DateTimeField(null=True, blank=True, verbose_name="Aprobado el")
     activa = models.BooleanField(default=True, verbose_name="Activa")
 
     class Meta:
@@ -171,20 +181,47 @@ class OperacionDetallada(models.Model):
     def __str__(self):
         return f"{self.madre.nombre} › {self.nombre}"
     
-    def minutos_fijos(self, cantidad):
-        """Tiempo fijo o por escalones del catálogo (manda sobre el estudio). None si la operación no tiene."""
-        fijo = getattr(self, "tiempo_fijo", None)
-        if fijo:
-            return redondear(fijo.minutos if fijo.por_pedido else fijo.minutos * cantidad)
+    def save(self, *args, **kwargs):
+        """Si cambia el nombre, el viejo se guarda: al importar el libro, ese nombre entra en esta operación."""
+        if self.pk:
+            antes = OperacionDetallada.objects.filter(pk=self.pk).values_list("nombre", flat=True).first()
+            if antes and antes != self.nombre:
+                NombreAnterior.objects.get_or_create(operacion=self, nombre=antes)
+        super().save(*args, **kwargs)
+    
+    @property
+    def usa_hoy_origen(self):
+        """De dónde sale el tiempo (Estudio de tiempos, regla 5): aprobado › tiempo fijo (o escalones) › mediana."""
+        if self.minutos_aprobado:
+            return "aprobado"
+        if getattr(self, "tiempo_fijo", None) or self.escalones.all():
+            return "tiempo fijo"
+        return "mediana" if self.minutos_estandar else ""
+
+    @property
+    def usa_hoy(self):
+        """Min por pieza (o por pedido) que manda hoy. None sin tiempo o por escalones (dependen de las piezas)."""
+        origen = self.usa_hoy_origen
+        if origen == "aprobado":
+            return self.minutos_aprobado
+        if origen == "tiempo fijo":
+            fijo = getattr(self, "tiempo_fijo", None)
+            return fijo.minutos if fijo else None
+        return self.minutos_estandar or None
+
+    def minutos_escalon(self, cantidad):
+        """Contar y revisar: minutos por pedido según sus piezas. None si la operación no va por escalones."""
         for escalon in self.escalones.all():  # ordenados por "hasta"; el último sin tope = "más de"
             if escalon.hasta is None or cantidad <= escalon.hasta:
                 return redondear(escalon.minutos)
         return None
 
     def minutos_para(self, cantidad):
-        """Normal: min/pz del estudio × cantidad. Sin tiempo: 0."""
-        fijos = self.minutos_fijos(cantidad)
-        return fijos if fijos is not None else redondear(self.minutos_estandar * cantidad)
+        """Min de una tarea: Usa HOY × piezas; por pedido, sin multiplicar. Sin tiempo: 0."""
+        unidad = self.usa_hoy
+        if unidad is None:
+            return self.minutos_escalon(cantidad) or 0
+        return redondear(unidad if self.es_por_pedido else unidad * cantidad)
 
     @property
     def es_tarea_especial(self):
@@ -192,9 +229,8 @@ class OperacionDetallada(models.Model):
 
     @property
     def sin_tiempo(self):
-        """Ni estudio, ni tiempo fijo, ni escalones: se muestra una raya y suma cero."""
-        return (not self.minutos_estandar and not getattr(self, "tiempo_fijo", None)
-                and not self.escalones.all() and not self.es_tarea_especial)
+        """Ni aprobado, ni tiempo fijo, ni escalones, ni mediana: se muestra una raya y suma cero."""
+        return self.usa_hoy is None and not self.escalones.all() and not self.es_tarea_especial
 
     @property
     def material(self):
@@ -202,9 +238,27 @@ class OperacionDetallada(models.Model):
 
     @property
     def es_por_pedido(self):
-        """Empaquetar, Contar y revisar: tiempo por pedido, sin piezas por hora."""
+        """Madre Empaquetar (incluye Contar y revisar) o tiempo fijo por pedido: sin piezas por hora."""
         fijo = getattr(self, "tiempo_fijo", None)
-        return bool(fijo and fijo.por_pedido) or bool(self.escalones.all())
+        return (self.madre.nombre == MADRE_EMPAQUETAR or bool(fijo and fijo.por_pedido)
+                or bool(self.escalones.all()))
+
+class NombreAnterior(models.Model):
+    """Estudio de tiempos 12g: si el libro trae el nombre viejo, la medición entra en la operación de hoy."""
+
+    operacion = models.ForeignKey(
+        OperacionDetallada, on_delete=models.CASCADE, related_name="nombres_anteriores", verbose_name="Operación",
+    )
+    nombre = models.CharField(max_length=200, verbose_name="Nombre anterior")
+    cambiado_en = models.DateTimeField(auto_now_add=True, verbose_name="Cambió el")
+
+    class Meta:
+        unique_together = ("operacion", "nombre")
+        verbose_name = "Nombre anterior de operación"
+        verbose_name_plural = "Nombres anteriores de operaciones"
+
+    def __str__(self):
+        return f"{self.nombre} → {self.operacion}"    
 
 class TiempoFijo(models.Model):
     """Tiempo fijo del catálogo; manda sobre el Estudio de tiempos (ej. Empaquetar pedido chico = 3 min por pedido)."""
@@ -463,7 +517,7 @@ class ItemDesignacion(models.Model):
     def _min_por_pieza(self):
         if self.es_especial:
             return self.min_estimado_pz or Decimal(0)
-        return self.operacion_detallada.minutos_estandar or Decimal(0)
+        return self.operacion_detallada.usa_hoy or Decimal(0)
 
     def calcular_minutos(self):
         """
@@ -474,10 +528,8 @@ class ItemDesignacion(models.Model):
         piezas = max(self.cantidad - self.piezas_base, 0)
         if self.es_especial:
             return redondear(self._min_por_pieza() * (self.cantidad or 1))
-        fijos = self.operacion_detallada.minutos_fijos(self.cantidad)
-        if fijos is not None:
-            return fijos
-        return redondear(self._min_por_pieza() * piezas)
+        operacion = self.operacion_detallada
+        return operacion.minutos_para(self.cantidad if operacion.es_por_pedido else piezas)
 
     def calcular_restantes(self):
         """min/pz × Faltan, redondeado. Con ✓: 0. Sin avance desde el último Nuevo día: igual a Min."""

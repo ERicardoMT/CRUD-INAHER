@@ -1,0 +1,10 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Borrar medición{% endblock %}
+
+{% block cuerpo %}
+<p class="mb-2">¿Borrar esta medición? Su operación recalcula el tiempo y el cambio queda en la bitácora.</p>
+<p class="small text-muted mb-0">{{ medicion.resumen }}</p>
+{% endblock %}
+
+{% block boton %}Borrar{% endblock %}

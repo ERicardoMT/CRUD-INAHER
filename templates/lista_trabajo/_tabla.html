@@ -17,8 +17,11 @@
                     {% if t.pedido %}<a href="{% url 'pedidos:detalle' t.pedido.pk %}" class="fw-bold text-primary">{{ t.pedido.numero }}</a>
                     {% else %}<span class="text-muted">stock</span>{% endif %}
                 </td>
-                <td data-label="Paso" class="text-center">{{ t.paso }}</td>
-                <td data-label="Producto">{{ t.producto_cerrado }}</td>
+                <td data-label="Paso" class="text-center">{% if t.paso %}{{ t.paso }}{% endif %}</td>
+                <td data-label="Producto">
+                    {{ t.producto }}
+                    {% if t.partida_texto %}<small class="text-muted d-block">{{ t.partida_texto }}</small>{% endif %}
+                </td>
                 <td data-label="Op. madre">{{ t.operacion_madre.nombre }}</td>
                 <td data-label="Op. detallada">{{ t.operacion_detallada.nombre }}</td>
                 <td data-label="Máquina"><strong>{{ t.maquina_nombre }}</strong></td>

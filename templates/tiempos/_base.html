@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Estudio de tiempos | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">INGENIERÍA DE PROCESOS</div>
+        <h1>INAHER · Estudio de tiempos</h1>
+        <p class="text-muted mb-0">Mediciones de piso y el tiempo por pieza que usan Designación diaria, Por operación y Eficiencia.</p>
+    </div>
+    <div class="archivo-acciones">
+        <a href="{% block url_exportar %}{% url 'tiempos:exportar' %}{% endblock %}?{{ request.GET.urlencode }}" class="btn-outline-inaher">
+            <i class="bi bi-file-earmark-excel text-success"></i> Exportar a Excel
+        </a>
+        {% if perms.tiempos.administrar_estudio %}
+        <button type="button" class="btn-outline-inaher" data-ventana="{% url 'tiempos:importar' %}">
+            <i class="bi bi-upload"></i> Importar mediciones
+        </button>
+        <button type="button" class="btn-inaher" data-ventana="{% url 'tiempos:nueva' %}">
+            <i class="bi bi-plus-lg"></i> Nueva medición
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+{% include "archivo/_tarjetas.html" %}
+
+<section class="content-card">
+    <nav class="archivo-pestanas" aria-label="Secciones del estudio">
+        <a href="{% url 'tiempos:lista' %}"{% if pestana == "mediciones" %} class="is-active" aria-current="page"{% endif %}>Mediciones <span class="badge-pill-num">{{ total_mediciones }}</span></a>
+        <a href="{% url 'tiempos:operaciones' %}"{% if pestana == "operaciones" %} class="is-active" aria-current="page"{% endif %}>Tiempos por operación <span class="badge-pill-num">{{ total_operaciones }}</span></a>
+    </nav>
+    {% block tabla %}{% endblock %}
+</section>
+
+{% include "archivo/_ventana.html" with tamano="modal-lg" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/archivo.js' %}"></script>
+<script src="{% static 'js/tiempos.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Tiempo fijo{% endblock %}
+
+{% block cuerpo %}
+<p class="mb-0 fw-semibold">{{ operacion.nombre }}</p>
+<p class="small text-muted">{{ operacion.madre.nombre }}</p>
+{% if escalones %}
+<p class="small mb-3">
+    Va por escalones:
+    {% for e in escalones %}{% if e.hasta %}hasta {{ e.hasta }}{% else %}más{% endif %} → {{ e.minutos|floatformat:"-2" }} min{% if not forloop.last %} · {% endif %}{% endfor %}.
+    Se cambian en el administrador (Escalones).
+</p>
+{% endif %}
+<div class="row g-3">
+    <div class="col-12 col-md-5">{% include "pedidos/_campo.html" with field=form.minutos %}</div>
+    <div class="col-12 col-md-7 d-flex align-items-end">
+        <div class="form-check mb-2">
+            {{ form.por_pedido }}
+            <label class="form-check-label" for="{{ form.por_pedido.id_for_label }}">{{ form.por_pedido.label }}</label>
+        </div>
+    </div>
+</div>
+<p class="small text-muted mt-2 mb-0">Manda sobre la mediana; el aprobado manda sobre él. Las tareas activas recalculan sus minutos y queda en la bitácora.</p>
+{% endblock %}
+
+{% block pie_extra %}
+{% if fijo %}<button type="submit" name="accion" value="borrar" class="btn-outline-inaher me-auto">Borrar tiempo fijo</button>{% endif %}
+{% endblock %}

@@ -508,8 +508,9 @@ def api_operaciones_detalladas(request):
         return JsonResponse({"detalles": [], "maquinas": []})
     detalles = [
         {"id": d.pk, "nombre": d.nombre, "minutos_estandar": float(d.minutos_estandar),
+         "usa_hoy": float(d.usa_hoy) if d.usa_hoy else None, "origen": d.usa_hoy_origen,
          "maquina_sugerida_id": d.maquina_sugerida_id, "especial": d.es_tarea_especial}
-        for d in madre.detalles.filter(activa=True).select_related("madre")
+        for d in madre.detalles.filter(activa=True).select_related("madre", "tiempo_fijo").prefetch_related("escalones")
     ]
     sola = madre.maquina_sola()
     return JsonResponse({

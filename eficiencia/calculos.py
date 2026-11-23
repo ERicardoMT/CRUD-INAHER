@@ -10,6 +10,7 @@ from designaciones.models import (
     Escalon, ItemDesignacion, Maquina, OperacionDetallada, Operario, TiempoFijo, clase_eficiencia,
 )
 from pedidos.models import Q_ITEM_VIGENTE, Pedido
+from tiempos.calculos import aprobar
 
 from .calendario import Calendario
 from .models import CambioEstandar
@@ -127,16 +128,20 @@ def resumen_operaciones(desde, hasta, config, operacion_id=None):
         .order_by("operacion_detallada__madre__nombre", "operacion_detallada__nombre")
     )
     por_pedido = ids_con_tiempo_fijo(solo_por_pedido=True)
+    operaciones = OperacionDetallada.objects.select_related("madre", "tiempo_fijo").prefetch_related("escalones").in_bulk(
+        [f["operacion_detallada"] for f in filas]
+    )
     tolerancia = Decimal(config.tolerancia_pct) / 100
     centavos = Decimal("0.01")
     resultado = []
     for f in filas:
-        es_por_pedido = f["operacion_detallada"] in por_pedido
+        operacion = operaciones[f["operacion_detallada"]]
+        es_por_pedido = operacion.es_por_pedido
         if es_por_pedido:
             estandar = (Decimal(f["estandar_total"]) / f["medidas"]).quantize(centavos) or None
             real = (f["real_total"] / f["medidas"]).quantize(centavos)
         else:
-            estandar = f["operacion_detallada__minutos_estandar"] or None
+            estandar = operacion.usa_hoy
             real = (f["real_total"] / f["piezas"]).quantize(centavos) if f["piezas"] else None
         diferencia = (real - estandar) / estandar if estandar and real else None
 
@@ -194,18 +199,11 @@ def tarjetas_periodo(filas, config, hoy):
 
 @transaction.atomic
 def aplicar_estandar(operacion, nuevo, medidas, usuario):
-    """Cambia el estándar en el catálogo. Lo vigente recalcula sus minutos; lo cerrado o archivado conserva los suyos."""
+    """'Actualizar estándar' guarda un aprobado del Estudio de tiempos (regla 6); aquí queda su propia bitácora."""
     CambioEstandar.objects.create(
-        operacion=operacion, anterior=operacion.minutos_estandar, nuevo=nuevo, medidas=medidas, usuario=usuario,
+        operacion=operacion, anterior=operacion.usa_hoy or 0, nuevo=nuevo, medidas=medidas, usuario=usuario,
     )
-    operacion.minutos_estandar = nuevo
-    operacion.save(update_fields=["minutos_estandar"])
-    vigentes = ItemDesignacion.objects.filter(
-        operacion_detallada=operacion, designacion__cerrada=False, fecha_cierre__isnull=True,
-    ).exclude(pedido__archivado=True)
-    for tarea in vigentes:
-        tarea.minutos = operacion.minutos_para(tarea.cantidad)
-        tarea.save(update_fields=["minutos"])
+    aprobar(operacion, nuevo, f"Eficiencia · {medidas} medida{'s' if medidas != 1 else ''}", usuario)
 
 
 # ---------------------------------------------------------------- minutos del día y producción
@@ -352,7 +350,7 @@ def costos_por_pedido(pedidos):
 def faltan_de_medir(hoy):
     """Operaciones activas sin tiempo. Arriba, las que hoy están en Designación (suman cero minutos)."""
     activas = OperacionDetallada.objects.filter(activa=True)
-    sin_tiempo = (activas.filter(minutos_estandar=0).exclude(pk__in=ids_con_tiempo_fijo())
+    sin_tiempo = (activas.filter(minutos_estandar=0, minutos_aprobado__isnull=True)
                   .select_related("madre"))
     hoy_por_operacion = dict(
         ItemDesignacion.objects.filter(designacion__fecha=hoy, operacion_detallada__in=sin_tiempo)

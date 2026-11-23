@@ -1,0 +1,13 @@
+<div class="row g-2 align-items-end mb-2" data-fila>
+    <div class="col-7">
+        <label class="form-label">Modelo <span class="text-danger">*</span></label>
+        <input type="text" name="empaque_modelo" value="{{ modelo }}" maxlength="60" class="form-control" placeholder="ej. MKD-2">
+    </div>
+    <div class="col-4">
+        <label class="form-label">Piezas <span class="text-danger">*</span></label>
+        <input type="number" name="empaque_piezas" value="{{ piezas }}" min="1" class="form-control" inputmode="numeric">
+    </div>
+    <div class="col-1 pb-2">
+        <button type="button" class="btn-close" data-quitar-modelo aria-label="Quitar modelo"></button>
+    </div>
+</div>

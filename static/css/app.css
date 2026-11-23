@@ -3712,3 +3712,70 @@ textarea.form-control {
     color: var(--text-muted);
     font-size: 11px;
 }
+/* ==========================================================
+   ESTUDIO DE TIEMPOS
+   ========================================================== */
+.tabla-estudio td.celda-sola { background: #F7F8FA; }
+.tabla-estudio td.celda-nueva { background: #FEF9C3; }
+.tabla-estudio td.marca-naranja { background: #FFEDD5; }
+.tabla-estudio .fila-excluida td { opacity: 0.55; }
+.aviso-amarillo { color: #854D0E; font-weight: 600; }
+.caja-verde { background: #DCFCE7; }
+.caja-amarillo { background: #FEF9C3; }
+.status-badge.status-aprobado { background: var(--inaher-navy); color: #fff; }
+
+.estudio-parametros {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.estudio-resultado {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #F7F8FA;
+}
+
+.estudio-resultado small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.estudio-resultado strong {
+    color: var(--inaher-navy);
+    font-size: 18px;
+}
+
+@media (max-width: 767px) {
+    .estudio-parametros { margin-left: 0; width: 100%; }
+}
+
+.ventana > form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+}
+
+.tabla-estudio td.celda-captura { background: #F4F8FE; }
+
+.estudio-subtitulo {
+    margin: 20px 16px 8px;
+    color: var(--inaher-navy);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.estudio-resumen-op {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #F7F8FA;
+    font-size: 13px;
+}

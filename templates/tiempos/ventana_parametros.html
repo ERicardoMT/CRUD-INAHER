@@ -1,0 +1,11 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Tolerancia y desvío máximo{% endblock %}
+
+{% block cuerpo %}
+<div class="row g-3">
+    <div class="col-6">{% include "pedidos/_campo.html" with field=form.estudio_tolerancia_pct ayuda="Verde si la muestra queda dentro." %}</div>
+    <div class="col-6">{% include "pedidos/_campo.html" with field=form.estudio_desvio_pct ayuda="Más que esto contra las otras: revisar o excluida." %}</div>
+</div>
+<p class="small text-muted mt-3 mb-0">Al cambiar el desvío se revisan otra vez todas las mediciones. El cambio queda en la bitácora.</p>
+{% endblock %}

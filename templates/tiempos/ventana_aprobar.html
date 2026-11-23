@@ -1,0 +1,31 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Aprobar tiempo{% endblock %}
+
+{% block cuerpo %}
+<div class="estudio-resumen-op mt-0 mb-3">
+    <strong class="d-block">{{ operacion.madre.nombre }} › {{ operacion.nombre }}</strong>
+    <small class="text-muted">
+        {{ detalle.mediciones|length }} mediciones · {{ detalle.validas }} válidas ·
+        hoy {% if operacion.usa_hoy %}{{ operacion.usa_hoy|floatformat:2 }}{% else %}sin tiempo{% endif %} ·
+        {{ detalle.tareas }} tareas activas
+    </small>
+    <div class="d-flex flex-wrap gap-1 mt-2">
+        {% for m in detalle.mediciones %}<span class="badge-pill-num{% if m.excluida %} text-decoration-line-through{% endif %}">{{ m.min_pz }}</span>{% endfor %}
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-12 col-md-5">{% include "pedidos/_campo.html" with field=form.minutos %}</div>
+    <div class="col-12 col-md-7">{% include "pedidos/_campo.html" with field=form.motivo nota="opcional" %}</div>
+</div>
+<p class="small text-muted mt-2 mb-0">
+    Manda sobre el tiempo fijo y la mediana hasta que lo quites. Las tareas activas recalculan sus minutos y queda en la bitácora.
+    {% if operacion.minutos_aprobado %}Hoy: <strong>{{ operacion.minutos_aprobado|floatformat:"-4" }}</strong> · {{ operacion.aprobado_por }} · {{ operacion.aprobado_en|date:"d/m/y" }}.{% endif %}
+</p>
+{% endblock %}
+
+{% block pie_extra %}
+{% if operacion.minutos_aprobado %}<button type="submit" name="accion" value="quitar" class="btn-outline-inaher me-auto">Quitar aprobado</button>{% endif %}
+{% endblock %}
+
+{% block boton %}Aprobar{% endblock %}

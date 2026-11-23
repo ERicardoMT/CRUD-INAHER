@@ -1,0 +1,41 @@
+{% extends "archivo/_ventana_base.html" %}
+
+{% block titulo %}Importar mediciones <small class="text-muted fw-normal">· {{ resumen.archivo }}</small>{% endblock %}
+
+{% block cuerpo %}
+<input type="hidden" name="accion" value="cargar">
+<div class="stats-grid stats-grid-4 mb-3">
+    <div class="stat-card tono-green"><div class="stat-card-top"><span>Nuevas</span></div><strong>{{ resumen.nuevas|length }}</strong><small>se van a cargar</small></div>
+    <div class="stat-card tono-gray"><div class="stat-card-top"><span>Ya estaban</span></div><strong>{{ resumen.ya }}</strong><small>no se duplican</small></div>
+    <div class="stat-card tono-red"><div class="stat-card-top"><span>No se cargan</span></div><strong>{{ resumen.no_cargan }}</strong><small>ver la lista</small></div>
+    <div class="stat-card tono-amber"><div class="stat-card-top"><span>Sin tiempo</span></div><strong>{{ resumen.pendientes }}</strong><small>pendientes de medir</small></div>
+</div>
+
+{% if resumen.borradas %}
+<p class="small mb-2"><strong>{{ resumen.borradas }}</strong> se saltaron porque se borraron en el sistema: no regresan.</p>
+{% endif %}
+
+{% if resumen.errores %}
+<div class="table-responsive">
+    <table class="table-designacion tabla-pedidos align-middle">
+        <thead><tr><th>Fila</th><th>Por qué no se carga</th></tr></thead>
+        <tbody>
+            {% for motivo, filas in resumen.errores %}
+            <tr class="fila-pedido"><td data-label="Fila">{{ filas }}</td><td data-label="Por qué">{{ motivo }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if resumen.avisos %}
+<p class="small fw-bold mt-3 mb-1">Avisos · la medición entra con ese dato vacío</p>
+<ul class="small mb-0">
+    {% for motivo, filas in resumen.avisos %}<li>Filas {{ filas }}: {{ motivo }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<p class="small text-muted mt-3 mb-0">No se guarda nada hasta oprimir Cargar. Lo que quedó fuera se corrige en la hoja y entra en la siguiente importación.</p>
+{% endblock %}
+
+{% block boton %}{% if resumen.nuevas %}Cargar {{ resumen.nuevas|length }} {% if resumen.nuevas|length == 1 %}medición{% else %}mediciones{% endif %}{% else %}Cerrar{% endif %}{% endblock %}

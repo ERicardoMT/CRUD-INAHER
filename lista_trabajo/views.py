@@ -7,6 +7,11 @@ from eficiencia.views import leer_filtros, selects_filtros
 from . import calculos
 
 
+def _selects(elegidos):
+    """Los 4 filtros en el orden de la hoja: Op. madre · Op. detallada · Máquina · Persona."""
+    selects = selects_filtros(elegidos)  # el de Eficiencia trae Persona primero
+    return selects[1:] + selects[:1]
+
 def _consulta(request):
     """Filtros de quien consulta: no cambian nada en Designación diaria."""
     elegidos, filtros = leer_filtros(request)
@@ -28,7 +33,7 @@ def lista(request):
         "hoy": hoy,
         "filas": filas,
         "tarjetas": calculos.tarjetas(totales),
-        "selects": selects_filtros(elegidos),
+        "selects": _selects(elegidos),
         "mostrar": mostrar,
         "orden": orden,
         "opciones_mostrar": calculos.MOSTRAR,
@@ -43,7 +48,7 @@ def imprimir(request):
     filas, totales = calculos.lista_del_dia(filtros, mostrar, orden)
     usados = [
         f"{s['etiqueta']}: {dict(s['opciones']).get(int(s['elegido']), '')}"
-        for s in selects_filtros(elegidos) if s["elegido"].isdigit()
+        for s in _selects(elegidos) if s["elegido"].isdigit()
     ]
     return render(request, "lista_trabajo/imprimir.html", {
         "hoy": hoy,
