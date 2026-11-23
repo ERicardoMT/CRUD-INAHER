@@ -1,0 +1,5 @@
+{# Costo MO + máquina y su desglose (Eficiencia v5 · Dirección, regla C). "—" si no hay tarifas capturadas. #}
+{% if pedido.costo_total is not None %}
+<strong>${{ pedido.costo_total|floatformat:"2g" }}</strong>
+<small class="d-block text-muted">MO ${{ pedido.costo_mo|floatformat:"2g" }} · máq. ${{ pedido.costo_maquina|floatformat:"2g" }}</small>
+{% else %}<span class="text-muted">—</span>{% endif %}

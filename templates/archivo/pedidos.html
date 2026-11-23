@@ -59,6 +59,7 @@
                     <th>Facturado</th>
                     <th>Pagado</th>
                     <th class="text-center">Días sin pagar</th>
+                    {% if perms.eficiencia.ver_direccion %}<th class="text-end">Costo</th>{% endif %}
                     <th class="col-opcional">Notas</th>
                     <th><span class="visually-hidden">Acciones</span></th>
                 </tr>
@@ -105,6 +106,9 @@
                         {% elif p.dias_sin_pagar is not None %}<strong class="text-danger">{{ p.dias_sin_pagar }}</strong>
                         {% else %}<span class="text-muted">—</span>{% endif %}
                     </td>
+                    {% if perms.eficiencia.ver_direccion %}
+                    <td data-label="Costo" class="text-end">{% include "pedidos/_costo.html" with pedido=p %}</td>
+                    {% endif %}
                     <td data-label="Notas" class="col-opcional"><small class="text-muted">{{ p.notas|truncatechars:40|default:"—" }}</small></td>
                     <td class="text-end col-mas">
                         <div class="dropdown">

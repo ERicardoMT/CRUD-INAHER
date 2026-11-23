@@ -127,7 +127,6 @@ def resumen_operaciones(desde, hasta, config, operacion_id=None):
         .annotate(medidas=Count("pk"), real_total=Sum("min_real"), piezas=Sum("cantidad"), estandar_total=Sum("minutos"))
         .order_by("operacion_detallada__madre__nombre", "operacion_detallada__nombre")
     )
-    por_pedido = ids_con_tiempo_fijo(solo_por_pedido=True)
     operaciones = OperacionDetallada.objects.select_related("madre", "tiempo_fijo").prefetch_related("escalones").in_bulk(
         [f["operacion_detallada"] for f in filas]
     )
@@ -315,15 +314,18 @@ def eficiencia_por_persona(desde, hasta):
                       "real": real, "pct": pct, "clase": clase_eficiencia(pct)})
     return filas
 
+VER_COSTOS = "eficiencia.ver_direccion"
+COLUMNAS_COSTO = ["Costo mano de obra", "Costo máquina", "Costo MO + máquina"]
 
-def costos_por_pedido(pedidos):
+
+def poner_costos(pedidos):
     """
     Minutos estándar × tarifa por hora ÷ 60, de la persona y de la máquina de cada tarea (activas y archivadas).
-    Sin tarifa suma cero. Si no hay ninguna tarifa capturada, las columnas quedan vacías.
+    Le pone a cada pedido min_costeado, costo_mo, costo_maquina y costo_total. Sin tarifa suma cero;
+    si no hay ninguna tarifa capturada, los costos quedan en None (columnas vacías). Regresa si hay tarifas.
     """
     hay_tarifas = (Operario.objects.filter(tarifa_hora__isnull=False).exists()
                    or Maquina.objects.filter(tarifa_hora__isnull=False).exists())
-    pedidos = list(pedidos)
     dinero = DecimalField(max_digits=14, decimal_places=2)
     sumas = {
         f["pedido"]: f for f in ItemDesignacion.objects.filter(Q_ITEM_VIGENTE, pedido__in=pedidos)
@@ -334,16 +336,32 @@ def costos_por_pedido(pedidos):
             costo_maquina=Sum(F("minutos") * F("maquina__tarifa_hora"), output_field=dinero),
         )
     }
-    filas = []
+    centavos = Decimal("0.01")
     for pedido in pedidos:
         f = sumas.get(pedido.pk, {})
-        mano_obra = (f.get("costo_mo") or Decimal(0)) / 60 if hay_tarifas else None
-        maquina = (f.get("costo_maquina") or Decimal(0)) / 60 if hay_tarifas else None
-        filas.append({
-            "numero": pedido.numero, "descripcion": pedido.descripcion, "minutos": f.get("min_pedido") or 0,
-            "mano_obra": mano_obra, "maquina": maquina,
-            "total": mano_obra + maquina if hay_tarifas else None,
-        })
+        pedido.min_costeado = f.get("min_pedido") or 0
+        pedido.costo_mo = pedido.costo_maquina = pedido.costo_total = None
+        if hay_tarifas:
+            pedido.costo_mo = ((f.get("costo_mo") or Decimal(0)) / 60).quantize(centavos)
+            pedido.costo_maquina = ((f.get("costo_maquina") or Decimal(0)) / 60).quantize(centavos)
+            pedido.costo_total = pedido.costo_mo + pedido.costo_maquina
+    return hay_tarifas
+
+
+def costos_de(pedido):
+    """Las 3 columnas de costo para Excel (mismo orden que COLUMNAS_COSTO)."""
+    return [pedido.costo_mo, pedido.costo_maquina, pedido.costo_total]
+
+
+def costos_por_pedido(pedidos):
+    """Tabla de costos de la pestaña Dirección."""
+    pedidos = list(pedidos)
+    hay_tarifas = poner_costos(pedidos)
+    filas = [
+        {"numero": p.numero, "descripcion": p.descripcion, "minutos": p.min_costeado,
+         "mano_obra": p.costo_mo, "maquina": p.costo_maquina, "total": p.costo_total}
+        for p in pedidos
+    ]
     return filas, hay_tarifas
 
 

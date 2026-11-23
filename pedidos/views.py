@@ -22,6 +22,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from .catalogo import modelos_catalogo
+from eficiencia.calculos import COLUMNAS_COSTO, VER_COSTOS, costos_de, poner_costos
 from .forms import EntregaForm, PartidaFormSet, PedidoForm, mensaje_numero_ocupado
 from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje, texto_seguro
 from django.contrib.auth.decorators import permission_required
@@ -133,6 +134,8 @@ class PedidoListView(ListView):
         context = super().get_context_data(**kwargs)
         pedidos = self.pedidos
         filtro = self.filtro
+        if self.request.user.has_perm(VER_COSTOS):
+            poner_costos(pedidos)
 
         min_total = sum(p.min_total for p in pedidos)
         min_restante = sum(p.min_restante for p in pedidos)
@@ -193,6 +196,9 @@ def imprimir_ficha(request, pk):
 def exportar_excel(request):
     """Exporta lo que se ve en pantalla (mismo filtro y orden)."""
     pedidos, filtro, orden = listado_pedidos(request)
+    ver_costos = request.user.has_perm(VER_COSTOS)
+    if ver_costos:
+        poner_costos(pedidos)
     ahora = timezone.localtime()
 
     wb = Workbook()
@@ -209,7 +215,7 @@ def exportar_excel(request):
     encabezados = [
         "# Pedido", "Cliente", "Cant", "Descripción", "Fecha captura", "Fecha salida",
         "Días", "Estado", "Estatus", "Entregado", "Detenido por", "Min total", "Min restante", "% avance", "Notas",
-    ]
+    ] + (COLUMNAS_COSTO if ver_costos else [])
     ws.append(encabezados)
     fila_encabezado = ws.max_row
     relleno = PatternFill("solid", fgColor="E8EEF6")
@@ -237,14 +243,16 @@ def exportar_excel(request):
             p.min_total,
             p.min_restante,
             p.pct_avance / 100,
-        ] + [p.notas])
+        ] + [p.notas] + (costos_de(p) if ver_costos else []))
 
     for fila in ws.iter_rows(min_row=fila_encabezado + 1):
         fila[3].alignment = Alignment(wrap_text=True, vertical="top")
         fila[4].number_format = fila[5].number_format = "DD/MM/YYYY"
         fila[13].number_format = "0%"
+        for celda in fila[15:18]:
+            celda.number_format = '"$"#,##0.00'
 
-    anchos = [11, 22, 7, 42, 13, 13, 7, 12, 22, 12, 28, 10, 12, 10, 40]
+    anchos = [11, 22, 7, 42, 13, 13, 7, 12, 22, 12, 28, 10, 12, 10, 40] + ([14, 14, 16] if ver_costos else [])
     for i, ancho in enumerate(anchos, start=1):
         ws.column_dimensions[get_column_letter(i)].width = ancho
     ws.freeze_panes = ws.cell(row=fila_encabezado + 1, column=1)

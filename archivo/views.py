@@ -11,6 +11,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods, require_POST
 
 from designaciones.models import ItemDesignacion, Maquina, OperacionMadre, Operario
+from eficiencia.calculos import COLUMNAS_COSTO, VER_COSTOS, costos_de, poner_costos
 from pedidos.catalogo import modelos_catalogo
 from pedidos.models import Cliente, MovimientoPedido, Pago, PartidaPedido, Pedido, normalizar
 from pedidos.views import quien_hace
@@ -214,6 +215,9 @@ def pedidos_archivados(request):
     hoy = timezone.localdate()
     pedidos, f = filtrar_pedidos(request, hoy)
     pagina, paginas = _pagina(request, pedidos)
+    if request.user.has_perm(VER_COSTOS):
+        pagina.object_list = list(pagina.object_list)
+        poner_costos(pagina.object_list)
     return render(request, "archivo/pedidos.html", {
         **f,
         "pagina": pagina,
@@ -239,8 +243,12 @@ def imprimir_pedidos(request):
 def exportar_pedidos(request):
     """Todo lo filtrado (todas las páginas), un renglón por partida para sumar por modelo o cliente."""
     pedidos, f = filtrar_pedidos(request, timezone.localdate())
+    pedidos = list(pedidos)
+    ver_costos = request.user.has_perm(VER_COSTOS)
+    if ver_costos:
+        poner_costos(pedidos)
     filas = []
-    for p in pedidos.iterator(chunk_size=500):
+    for p in pedidos:
         inicio = [p.numero, p.cotizacion, p.oc_cliente, str(p.cliente or "")]
         final = [
             p.fecha_captura,
@@ -253,9 +261,10 @@ def exportar_pedidos(request):
             " · ".join(f"{x.get_tipo_display()} {x.fecha:%d/%m/%Y} ({x.get_forma_display()})" for x in p.pagos.all()),
             p.notas,
         ]
-        for partida in p.partidas.all() or [None]:
+        for i, partida in enumerate(p.partidas.all() or [None]):
             medio = [partida.modelo, partida.cantidad, partida.descripcion] if partida else ["", p.cantidad, p.descripcion]
-            filas.append(inicio + medio + final)
+            costo = (costos_de(p) if i == 0 else [None] * 3) if ver_costos else []
+            filas.append(inicio + medio + final + costo)
 
     return respuesta_excel(
         nombre="archivo_pedidos",
@@ -263,9 +272,9 @@ def exportar_pedidos(request):
         subtitulo=describir_filtros(f),
         encabezados=["# Pedido", "Cotización", "OC", "Cliente", "Modelo", "Cant", "Descripción",
                      "Captura", "Entregado", "Archivado", "Situación", "Guías", "Factura",
-                     "Fecha factura", "Pagos", "Notas"],
+                     "Fecha factura", "Pagos", "Notas"] + (COLUMNAS_COSTO if ver_costos else []),
         filas=filas,
-        anchos=[11, 12, 12, 22, 12, 7, 38, 12, 12, 12, 24, 30, 16, 13, 40, 30],
+        anchos=[11, 12, 12, 22, 12, 7, 38, 12, 12, 12, 24, 30, 16, 13, 40, 30] + ([14, 14, 16] if ver_costos else []),
         columnas_fecha=(7, 8, 9, 13),
     )
 

@@ -141,6 +141,7 @@
                     <th>Estado</th>
                     <th>Estatus</th>
                     <th class="col-opcional">Notas</th>
+                    {% if perms.eficiencia.ver_direccion %}<th class="text-end">Costo</th>{% endif %}
                     <th class="text-end">Min</th>
                 </tr>
             </thead>
@@ -203,6 +204,9 @@
                     <td data-label="Notas" class="col-opcional">
                         <small class="text-muted">{{ pedido.notas|default:"—" }}</small>
                     </td>
+                    {% if perms.eficiencia.ver_direccion %}
+                    <td data-label="Costo" class="text-end">{% include "pedidos/_costo.html" %}</td>
+                    {% endif %}
                     <td class="text-end col-mas">
                         <button type="button" class="btn-outline-inaher btn-mas" data-bs-toggle="collapse"
                                 data-bs-target="#mas-{{ pedido.pk }}" aria-expanded="false" aria-controls="mas-{{ pedido.pk }}"
@@ -212,7 +216,7 @@
                     </td>
                 </tr>
                 <tr class="collapse fila-mas" id="mas-{{ pedido.pk }}">
-                    <td colspan="12">
+                    <td colspan="{% if perms.eficiencia.ver_direccion %}13{% else %}12{% endif %}">
                         <div class="resumen-min">
                             {% include "pedidos/_dato_min.html" with titulo="Min total" valor=pedido.min_total nota="ruta × cantidad × min estándar" %}
                             {% include "pedidos/_dato_min.html" with titulo="Min restante" valor=pedido.min_restante nota="tareas sin ✓" tono="restante" %}
