@@ -101,7 +101,9 @@
                 <input type="hidden" name="ver" value="{{ filtro }}">
                 <input type="hidden" name="orden" value="{{ orden }}">
                 <input type="search" name="q" value="{{ request.GET.q }}" maxlength="60" class="form-control form-control-sm"
-                       placeholder="Buscar # pedido, cotización, OC, cliente…" aria-label="Buscar pedidos">
+                       placeholder="Buscar # pedido, cliente, descripción…" aria-label="Buscar pedidos" autocomplete="off"
+                       data-buscar-url="{% url 'archivo:buscar' %}" aria-controls="pedidos-sugerencias">
+                <div id="pedidos-sugerencias" class="archivo-sugerencias" hidden></div>
             </form>
             <div class="dropdown">
                 <button class="btn btn-outline-inaher btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -201,9 +203,7 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td data-label="Notas" class="col-opcional">
-                        <small class="text-muted">{{ pedido.notas|default:"—" }}</small>
-                    </td>
+                    <td data-label="Notas" class="col-opcional">{% include "pedidos/_nota_rapida.html" %}</td>
                     {% if perms.eficiencia.ver_direccion %}
                     <td data-label="Costo" class="text-end">{% include "pedidos/_costo.html" %}</td>
                     {% endif %}
@@ -281,6 +281,8 @@
 
 {% block extra_js %}
 <script src="{% static 'js/seleccion.js' %}"></script>
+<script src="{% static 'pedidos/js/notas.js' %}"></script>
+<script src="{% static 'js/archivo.js' %}"></script>
 <script>
 document.querySelectorAll(
     ".tabla-tarjetas tbody tr.fila-tarjeta[data-pedido-url]"

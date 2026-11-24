@@ -1,4 +1,4 @@
-{% if pedido.fecha_entrega and not pedido.archivado_sin_terminar %}
+{% if not pedido.archivado_sin_terminar %}
 <button type="button" class="archivo-chip-boton" data-ventana="{% url 'archivo:pagado' pedido.pk %}" title="Registrar o corregir pagos" {% if not perms.pedidos.palomear_seguimiento %} disabled{% endif %}
 >
     {% if pedido.liquidacion %}

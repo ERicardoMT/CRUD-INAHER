@@ -317,25 +317,25 @@
                             {% endif %}
                         </div>
                         {% empty %}
-                        {% include "archivo/_chip_factura.html" %}
+                        <small>Sin envío</small>
                         {% endfor %}
                     </div>
 
-                    <div class="pedido-seguimiento-item">
-                        <i class="bi bi-circle"></i>
+                    <div class="pedido-seguimiento-item{% if pedido.factura_estado != 'PENDIENTE' %} is-done{% endif %}">
+                        <i class="bi {% if pedido.factura_estado != 'PENDIENTE' %}bi-check-lg{% else %}bi-circle{% endif %}"></i>
                         <strong>FACTURADO</strong>
-                        <small>Sin registro</small>
+                        {% include "archivo/_chip_factura.html" %}
                     </div>
 
-                    <div class="pedido-seguimiento-item">
-                        <i class="bi bi-circle"></i>
+                    <div class="pedido-seguimiento-item{% if pedido.liquidacion %} is-done{% endif %}">
+                        <i class="bi {% if pedido.liquidacion %}bi-check-lg{% else %}bi-circle{% endif %}"></i>
                         <strong>PAGADO</strong>
                         {% include "archivo/_chip_pago.html" %}
                     </div>
                 </div>
 
                 <div class="pedido-ficha-nota-tecnica">
-                    Enviado se llena al registrar una entrega. Facturado y Pagado: pendientes.
+                    Enviado se llena al registrar una entrega. Toca Facturado o Pagado para capturarlos (también antes de entregar: factura o anticipo).
                 </div>
 
             </section>
@@ -397,16 +397,30 @@
                 </div>
 
                 <div class="pedido-notas-contenido">
-                    {% if pedido.notas %}
-                        <p>{{ pedido.notas|linebreaksbr }}</p>
-                    {% else %}
-                        <p class="pedido-ficha-vacio">Sin observaciones registradas.</p>
+                    {% include "pedidos/_nota_rapida.html" with filas=4 %}
+                    {% if pedido.adjuntos.all %}
+                    <div class="pedido-adjuntos">
+                        {% for a in pedido.adjuntos.all %}
+                        <figure class="pedido-adjunto">
+                            <a href="{{ a.archivo.url }}" target="_blank" rel="noopener" title="{{ a.nombre }}">
+                                {% if a.es_pdf %}<i class="bi bi-file-earmark-pdf"></i>{% else %}<img src="{{ a.archivo.url }}" alt="{{ a.nombre }}" loading="lazy">{% endif %}
+                            </a>
+                            <figcaption>{{ a.nombre|truncatechars:24 }}<small>{{ a.subido_en|date:"d M" }}{% if a.subido_por %} · {{ a.subido_por }}{% endif %}</small></figcaption>
+                            <form method="post" action="{% url 'pedidos:quitar_adjunto' a.pk %}" onsubmit="return confirm('¿Quitar este adjunto?');">
+                                {% csrf_token %}
+                                <button type="submit" class="pedido-adjunto-quitar" aria-label="Quitar {{ a.nombre }}"><i class="bi bi-x"></i></button>
+                            </form>
+                        </figure>
+                        {% endfor %}
+                    </div>
                     {% endif %}
 
-                    <div class="pedido-adjuntos-pendientes">
-                        <i class="bi bi-paperclip"></i>
-                        Adjuntos de foto y PDF: pendiente de implementación.
-                    </div>
+                    <form method="post" action="{% url 'pedidos:adjuntar' pedido.pk %}" enctype="multipart/form-data" class="pedido-adjuntar">
+                        {% csrf_token %}
+                        {{ form_adjunto.archivo }}
+                        <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-paperclip"></i> Adjuntar</button>
+                    </form>
+                    <small class="text-muted">Foto (JPG, PNG o WEBP) o PDF · máximo 5 MB. En el celular abre la cámara o la galería.</small>
                 </div>
 
             </section>
@@ -435,14 +449,14 @@
                     </article>
                     {% empty %}
                     <p class="pedido-ficha-vacio">
-                        Aún no hay movimientos de archivo o desarchivo registrados.
+                        Aún no hay movimientos registrados.
                     </p>
                     {% endfor %}
 
                 </div>
 
                 <div class="pedido-ficha-nota-tecnica">
-                    Los cambios de estado, captura y tareas todavía no se registran aquí.
+                    Captura, cambios, estatus, entregas, notas, adjuntos, factura, pagos y ruta de Designación. La bitácora completa está en Pedidos › Opciones.
                 </div>
 
             </section>
@@ -452,9 +466,9 @@
     </div>
 </div>
 {% include "archivo/_ventana.html" %}
+{% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'js/archivo.js' %}"></script>
-{% endblock %}
-
+<script src="{% static 'pedidos/js/notas.js' %}"></script>
 {% endblock %}

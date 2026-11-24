@@ -1,0 +1,7 @@
+{# Notas del pedido sin entrar a editarlo: se guardan solas al salir de la casilla. #}
+<form method="post" action="{% url 'pedidos:notas' pedido.pk %}" class="nota-rapida" data-nota-rapida>
+    {% csrf_token %}
+    <textarea name="notas" rows="{{ filas|default:2 }}" maxlength="1000" class="form-control form-control-sm"
+              placeholder="Escribe una nota…" aria-label="Notas del pedido {{ pedido.numero }}">{{ pedido.notas }}</textarea>
+    <small class="nota-rapida-estado" aria-live="polite"></small>
+</form>

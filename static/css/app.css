@@ -1047,11 +1047,20 @@ textarea.form-control {
 .designacion-side-col {
     width: 320px;
     flex: 0 0 320px;
+    align-self: stretch; 
 }
 
 .sticky-top-card {
     position: sticky;
     top: 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+}
+
+.sticky-top-card > .p-3 {
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .table-designacion th {
@@ -1168,8 +1177,12 @@ textarea.form-control {
 @media (max-width: 992px) {
     .designacion-grid {
         flex-direction: column-reverse;
+        
     }
-
+    .sticky-top-card {
+        position: static;
+        max-height: none;
+    }
     .designacion-side-col {
         width: 100%;
         flex: auto;
@@ -3572,6 +3585,10 @@ textarea.form-control {
 }
 
 /* ----- Pedidos: buscador ----- */
+.pedidos-buscar {
+    position: relative;
+}
+
 .pedidos-buscar input {
     width: 260px;
     font-size: 12px;
@@ -3779,3 +3796,53 @@ textarea.form-control {
     background: #F7F8FA;
     font-size: 13px;
 }
+/* ==========================================================
+   PEDIDOS · notas rápidas y adjuntos
+   ========================================================== */
+.nota-rapida textarea { min-width: 180px; font-size: 12px; resize: vertical; }
+.nota-rapida-estado { display: block; min-height: 14px; color: var(--text-muted); font-size: 10px; }
+.nota-rapida-estado.is-ok { color: var(--success-text); }
+.nota-rapida-estado.is-error { color: #B91C1C; }
+
+.pedido-adjuntos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.pedido-adjunto {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #F7F8FA;
+}
+
+.pedido-adjunto > a {
+    display: flex;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+    color: #B91C1C;
+    font-size: 28px;
+}
+
+.pedido-adjunto img { width: 100%; height: 100%; object-fit: cover; }
+.pedido-adjunto figcaption { padding: 4px 6px; font-size: 10px; word-break: break-word; }
+.pedido-adjunto figcaption small { display: block; color: var(--text-muted); }
+.pedido-adjunto form { position: absolute; top: 4px; right: 4px; }
+
+.pedido-adjunto-quitar {
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: #B91C1C;
+    line-height: 1;
+}
+
+.pedido-adjuntar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pedido-adjuntar input { flex: 1 1 200px; min-width: 0; }

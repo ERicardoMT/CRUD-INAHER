@@ -57,7 +57,7 @@ def detectar_modelo(descripcion):
 
 def armar_busqueda(pedido):
     """Texto del buscador: # pedido, cotización, OC, cliente, folio, partidas, modelos y guías."""
-    piezas = [pedido.numero, pedido.cotizacion, pedido.oc_cliente, pedido.factura_folio,
+    piezas = [pedido.numero, pedido.cotizacion, pedido.oc_cliente, pedido.factura_folio, pedido.descripcion,
               pedido.cliente.nombre if pedido.cliente_id else ""]
     for descripcion, modelo in pedido.partidas.values_list("descripcion", "modelo"):
         piezas += [descripcion, modelo]
@@ -136,11 +136,14 @@ class PedidoQuerySet(models.QuerySet):
             .exclude(pagos__tipo=Pago.Tipo.LIQUIDACION)
         )
 
-    
-
     def buscar(self, texto):
-        clave = normalizar(texto)
-        return self.filter(busqueda__contains=clave) if clave else self
+        """Cada palabra tiene que aparecer, en cualquier orden: # pedido, cliente, descripción, modelo, guía…"""
+        pedidos = self
+        for palabra in str(texto or "").split():
+            clave = normalizar(palabra)
+            if clave:
+                pedidos = pedidos.filter(busqueda__contains=clave)
+        return pedidos
 class Pedido(models.Model):
 
     class Estado(models.TextChoices):
@@ -439,11 +442,13 @@ class Pedido(models.Model):
                 tarea.cantidad = nueva
                 tarea.save()  # recalcula Min y Min restantes
 
-    def establecer_estado(self, nuevo, guardar=True):
+    def establecer_estado(self, nuevo, guardar=True, usuario="Sistema"):
         """
         Único lugar donde cambia el estatus. TERMINADO guarda su fecha;
         si el pedido vuelve a producción, esa fecha se borra.
+        Cada cambio queda en la bitácora ("Sistema" si lo hizo una ✓, un avance o una entrega).
         """
+        anterior = self.estado
         campos = ["estado", "fecha_terminado", "fecha_entrega", "fecha_actualizacion"]
         self.estado = nuevo
         if nuevo == self.Estado.TERMINADO:
@@ -454,6 +459,9 @@ class Pedido(models.Model):
             self.fecha_entrega = None
         if guardar:
             self.save(update_fields=campos)
+        if anterior != nuevo:
+            MovimientoPedido.registrar(self, MovimientoPedido.Accion.ESTATUS, usuario,
+                                       f"{self.Estado(anterior).label} → {self.Estado(nuevo).label}")
 
     def sincronizar_estatus(self):
         """
@@ -690,6 +698,18 @@ class MovimientoPedido(models.Model):
         ARCHIVADO_SIN_TERMINAR = "ARCHIVADO_SIN_TERMINAR", "Archivado sin terminar"
         DESARCHIVADO = "DESARCHIVADO", "Desarchivado"
         FOLIO_CAMBIADO = "FOLIO_CAMBIADO", "Folio de factura cambiado"
+        CAPTURADO = "CAPTURADO", "Capturado"
+        EDITADO = "EDITADO", "Editado"
+        ESTATUS = "ESTATUS", "Estatus"
+        ENTREGA = "ENTREGA", "Entrega registrada"
+        ENTREGA_QUITADA = "ENTREGA_QUITADA", "Entrega quitada"
+        NOTAS = "NOTAS", "Notas"
+        ADJUNTO = "ADJUNTO", "Adjunto agregado"
+        ADJUNTO_QUITADO = "ADJUNTO_QUITADO", "Adjunto quitado"
+        FACTURA = "FACTURA", "Factura"
+        PAGO = "PAGO", "Pago registrado"
+        PAGO_QUITADO = "PAGO_QUITADO", "Pago quitado"
+        RUTA = "RUTA", "Ruta cargada en Designación"
 
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
     accion = models.CharField(max_length=30, choices=Accion.choices, verbose_name="Acción")
@@ -705,7 +725,13 @@ class MovimientoPedido(models.Model):
 
     def __str__(self):
         return f"{self.get_accion_display()} · {self.pedido_numero} · {self.usuario}"
-
+    @classmethod
+    def registrar(cls, pedido, accion, usuario, detalle=""):
+        """Un solo lugar para anotar en la bitácora."""
+        return cls.objects.create(
+            pedido_numero=pedido.numero, accion=accion,
+            usuario=(usuario or "Sin nombre")[:150], detalle=str(detalle)[:255],
+        )
 
 class Entrega(models.Model):
     """Entrega a cliente. Admite parciales: el pedido se cierra al completar la cantidad."""
@@ -806,3 +832,27 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} · {self.pedido.numero} · {self.fecha:%d/%m/%Y}"
+class AdjuntoPedido(models.Model):
+    """Notas y fotos: fotos (se comprimen) o PDF, 5 MB máximo cada uno."""
+
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="adjuntos")
+    archivo = models.FileField(
+        upload_to="pedidos/adjuntos/%Y/%m/",
+        validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp", "pdf"]), max_5mb],
+        verbose_name="Archivo",
+    )
+    nombre = models.CharField(max_length=150, verbose_name="Nombre")
+    subido_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Subió")
+    subido_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-subido_en", "-id"]
+        verbose_name = "Adjunto del pedido"
+        verbose_name_plural = "Adjuntos del pedido"
+
+    def __str__(self):
+        return f"{self.nombre} · {self.pedido.numero}"
+
+    @property
+    def es_pdf(self):
+        return self.archivo.name.lower().endswith(".pdf")

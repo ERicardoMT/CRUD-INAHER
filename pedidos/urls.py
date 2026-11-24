@@ -27,4 +27,7 @@ urlpatterns = [
     path("exportar/", views.exportar_excel, name="exportar_excel"),
     path("bitacora/", views.bitacora, name="bitacora"),
     path("api/numero-disponible/", views.numero_disponible, name="numero_disponible"),
+    path("<int:pk>/notas/", views.guardar_notas, name="notas"),
+    path("<int:pk>/adjuntar/", views.adjuntar, name="adjuntar"),
+    path("adjunto/<int:pk>/quitar/", views.quitar_adjunto, name="quitar_adjunto"),
 ]

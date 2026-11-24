@@ -1,5 +1,5 @@
 {% for p in pedidos %}
-<a class="archivo-sugerencia" href="{% url 'pedidos:detalle' p.pk %}?next={% filter urlencode %}{% url 'archivo:pedidos' %}?q={{ q }}{% endfilter %}">
+<a class="archivo-sugerencia" href="{% url 'pedidos:detalle' p.pk %}?next={% if volver %}{{ volver|urlencode }}{% else %}{% filter urlencode %}{% url 'archivo:pedidos' %}?q={{ q }}{% endfilter %}{% endif %}">
     <span>
         <strong>{{ p.numero }}</strong> {{ p.cliente|default:"Sin cliente" }} ·
         {% for x in p.partidas.all %}{{ x.cantidad }} {{ x.descripcion }}{% if not forloop.last %}, {% endif %}{% endfor %}

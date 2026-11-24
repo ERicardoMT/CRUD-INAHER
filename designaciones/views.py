@@ -20,7 +20,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from core.roles import EDITAR, IMPRIMIR, NUEVO_DIA, PALOMEAR, nombre_de, permisos_de, requiere
-from pedidos.models import Pedido
+from pedidos.models import MovimientoPedido, Pedido
 
 from . import reglas
 from .forms import ItemDesignacionForm
@@ -662,6 +662,8 @@ def cargar_ruta(request):
     sincronizar_pedidos(pedido)  # sigue EN ESPERA: no hay ✓ ni avance
     total = sum(t.minutos for t in creadas)
     sin_tiempo = sum(1 for t in creadas if t.sin_tiempo)
+    MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.RUTA, nombre_de(request.user),
+                            f"{len(creadas)} tareas · {total} min · {sin_tiempo} sin tiempo")
     messages.success(
         request,
         f"Se agregaron {len(creadas)} tareas del pedido {pedido.numero}: {total} min · {sin_tiempo} sin tiempo · nacen sin persona.",

@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import F, Q
@@ -23,8 +24,8 @@ from openpyxl.utils import get_column_letter
 
 from .catalogo import modelos_catalogo
 from eficiencia.calculos import COLUMNAS_COSTO, VER_COSTOS, costos_de, poner_costos
-from .forms import EntregaForm, PartidaFormSet, PedidoForm, mensaje_numero_ocupado
-from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje, texto_seguro
+from .forms import EntregaForm, PartidaFormSet, PedidoForm, mensaje_numero_ocupado, AdjuntoForm
+from .models import Cliente, Entrega, EntregaPartida, MovimientoPedido, Pedido, porcentaje, texto_seguro, AdjuntoPedido
 from django.contrib.auth.decorators import permission_required
 
 
@@ -275,7 +276,7 @@ class PedidoDetailView(DetailView):
         return (
             Pedido.objects.con_minutos()
             .select_related("cliente")
-            .prefetch_related("partidas__entregas", "entregas", "pagos")
+            .prefetch_related("partidas__entregas", "entregas", "pagos", "adjuntos")
         )
 
     def get_context_data(self, **kwargs):
@@ -315,9 +316,9 @@ class PedidoDetailView(DetailView):
         context["movimientos"] = (
             MovimientoPedido.objects
             .filter(pedido_numero=pedido.numero)
-            .order_by("-fecha", "-id")[:8]
+            .order_by("-fecha", "-id")[:15]
         )
-
+        context["form_adjunto"] = AdjuntoForm()
         return context
 
 class PedidoFormMixin:
@@ -353,6 +354,7 @@ class PedidoFormMixin:
         return context
 
     def form_valid(self, form):
+        es_nuevo = self.object is None
         partidas = self.get_partidas()
         if not partidas.is_valid():
             return self.render_to_response(self.get_context_data(form=form, partidas=partidas))
@@ -365,6 +367,13 @@ class PedidoFormMixin:
             if "estado" in form.changed_data:
                 self.object.establecer_estado(self.object.estado)
             self.object.sincronizar_detenido()
+            cambios = [str(form.fields[c].label or c) for c in form.changed_data]
+            cambios += ["partidas"] if partidas.has_changed() else []
+            if es_nuevo or cambios:
+                MovimientoPedido.registrar(
+                    self.object, MovimientoPedido.Accion.CAPTURADO if es_nuevo else MovimientoPedido.Accion.EDITADO,
+                    quien_hace(self.request), "" if es_nuevo else "Cambió: " + ", ".join(cambios),
+                )
 
         messages.success(self.request, f"Pedido {self.object.numero} guardado.")
         return redirect(self.get_success_url())
@@ -562,7 +571,7 @@ def cambiar_estado(request, pk):
         messages.error(request, "Estatus no válido.")
     elif nuevo != pedido.estado:
         anterior = pedido.get_estado_display()
-        pedido.establecer_estado(nuevo)
+        pedido.establecer_estado(nuevo, usuario=quien_hace(request))
         messages.success(request, f"Pedido {pedido.numero}: {anterior} → {pedido.get_estado_display()}.")
 
     return volver(request)
@@ -589,6 +598,7 @@ def registrar_entrega(request, pk):
                 )
 
                 pedido.actualizar_por_entregas()
+                MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.ENTREGA, entrega.registrada_por, entrega)
 
             pedido = Pedido.objects.prefetch_related("entregas").get(pk=pedido.pk)
             if pedido.estado == Pedido.Estado.ENTREGADO:
@@ -615,6 +625,7 @@ def eliminar_entrega(request, pk):
     entrega = get_object_or_404(Entrega.objects.select_related("pedido"), pk=pk)
     pedido = entrega.pedido
     with transaction.atomic():
+        MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.ENTREGA_QUITADA, quien_hace(request), entrega)
         entrega.acuse.delete(save=False)
         entrega.delete()
         pedido.actualizar_por_entregas()
@@ -633,3 +644,48 @@ def numero_disponible(request):
     if existente:
         return JsonResponse({"disponible": False, "mensaje": mensaje_numero_ocupado(existente)})
     return JsonResponse({"disponible": True})
+
+NOTAS_MAX = 1000
+
+@require_POST
+def guardar_notas(request, pk):
+    """Notas sin entrar a editar el pedido (lista y ficha). Se guardan al salir de la casilla y quedan en la bitácora."""
+    pedido = get_object_or_404(Pedido, pk=pk)
+    notas = request.POST.get("notas", "").strip()
+    if len(notas) > NOTAS_MAX:
+        return JsonResponse({"ok": False, "error": f"Máximo {NOTAS_MAX} caracteres."}, status=400)
+    if notas != pedido.notas:
+        anterior = pedido.notas
+        pedido.notas = notas
+        pedido.save(update_fields=["notas", "fecha_actualizacion"])
+        MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.NOTAS, quien_hace(request),
+                                   f"«{anterior[:100]}» → «{notas[:100]}»")
+    return JsonResponse({"ok": True})
+
+@require_POST
+def adjuntar(request, pk):
+    """Notas y fotos: una foto (se comprime) o un PDF, 5 MB máximo."""
+    pedido = get_object_or_404(Pedido, pk=pk)
+    form = AdjuntoForm(request.POST, request.FILES)
+    if form.is_valid():
+        adjunto = form.save(commit=False)
+        adjunto.pedido = pedido
+        adjunto.nombre = Path(request.FILES["archivo"].name).name[:150]
+        adjunto.subido_por = quien_hace(request)
+        adjunto.save()
+        MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.ADJUNTO, adjunto.subido_por, adjunto.nombre)
+        messages.success(request, f"Se adjuntó «{adjunto.nombre}».")
+    else:
+        messages.error(request, " ".join(form.errors.get("archivo", ["No se pudo adjuntar el archivo."])))
+    return redirect("pedidos:detalle", pk=pedido.pk)
+
+
+@require_POST
+def quitar_adjunto(request, pk):
+    adjunto = get_object_or_404(AdjuntoPedido.objects.select_related("pedido"), pk=pk)
+    with transaction.atomic():
+        MovimientoPedido.registrar(adjunto.pedido, MovimientoPedido.Accion.ADJUNTO_QUITADO, quien_hace(request), adjunto.nombre)
+        adjunto.archivo.delete(save=False)
+        adjunto.delete()
+    messages.info(request, f"Se quitó «{adjunto.nombre}».")
+    return redirect("pedidos:detalle", pk=adjunto.pedido_id)

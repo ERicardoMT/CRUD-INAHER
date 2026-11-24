@@ -1,4 +1,4 @@
-// Ventanas FACTURADO / PAGADO: el contenido viene del servidor y se guarda sin salir de la página.
+// Buscador en vivo (Archivo y Pedidos): contesta mientras escribes dónde está cada pedido.
 (() => {
     const modalEl = document.getElementById("ventana");
     if (!modalEl) return;
@@ -36,7 +36,7 @@
 // Buscador del Archivo: contesta mientras escribes dónde está cada pedido.
 (() => {
     const entrada = document.querySelector("[data-buscar-url]");
-    const lista = document.getElementById("archivo-sugerencias");
+    const lista = entrada && document.getElementById(entrada.getAttribute("aria-controls"));
     if (!entrada || !lista) return;
     let espera;
     let peticion;
@@ -52,7 +52,8 @@
             peticion?.abort();
             peticion = new AbortController();
             try {
-                const url = `${entrada.dataset.buscarUrl}?q=${encodeURIComponent(texto)}`;
+                const volver = encodeURIComponent(location.pathname + location.search);
+                const url = `${entrada.dataset.buscarUrl}?q=${encodeURIComponent(texto)}&next=${volver}`;
                 const respuesta = await fetch(url, { signal: peticion.signal });
                 lista.innerHTML = await respuesta.text();
                 lista.hidden = false;

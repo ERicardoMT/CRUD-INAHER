@@ -289,7 +289,9 @@ def buscar(request):
             .prefetch_related("partidas", "entregas", "pagos")
             .order_by("-fecha_captura", "-pk")
         )
-    return render(request, "archivo/_busqueda.html", {"pedidos": pedidos[:8], "total": pedidos.count(), "q": q})
+    return render(request, "archivo/_busqueda.html", {
+        "pedidos": pedidos[:8], "total": pedidos.count(), "q": q, "volver": request.GET.get("next", "")[:300],
+    })
 
 
 # ---------------------------------------------------------------- seguimiento (ventanas)
@@ -298,7 +300,7 @@ def buscar(request):
 def facturado(request, pk):
     """FACTURADO: con factura o no pidió factura. Al cambiar el folio, el anterior queda en bitácora."""
     pedido = get_object_or_404(Pedido, pk=pk)
-    folio_anterior = pedido.factura_folio
+    texto_anterior = pedido.factura_texto
 
     if request.method == "GET":
         return render(request, "archivo/ventana_facturado.html", {"pedido": pedido, "form": FacturaForm(instance=pedido)})
@@ -318,13 +320,8 @@ def facturado(request, pk):
         pedido.save(update_fields=["factura_estado", "factura_fecha", "factura_folio",
                                    "factura_nota", "factura_por", "fecha_actualizacion"])
         pedido.actualizar_busqueda()
-        if folio_anterior and folio_anterior != pedido.factura_folio:
-            MovimientoPedido.objects.create(
-                accion=MovimientoPedido.Accion.FOLIO_CAMBIADO,
-                pedido_numero=pedido.numero,
-                detalle=f"{folio_anterior} → {pedido.factura_folio or 'sin folio'}",
-                usuario=quien or "Sin nombre",
-            )
+        if texto_anterior != pedido.factura_texto:
+            MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.FACTURA, quien, f"{texto_anterior} → {pedido.factura_texto}")
     return HttpResponse(status=204)
 
 @permission_required("pedidos.palomear_seguimiento", raise_exception=True)
@@ -338,6 +335,7 @@ def pagado(request, pk):
         pago.pedido = pedido
         pago.registrado_por = quien_hace(request)
         pago.save()
+        MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.PAGO, pago.registrado_por, pago)
         return HttpResponse(status=204)
     estado = 400 if request.method == "POST" else 200
     return render(request, "archivo/ventana_pagado.html", {"pedido": pedido, "form": form}, status=estado)
@@ -345,7 +343,9 @@ def pagado(request, pk):
 @permission_required("pedidos.palomear_seguimiento", raise_exception=True)
 @require_POST
 def quitar_pago(request, pk):
-    get_object_or_404(Pago, pk=pk).delete()
+    pago = get_object_or_404(Pago.objects.select_related("pedido"), pk=pk)
+    MovimientoPedido.registrar(pago.pedido, MovimientoPedido.Accion.PAGO_QUITADO, quien_hace(request), pago)
+    pago.delete()
     return HttpResponse(status=204)
 
 

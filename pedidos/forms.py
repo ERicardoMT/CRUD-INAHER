@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
-from .models import Cliente, Entrega, PartidaPedido, Pedido, max_5mb
+from .models import AdjuntoPedido, Cliente, Entrega, PartidaPedido, Pedido, max_5mb
 from .fotos import comprimir_foto
 
 
@@ -272,3 +272,23 @@ class EntregaForm(forms.ModelForm):
             raise ValidationError(f"Solo faltan {faltan} pzas por entregar.")
         self.instance.cantidad = total
         return datos
+class AdjuntoForm(forms.ModelForm):
+    """Foto (se comprime, como el acuse) o PDF. 5 MB máximo."""
+
+    class Meta:
+        model = AdjuntoPedido
+        fields = ["archivo"]
+        widgets = {"archivo": forms.ClearableFileInput(attrs={"class": "form-control form-control-sm", "accept": "image/*,.pdf"})}
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data["archivo"]
+        max_5mb(archivo)
+        if archivo.name.lower().endswith(".pdf"):
+            if archivo.read(5) != b"%PDF-":
+                raise ValidationError("El archivo no es un PDF válido.")
+            archivo.seek(0)
+            return archivo
+        try:
+            return comprimir_foto(archivo)
+        except Exception:
+            raise ValidationError("No se pudo leer la imagen. Sube JPG, PNG, WEBP o PDF.")
