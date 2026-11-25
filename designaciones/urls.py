@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, rutas_api
 
 app_name = "designaciones"
 
@@ -21,5 +21,6 @@ urlpatterns = [
     path("api/pedido-info/", views.api_pedido_info, name="api_pedido_info"),
     path("api/ruta-pedido/", views.api_ruta_pedido, name="api_ruta_pedido"),
     path("api/minutos-ruta/", views.api_minutos_ruta, name="api_minutos_ruta"),
+    path("api/catalogo-rutas/", rutas_api.catalogo_rutas, name="api_catalogo_rutas"),
     path("cargar-ruta/", views.cargar_ruta, name="cargar_ruta"),
 ]

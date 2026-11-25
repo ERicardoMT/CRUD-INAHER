@@ -26,6 +26,7 @@
         ];
         const PREGUNTAS = {
             tornillo: "¿Hay tornillo a la medida (comprado o en stock)?",
+            anclaje: "¿Lleva barrenos de anclaje?",
             pad: "¿Lleva pad?",
             diametro: "No se leyó el diámetro del tornillo. Escríbelo (ej. 1/2, 5/8, M12). Vacío = 1/2",
             grande: "¿Es la medida grande?",

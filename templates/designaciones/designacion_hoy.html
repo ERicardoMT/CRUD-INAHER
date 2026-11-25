@@ -317,7 +317,7 @@
 
 <!-- ================= MODAL: CARGAR RUTA DE PEDIDO (motor de rutas, una llamada por partida) ================= -->
 <div class="modal fade" id="modalCargarRuta" tabindex="-1" aria-hidden="true"
-     data-json-url="{% static 'designaciones/data/datos_rutas_inaher.json' %}"
+     data-json-url="{% url 'designaciones:api_catalogo_rutas' %}"
      data-url-pedido="{% url 'designaciones:api_ruta_pedido' %}"
      data-url-minutos="{% url 'designaciones:api_minutos_ruta' %}"
      data-url-guardar="{% url 'designaciones:cargar_ruta' %}"
