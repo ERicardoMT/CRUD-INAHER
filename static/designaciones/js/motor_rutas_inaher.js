@@ -120,7 +120,7 @@
   function cumple(cond, ctx) {
     cond = String(cond || "").trim(); if (!cond) { return true; }
     var partes = cond.split(";").map(function (p) { return norm(p); }).filter(Boolean);
-    partes.sort(function (a, b) { var qa = /^(tornillo|grande|stock|pad)/.test(a) ? 1 : 0, qb = /^(tornillo|grande|stock|pad)/.test(b) ? 1 : 0; return qa - qb; });
+    partes.sort(function (a, b) { var qa = /^(tornillo|grande|stock|pad|anclaje)/.test(a) ? 1 : 0, qb = /^(tornillo|grande|stock|pad|anclaje)/.test(b) ? 1 : 0; return qa - qb; });
     function pregunta(k) {
       if (k === "stock") { return true; }
       if (ctx.resp[k] === undefined || ctx.resp[k] === null) { if (ctx.pendientes.indexOf(k) < 0) { ctx.pendientes.push(k); } return false; }
@@ -130,7 +130,7 @@
     return partes.every(function (p) {
       var m;
       if (p === "pad") { if (ctx.pad === null) { ctx.pad = pregunta("pad"); } return ctx.pad === true; }
-      if ((m = p.match(/^(tornillo|grande|stock)\s*=\s*(si|sí|no)$/))) { var want = (m[2] !== "no"); return pregunta(m[1]) === want; }
+      if ((m = p.match(/^(tornillo|grande|stock|anclaje)\s*=\s*(si|sí|no)$/))) { var want = (m[2] !== "no"); return pregunta(m[1]) === want; }
       if ((m = p.match(/^d\s*(>=|<=|>|<|=)\s*(.+)$/))) {
         var v = diamVal(m[2]), d = diam(); if (v === null) { return true; }
         return m[1] === ">=" ? d >= v - 0.001 : (m[1] === "<=" ? d <= v + 0.001 : (m[1] === ">" ? d > v + 0.001 : (m[1] === "<" ? d < v - 0.001 : Math.abs(d - v) < 0.001)));
@@ -242,7 +242,7 @@
       var rt = D.rutas.filter(function (r) { return norm(r.familia) === norm(hit.familia); });
       var tramo = prod.slice(hit.pos, hit.finTxt), pT = padDe(tramo);
       var rp = (respuestas.partidas && respuestas.partidas[k]) || {};
-      var resp = { tornillo: rp.tornillo !== undefined ? rp.tornillo : respuestas.tornillo, grande: rp.grande !== undefined ? rp.grande : respuestas.grande, pad: rp.pad !== undefined ? rp.pad : respuestas.pad, diametro: rp.diametro !== undefined ? rp.diametro : respuestas.diametro };
+      var resp = { tornillo: rp.tornillo !== undefined ? rp.tornillo : respuestas.tornillo, grande: rp.grande !== undefined ? rp.grande : respuestas.grande, anclaje: rp.anclaje !== undefined ? rp.anclaje : respuestas.anclaje, pad: rp.pad !== undefined ? rp.pad : respuestas.pad, diametro: rp.diametro !== undefined ? rp.diametro : respuestas.diametro };
       var ctx = { d: parseDiam(tramo), mat: esInox(tramo) ? "inox" : "fierro", pad: (pT !== null ? pT : (multi ? null : padDe(pn))), modelo: hit.modelo, resp: resp, pendientes: [] };
       var pasos = rt.filter(function (r) { return cumple(r.condicion, ctx); });
       if (multi) { pasos = pasos.filter(function (p) { return String(p.detallada).indexOf("{empaque}") < 0; }); }
@@ -269,6 +269,7 @@
   // Preguntas en el mismo orden y con el mismo texto que el pizarrón
   var PREGUNTAS = {
     tornillo: "¿Hay tornillo a la medida (comprado o en stock)?",
+    anclaje: "¿Lleva barrenos de anclaje?",
     pad: "¿Lleva pad?",
     diametro: "No pude leer el diámetro del tornillo. Escríbelo (ej. 1/2, 5/8, 1 1/4, M12). Vacío = 1/2",
     empaque: "¿Paquete chico, mediano o grande para TODO el pedido?",

@@ -1,0 +1,81 @@
+/*
+ * Editor de rutas INAHER.
+ * Solo se carga dentro del administrador de rutas.
+ */
+
+#content-main {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1160px;
+    min-width: 0;
+    margin-inline: auto;
+}
+
+#content-main .module,
+#content-main .inline-group,
+#content-main .inline-related,
+#content-main .form-row,
+#content-main .form-row > div {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+}
+
+#content-main .inline-related .fieldBox {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+#content-main input[type="text"],
+#content-main input[type="number"],
+#content-main select,
+#content-main textarea {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+#content-main .ruta-texto-compacto {
+    display: block;
+    width: min(100%, 780px);
+    resize: vertical;
+}
+
+#content-main .ruta-campo-largo {
+    width: min(100%, 780px);
+}
+
+#content-main .inline-group .inline-related {
+    margin: 12px 0;
+    border: 1px solid var(--hairline-color, #d1d5db);
+    border-radius: 10px;
+}
+
+#content-main .inline-group .inline-related > h3 {
+    padding: 11px 14px;
+    border-radius: 9px 9px 0 0;
+}
+
+@media (max-width: 1100px) {
+
+    #content-main .aligned label {
+        float: none;
+        display: block;
+        width: auto;
+        margin-bottom: 6px;
+    }
+
+    #content-main .aligned .form-row > div {
+        margin-left: 0;
+    }
+
+    #content-main .inline-related .fieldBox {
+        float: none;
+        display: block;
+        width: 100%;
+        margin-inline: 0;
+    }
+
+    #content-main .inline-group .inline-related {
+        padding-inline: 6px;
+    }
+}

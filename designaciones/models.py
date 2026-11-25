@@ -696,3 +696,182 @@ class ItemDesignacion(models.Model):
                 "clase": "status-terminado", # Verde éxito
                 "dias": dias,
             }
+
+class FamiliaRuta(models.Model):
+    """Familia reconocida por el motor de rutas."""
+
+    nombre = models.CharField(
+        max_length=180,
+        unique=True,
+        verbose_name="Familia",
+    )
+
+    modelos = models.TextField(
+        verbose_name="Modelos reconocidos",
+        help_text=(
+            "Separados por coma. Un modelo terminado en '-' "
+            "reconoce sus variantes."
+        ),
+    )
+
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name="Descripción",
+    )
+
+    orden = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Orden",
+    )
+
+    activa = models.BooleanField(
+        default=True,
+        verbose_name="Activa",
+    )
+
+    class Meta:
+        ordering = ("orden", "nombre")
+        verbose_name = "Familia de ruta"
+        verbose_name_plural = "Familias de rutas"
+
+    def __str__(self):
+        return self.nombre
+
+
+class PasoRuta(models.Model):
+    """Regla para generar tareas nuevas sin alterar el histórico."""
+
+    familia = models.ForeignKey(
+        FamiliaRuta,
+        on_delete=models.PROTECT,
+        related_name="pasos",
+        verbose_name="Familia",
+    )
+
+    orden = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Número de paso",
+    )
+
+    madre = models.ForeignKey(
+        OperacionMadre,
+        on_delete=models.PROTECT,
+        related_name="pasos_ruta",
+        verbose_name="Operación madre",
+    )
+
+    detallada = models.CharField(
+        max_length=200,
+        verbose_name="Operación detallada",
+        help_text=(
+            "Se permiten las variables "
+            "{rango}, {mat} y {empaque}."
+        ),
+    )
+
+    condicion = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Condición",
+        help_text=(
+            "Opcional. Ejemplo: "
+            "tornillo=no;d>=3/4;modelo=MT-3"
+        ),
+    )
+
+    nota = models.TextField(
+        blank=True,
+        verbose_name="Nota",
+    )
+
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    class Meta:
+        ordering = (
+            "familia__orden",
+            "familia__nombre",
+            "orden",
+            "pk",
+        )
+        verbose_name = "Paso de ruta"
+        verbose_name_plural = "Pasos de rutas"
+
+    def __str__(self):
+        return f"{self.familia} · {self.orden}: {self.detallada}"
+
+    def clean(self):
+        """Impide condiciones que el motor ignoraría silenciosamente."""
+
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        errores = {}
+
+        if self.orden is not None and self.orden < 1:
+            errores["orden"] = (
+                "El número de paso debe empezar en 1."
+            )
+
+        variables = set(
+            re.findall(
+                r"\{([^{}]+)\}",
+                self.detallada or "",
+            )
+        )
+
+        desconocidas = variables - {
+            "rango",
+            "mat",
+            "empaque",
+        }
+
+        if desconocidas:
+            errores["detallada"] = (
+                "Variable no reconocida: "
+                + ", ".join(sorted(desconocidas))
+            )
+
+        partes = (
+            x.strip()
+            for x in (self.condicion or "").split(";")
+        )
+
+        for parte in filter(None, partes):
+
+            valida = (
+                parte.lower() == "pad"
+                or re.fullmatch(
+                    r"(tornillo|grande|stock|anclaje)\s*=\s*(si|sí|no)",
+                    parte,
+                    re.I,
+                )
+                or re.fullmatch(
+                    r"d\s*(>=|<=|>|<|=)\s*"
+                    r"(m\d{1,2}|\d+(?:\s+\d+/\d+|/\d+|\.\d+)?)",
+                    parte,
+                    re.I,
+                )
+                or re.fullmatch(
+                    r"mat\s*=\s*(fierro|inox)",
+                    parte,
+                    re.I,
+                )
+                or re.fullmatch(
+                    r"modelo\s*(!=|=)\s*[^,;]+(?:,[^,;]+)*",
+                    parte,
+                    re.I,
+                )
+            )
+
+            if not valida:
+                errores["condicion"] = (
+                    f"Condición no reconocida: {parte}"
+                )
+                break
+
+        if errores:
+            raise ValidationError(errores)
