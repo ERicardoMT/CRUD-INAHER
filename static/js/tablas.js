@@ -96,46 +96,46 @@
         observador.observe(cuerpo, { childList: true });
         aplicarOrden();
 
-        // ----- 2 · ocultar columnas: se marcan en la lista y "Ocultar columnas" las esconde
+        // ----- 2 · ocultar columnas: la casilla marcada esconde su columna al momento
         const control = document.querySelector(`[data-columnas-de="${nombre}"]`);
         if (control) {
             const estilo = document.head.appendChild(document.createElement("style"));
             const lista = control.querySelector("[data-columnas-lista]");
-            const interruptor = control.querySelector("[data-ocultar-columnas]");
+            const todas = control.querySelector("[data-columnas-todas]");
             const cuantas = control.querySelector("[data-columnas-cuantas]");
-            const elegidas = new Set(leer("localStorage", `columnas:${nombre}`, []));
-            interruptor.checked = leer("localStorage", `columnas-ocultas:${nombre}`, false);
-            const pintar = () => {
-                const celdas = `table[data-tabla="${nombre}"] tr:not([data-fila-ancha]) >`;
-                estilo.textContent = interruptor.checked
-                    ? encabezados.filter((th) => elegidas.has(texto(th)))
-                        .map((th) => `${celdas} :nth-child(${th.cellIndex + 1}) { display: none !important; }`).join("\n")
-                    : "";
-                cuantas.textContent = elegidas.size ? `(${elegidas.size})` : "";
-            };
-            encabezados.filter(elegible).forEach((th) => {
-                const etiqueta = document.createElement("label");
+            const columnas = encabezados.filter(elegible);
+            const nombres = columnas.map(texto);
+            const elegidas = new Set(leer("localStorage", `columnas:${nombre}`, []).filter((n) => nombres.includes(n)));
+            const casillas = nombres.map((n) => {
+                const etiqueta = lista.appendChild(document.createElement("label"));
                 etiqueta.className = "dropdown-item d-flex align-items-center gap-2";
                 const casilla = document.createElement("input");
                 casilla.type = "checkbox";
                 casilla.className = "form-check-input mt-0";
-                casilla.checked = elegidas.has(texto(th));
-                casilla.addEventListener("change", () => {
-                    if (casilla.checked) elegidas.add(texto(th));
-                    else elegidas.delete(texto(th));
-                    guardar("localStorage", `columnas:${nombre}`, [...elegidas]);
-                    pintar();
-                });
-                etiqueta.append(casilla, texto(th));
-                lista.append(etiqueta);
+                casilla.value = n;
+                etiqueta.append(casilla, n);
+                return casilla;
             });
-            interruptor.addEventListener("change", () => {
-                guardar("localStorage", `columnas-ocultas:${nombre}`, interruptor.checked);
+            const pintar = () => {
+                const celdas = `table[data-tabla="${nombre}"] tr:not([data-fila-ancha]) >`;
+                estilo.textContent = columnas.filter((th) => elegidas.has(texto(th)))
+                    .map((th) => `${celdas} :nth-child(${th.cellIndex + 1}) { display: none !important; }`).join("\n");
+                casillas.forEach((c) => { c.checked = elegidas.has(c.value); });
+                todas.checked = elegidas.size === casillas.length;
+                todas.indeterminate = elegidas.size > 0 && !todas.checked;
+                cuantas.textContent = elegidas.size ? `(${elegidas.size})` : "";
+                guardar("localStorage", `columnas:${nombre}`, [...elegidas]);
+            };
+            lista.addEventListener("change", (e) => {
+                if (e.target.checked) elegidas.add(e.target.value); else elegidas.delete(e.target.value);
+                pintar();
+            });
+            todas.addEventListener("change", () => {
+                casillas.forEach((c) => (todas.checked ? elegidas.add(c.value) : elegidas.delete(c.value)));
                 pintar();
             });
             pintar();
         }
-
         // ----- 3 · barra de scroll horizontal también arriba
         const caja = tabla.closest(".table-responsive");
         if (!caja) return;

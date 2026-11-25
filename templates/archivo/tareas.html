@@ -37,6 +37,7 @@
             <span>Agrupar:</span>
             {% for a in agrupaciones %}<a href="{{ a.url }}"{% if a.activo %} class="is-active" aria-current="true"{% endif %}>{{ a.nombre }}</a>{% endfor %}
         </div>
+    {% include "core/_columnas.html" with tabla="archivo-tareas" %}    
     </form>
 
     {% if pagina.object_list %}

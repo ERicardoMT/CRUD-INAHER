@@ -29,6 +29,7 @@
             <option value="">Seguimiento: todos</option>
             {% for clave, nombre in seguimientos.items %}<option value="{{ clave }}"{% if clave == seguimiento %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
         </select>
+    {% include "core/_columnas.html" with tabla="archivo-pedidos" %}    
     </form>
 
     {% if q %}

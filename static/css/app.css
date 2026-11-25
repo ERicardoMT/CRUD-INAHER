@@ -1025,6 +1025,13 @@ textarea.form-control {
     overflow-y: auto;
 }
 
+.designacion-grid.carga-oculta .designacion-side-col {
+    display: none;
+}
+.btn[data-alternar-carga][aria-expanded="true"] {
+    background-color: #F2F7FC;
+}
+
 .table-designacion th {
     font-size: 11px;
     text-transform: uppercase;

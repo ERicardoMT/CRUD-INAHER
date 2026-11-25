@@ -120,7 +120,7 @@
 </section>
 
 <!-- ================= LAYOUT PRINCIPAL (TABLA + CARGA POR PERSONA) ================= -->
-<div class="designacion-grid">
+<div class="designacion-grid" id="designacionGrid">
 
     <div class="designacion-main-col">
         <div class="content-card">
@@ -149,6 +149,9 @@
                         Ocultar palomeadas
                     </label>
                     {% include "core/_columnas.html" with tabla="designacion" %}
+                    <button type="button" class="btn btn-outline-inaher btn-sm" data-alternar-carga aria-controls="panelCarga">
+                        <i class="bi bi-people"></i> <span class="d-none d-sm-inline">Carga por persona</span>
+                    </button>
                 </div>
             </div>
 
@@ -195,13 +198,14 @@
         </div>
     </div>
 
-    <div class="designacion-side-col">
+    <div class="designacion-side-col" id="panelCarga">
         <div class="content-card sticky-top-card">
-            <div class="content-card-header">
+            <div class="content-card-header d-flex justify-content-between align-items-start gap-2">
                 <div>
                     <h2>Carga por persona</h2>
                     <p>Min asignados · turno {{ turno }} min</p>
                 </div>
+                <button type="button" class="btn-close" data-alternar-carga aria-controls="panelCarga" aria-label="Ocultar carga por persona"></button>
             </div>
 
             <div class="p-3">
@@ -213,6 +217,22 @@
     </div>
 
 </div>
+
+<script>
+(() => {
+    const grid = document.getElementById("designacionGrid");
+    const botones = document.querySelectorAll("[data-alternar-carga]");
+    const pintar = (oculta) => {
+        grid.classList.toggle("carga-oculta", oculta);
+        botones.forEach((b) => b.setAttribute("aria-expanded", String(!oculta)));
+        try { localStorage.setItem("carga-oculta", oculta ? "1" : ""); } catch { /* sin memoria */ }
+    };
+    let oculta = false;
+    try { oculta = localStorage.getItem("carga-oculta") === "1"; } catch { /* sin memoria */ }
+    pintar(oculta);
+    botones.forEach((b) => b.addEventListener("click", () => pintar(!grid.classList.contains("carga-oculta"))));
+})();
+</script>
 
 {% if permisos.editar %}
 <!-- ================= MODAL: AGREGAR TAREA ================= -->
