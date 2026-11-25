@@ -258,7 +258,7 @@ def exportar_pedidos(request):
             " · ".join(f"{e.paqueteria_nombre} {e.guia}".strip() for e in p.entregas.all()),
             p.factura_texto,
             p.factura_fecha,
-            " · ".join(f"{x.get_tipo_display()} {x.fecha:%d/%m/%Y} ({x.get_forma_display()})" for x in p.pagos.all()),
+            " · ".join(x.texto for x in p.pagos.all()),
             p.notas,
         ]
         for i, partida in enumerate(p.partidas.all() or [None]):

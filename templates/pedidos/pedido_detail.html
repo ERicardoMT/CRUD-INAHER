@@ -306,6 +306,8 @@
                     <div class="pedido-seguimiento-item{% if pedido.entregas.all %} is-done{% endif %}">
                         <i class="bi {% if pedido.entregas.all %}bi-check-lg{% else %}bi-circle{% endif %}"></i>
                         <strong>ENVIADO</strong>
+                        <a class="stretched-link" href="{% url 'pedidos:registrar_entrega' pedido.pk %}?next={{ request.get_full_path|urlencode }}"
+                           aria-label="Registrar entrega del pedido {{ pedido.numero }}"></a>
                         {% for e in pedido.entregas.all %}
                         <div class="pedido-envio">
                             <small>{{ e.fecha|date:"d M"|lower }}{% if e.registrada_por %} · {{ e.registrada_por }}{% endif %}</small>
@@ -324,18 +326,18 @@
                     <div class="pedido-seguimiento-item{% if pedido.factura_estado != 'PENDIENTE' %} is-done{% endif %}">
                         <i class="bi {% if pedido.factura_estado != 'PENDIENTE' %}bi-check-lg{% else %}bi-circle{% endif %}"></i>
                         <strong>FACTURADO</strong>
-                        {% include "archivo/_chip_factura.html" %}
+                        {% include "archivo/_chip_factura.html" with estirar=True %}
                     </div>
 
                     <div class="pedido-seguimiento-item{% if pedido.liquidacion %} is-done{% endif %}">
                         <i class="bi {% if pedido.liquidacion %}bi-check-lg{% else %}bi-circle{% endif %}"></i>
                         <strong>PAGADO</strong>
-                        {% include "archivo/_chip_pago.html" %}
+                        {% include "archivo/_chip_pago.html" with estirar=True %}
                     </div>
                 </div>
 
                 <div class="pedido-ficha-nota-tecnica">
-                    Enviado se llena al registrar una entrega. Toca Facturado o Pagado para capturarlos (también antes de entregar: factura o anticipo).
+                    Toca cualquier cuadro: Enviado registra una entrega (paquetería y guía); Facturado y Pagado abren su ventana, también antes de entregar.
                 </div>
 
             </section>

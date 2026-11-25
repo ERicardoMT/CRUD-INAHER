@@ -1,0 +1,14 @@
+{# Ocultar columnas (static/js/tablas.js). tabla = el data-tabla de la tabla. #}
+<div class="columnas-control" data-columnas-de="{{ tabla }}">
+    <div class="dropdown">
+        <button class="btn btn-outline-inaher btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                data-bs-auto-close="outside" aria-expanded="false">
+            <i class="bi bi-layout-three-columns"></i> Columnas
+        </button>
+        <div class="dropdown-menu shadow-sm columnas-lista" data-columnas-lista></div>
+    </div>
+    <label class="form-check d-flex align-items-center gap-1 mb-0 small">
+        <input type="checkbox" class="form-check-input mt-0" data-ocultar-columnas>
+        Ocultar columnas <span data-columnas-cuantas></span>
+    </label>
+</div>

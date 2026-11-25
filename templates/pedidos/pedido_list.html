@@ -117,6 +117,7 @@
                     {% endfor %}
                 </ul>
             </div>
+            {% include "core/_columnas.html" with tabla="pedidos" %}
         </div>
     </div>
 
@@ -127,7 +128,7 @@
 
     {% if pedidos %}
     <div class="table-responsive">
-        <table class="table-designacion tabla-tarjetas align-middle">
+        <table class="table-designacion tabla-tarjetas align-middle" data-tabla="pedidos">
             <thead>
                 <tr>
                     <th class="col-check">
@@ -207,7 +208,7 @@
                     {% if perms.eficiencia.ver_direccion %}
                     <td data-label="Costo" class="text-end">{% include "pedidos/_costo.html" %}</td>
                     {% endif %}
-                    <td class="text-end col-mas">
+                    <td class="text-end col-mas" data-orden="{{ pedido.min_total }}">
                         <button type="button" class="btn-outline-inaher btn-mas" data-bs-toggle="collapse"
                                 data-bs-target="#mas-{{ pedido.pk }}" aria-expanded="false" aria-controls="mas-{{ pedido.pk }}"
                                 title="Minutos, avance y acciones">
@@ -215,7 +216,7 @@
                         </button>
                     </td>
                 </tr>
-                <tr class="collapse fila-mas" id="mas-{{ pedido.pk }}">
+                <tr class="collapse fila-mas" id="mas-{{ pedido.pk }}" data-anexo data-fila-ancha>
                     <td colspan="{% if perms.eficiencia.ver_direccion %}13{% else %}12{% endif %}">
                         <div class="resumen-min">
                             {% include "pedidos/_dato_min.html" with titulo="Min total" valor=pedido.min_total nota="ruta × cantidad × min estándar" %}

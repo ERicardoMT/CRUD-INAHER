@@ -48,12 +48,13 @@ class PagoForm(forms.ModelForm):
 
     class Meta:
         model = Pago
-        fields = ["fecha", "tipo", "forma", "nota"]
+        fields = ["fecha", "tipo", "monto", "forma", "nota"]
         widgets = {
             "fecha": FechaInput(),
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "forma": forms.Select(attrs={"class": "form-select"}),
             "nota": forms.TextInput(attrs={"class": "form-control", "placeholder": "referencia…"}),
+            "monto": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0.01", "inputmode": "decimal", "placeholder": "0.00"}),
         }
 
     def __init__(self, *args, pedido, **kwargs):
@@ -65,3 +66,10 @@ class PagoForm(forms.ModelForm):
         if tipo == Pago.Tipo.LIQUIDACION and self.pedido.liquidacion:
             raise ValidationError("Este pedido ya está liquidado. Quita la liquidación para corregirla.")
         return tipo
+    def clean(self):
+        datos = super().clean()
+        if datos.get("tipo") == Pago.Tipo.LIQUIDACION:
+            datos["monto"] = None   # la liquidación no lleva cantidad
+        elif datos.get("tipo") and not datos.get("monto"):
+            self.add_error("monto", "Escribe la cantidad en pesos del anticipo o abono.")
+        return datos

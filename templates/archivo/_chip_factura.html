@@ -1,5 +1,5 @@
 {% if not pedido.archivado_sin_terminar %}
-<button type="button" class="archivo-chip-boton" data-ventana="{% url 'archivo:facturado' pedido.pk %}" title="Capturar o corregir la factura"{% if not perms.pedidos.palomear_seguimiento %} disabled{% endif %}>
+<button type="button" class="archivo-chip-boton{% if estirar %} stretched-link{% endif %}" data-ventana="{% url 'archivo:facturado' pedido.pk %}" title="Capturar o corregir la factura"{% if not perms.pedidos.palomear_seguimiento %} disabled{% endif %}>
     {% if pedido.factura_estado == "FACTURADO" %}
     <span class="archivo-chip is-ok"><i class="bi bi-check-lg"></i>{{ pedido.factura_folio }}</span>
     {% elif pedido.factura_estado == "NO_PIDIO" %}

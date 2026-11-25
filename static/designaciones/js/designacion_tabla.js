@@ -121,6 +121,18 @@
             tr.hidden = !ver;
             if (ver) visibles += 1;
         });
+        document.querySelectorAll("#tablaItemsBody tr[data-franja]").forEach(function (franja) {
+            const filas = Array.from(document.querySelectorAll(`#tablaItemsBody tr[data-id][data-grupo="${franja.dataset.grupo}"]`));
+            const vistas = filas.filter(function (tr) { return !tr.hidden; }).length;
+            const hechas = filas.filter(function (tr) { return tr.dataset.hecho === "1"; }).length;
+            franja.hidden = !vistas;
+            const texto = franja.querySelector(".franja-conteo");
+            if (texto) {
+                texto.textContent = vistas === filas.length
+                    ? `${hechas} de ${filas.length} tarea${filas.length === 1 ? "" : "s"}`
+                    : `mostrando ${vistas} de ${filas.length} tareas`;
+            }
+        });
         const conteo = document.getElementById("conteoVisible");
         if (conteo) {
             const total = document.querySelectorAll("#tablaItemsBody tr[data-id]").length;

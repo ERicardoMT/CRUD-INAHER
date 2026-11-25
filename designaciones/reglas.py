@@ -178,6 +178,29 @@ def ordenar(tareas, orden):
         clave = _clave_urgencia
     return sorted(tareas, key=clave)
 
+def agrupar(tareas, orden):
+    """
+    Franjas de la tabla (Correcciones 24-nov, punto 8): una por el grupo del orden elegido.
+    Urgencia → pedido · Persona → persona · Operación → operación madre · Máquina → máquina.
+    Las tareas ya vienen ordenadas (ordenar), así que cada grupo queda junto.
+    """
+    grupos = []
+    for t in tareas:
+        if orden == "persona":
+            clave, titulo, pedido = f"p{t.quien_id or 0}", t.quien.nombre if t.quien_id else "Sin asignar", None
+        elif orden == "operacion":
+            clave, titulo, pedido = f"o{t.operacion_madre_id}", t.operacion_madre.nombre, None
+        elif orden == "maquina":
+            clave, titulo, pedido = f"m{t.maquina_id or 0}", t.maquina.nombre if t.maquina_id else "Sin máquina", None
+        elif t.pedido_id:
+            clave, titulo, pedido = f"d{t.pedido_id}", t.pedido.numero, t.pedido
+        else:
+            clave, titulo, pedido = "stock", "Stock · sin pedido", None
+        if not grupos or grupos[-1]["clave"] != clave:
+            grupos.append({"clave": clave, "titulo": titulo, "pedido": pedido,
+                           "alerta": t.alerta_info if pedido else None, "tareas": []})
+        grupos[-1]["tareas"].append(t)
+    return grupos
 
 # ---------------------------------------------------------------- tarjetas y carga por persona (regla 5)
 

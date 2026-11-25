@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator, RegexValidator
+from decimal import Decimal
 from django.db import models
 from django.db.models import Q, Sum
 from django.db.models.functions import Coalesce
@@ -575,6 +576,11 @@ class Pedido(models.Model):
     def liquidacion(self):
         """El pago de liquidación, o None si todavía no se liquida."""
         return next((p for p in self.pagos.all() if p.tipo == Pago.Tipo.LIQUIDACION), None)
+    @property
+    def pagado_parcial(self):
+        """Mientras no se liquida: suma de anticipos y abonos, y el último pago (con su fecha)."""
+        pagos = list(self.pagos.all())
+        return {"total": sum(p.monto or 0 for p in pagos), "ultimo": pagos[-1] if pagos else None}
 
     @property
     def dias_sin_pagar(self):
@@ -803,12 +809,12 @@ class EntregaPartida(models.Model):
         verbose_name = "Partida entregada"
         verbose_name_plural = "Partidas entregadas"
 class Pago(models.Model):
-    """Pagos del pedido. Sin importes: la cobranza se lleva en el SAE."""
+    """Pagos del pedido. Anticipo y Abono llevan cantidad en pesos; la cobranza completa sigue en el SAE."""
 
     class Tipo(models.TextChoices):
+        LIQUIDACION = "LIQUIDACION", "Liquidación (pago total)"
         ANTICIPO = "ANTICIPO", "Anticipo"
         ABONO = "ABONO", "Abono"
-        LIQUIDACION = "LIQUIDACION", "Liquidación (pago total)"
 
     class Forma(models.TextChoices):
         TRANSFERENCIA = "TRANSFERENCIA", "Transferencia"
@@ -819,7 +825,11 @@ class Pago(models.Model):
 
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name="pagos")
     fecha = models.DateField(default=timezone.localdate, verbose_name="Fecha de pago")
-    tipo = models.CharField(max_length=15, choices=Tipo.choices, default=Tipo.ANTICIPO, verbose_name="Tipo")
+    tipo = models.CharField(max_length=15, choices=Tipo.choices, default=Tipo.LIQUIDACION, verbose_name="Tipo")
+    monto = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.01"))], verbose_name="Cantidad ($)",
+    )
     forma = models.CharField(max_length=15, choices=Forma.choices, default=Forma.TRANSFERENCIA, verbose_name="Forma de pago")
     nota = models.CharField(max_length=200, blank=True, default="", validators=[texto_seguro], verbose_name="Nota")
     registrado_por = models.CharField(max_length=150, blank=True, default="", verbose_name="Registró")
@@ -832,6 +842,11 @@ class Pago(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} · {self.pedido.numero} · {self.fecha:%d/%m/%Y}"
+    @property
+    def texto(self):
+        """Anticipo $1,500.00 · 24/11/2026 · Transferencia (ventana, bitácora y Excel)."""
+        monto = f" ${self.monto:,.2f}" if self.monto else ""
+        return f"{self.get_tipo_display()}{monto} · {self.fecha:%d/%m/%Y} · {self.get_forma_display()}"
 class AdjuntoPedido(models.Model):
     """Notas y fotos: fotos (se comprimen) o PDF, 5 MB máximo cada uno."""
 

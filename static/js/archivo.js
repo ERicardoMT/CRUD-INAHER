@@ -4,6 +4,13 @@
     if (!modalEl) return;
     const contenido = modalEl.querySelector(".modal-content");
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    function condicionales() {
+        contenido.querySelectorAll("[data-mostrar-si]").forEach((caja) => {
+            const campo = contenido.querySelector(`[name="${caja.dataset.mostrarSi}"]`);
+            caja.hidden = !campo || !caja.dataset.valores.split(",").includes(campo.value);
+        });
+    }
+    contenido.addEventListener("change", condicionales);
 
     async function cargar(url, opciones = {}) {
         const respuesta = await fetch(url, { headers: { "X-Requested-With": "fetch" }, ...opciones });
@@ -12,6 +19,7 @@
             return;
         }
         contenido.innerHTML = await respuesta.text();
+        condicionales();
         contenido.querySelector("[autofocus]")?.focus();
     }
 

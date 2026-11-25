@@ -148,6 +148,7 @@
                         <input type="checkbox" class="form-check-input mt-0" id="ocultarPalomeadas">
                         Ocultar palomeadas
                     </label>
+                    {% include "core/_columnas.html" with tabla="designacion" %}
                 </div>
             </div>
 
@@ -157,23 +158,23 @@
                 <input type="hidden" name="quien" id="quienSeleccion" value="">
             </form>
 
-            <div class="table-responsive">
-                <table class="table-designacion tabla-tarjetas align-middle tabla-designacion-v2">
+            <div class="table-responsive tabla-alta">
+                <table class="table-designacion tabla-tarjetas align-middle tabla-designacion-v2" data-tabla="designacion">
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" class="form-check-input" onclick="toggleSelectAllItems(this)" aria-label="Marcar todas"></th>
                             <th>Quién</th>
-                            <th># P</th>
+                            {% if not por_pedido %}<th>Pedido</th>{% endif %}
                             <th class="text-center">Paso</th>
                             <th>Producto</th>
-                            <th>Operación madre &rsaquo; detallada</th>
+                            <th>Operación madre</th>
+                            <th>Operación detallada</th>
                             <th>Máquina</th>
                             <th>Detalle <small class="d-block fw-normal text-muted">medida · tolerancia</small></th>
                             <th class="text-center">Cant</th>
                             <th class="text-center">Min</th>
                             <th class="text-center">✓</th>
                             <th class="text-center">Hechas</th>
-                            <th>Sale</th>
                             <th>Estado</th>
                             <th class="text-end"></th>
                         </tr>

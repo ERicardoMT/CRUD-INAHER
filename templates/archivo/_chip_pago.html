@@ -1,10 +1,12 @@
 {% if not pedido.archivado_sin_terminar %}
-<button type="button" class="archivo-chip-boton" data-ventana="{% url 'archivo:pagado' pedido.pk %}" title="Registrar o corregir pagos" {% if not perms.pedidos.palomear_seguimiento %} disabled{% endif %}
+<button type="button" class="archivo-chip-boton{% if estirar %} stretched-link{% endif %}" data-ventana="{% url 'archivo:pagado' pedido.pk %}" title="Registrar o corregir pagos" {% if not perms.pedidos.palomear_seguimiento %} disabled{% endif %}
 >
     {% if pedido.liquidacion %}
     <span class="archivo-chip is-ok"><i class="bi bi-check-lg"></i>{{ pedido.liquidacion.fecha|date:"d/m/y" }}</span>
     {% elif pedido.pagos.all %}
-    <span class="archivo-chip is-parcial"><i class="bi bi-circle-half"></i>parcial · {{ pedido.pagos.all|length }} pago{{ pedido.pagos.all|length|pluralize }}</span>
+    {% with parcial=pedido.pagado_parcial %}
+    <span class="archivo-chip is-parcial"><i class="bi bi-circle-half"></i>parcial{% if parcial.total %} · ${{ parcial.total|floatformat:"2g" }}{% endif %} · {{ parcial.ultimo.get_tipo_display|lower }} {{ parcial.ultimo.fecha|date:"d/m/y" }}</span>
+    {% endwith %}
     {% else %}
     <span class="archivo-chip is-neutral"><i class="bi bi-circle"></i>pendiente</span>
     {% endif %}

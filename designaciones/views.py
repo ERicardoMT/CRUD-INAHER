@@ -60,8 +60,11 @@ def _datos_pantalla(request):
     maquinas = list(Maquina.objects.filter(activa=True))
     tareas = reglas.preparar(reglas.tareas_activas(), maquinas)
     turno = reglas.turno_minutos()
+    ordenadas = reglas.ordenar(tareas, orden)
     return {
-        "tareas": reglas.ordenar(tareas, orden),
+        "tareas": ordenadas,                              
+        "grupos": reglas.agrupar(ordenadas, orden),       
+        "por_pedido": orden == "urgencia",                
         "tarjetas": reglas.tarjetas(tareas),
         "carga": reglas.carga_por_persona(tareas, turno),
         "turno": turno,

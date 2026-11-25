@@ -84,37 +84,6 @@ p {
     color: #FFFFFF;
 }
 
-.brand-mark {
-    width: 43px;
-    height: 43px;
-    display: grid;
-    place-items: center;
-
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    border-radius: 12px;
-    background: var(--inaher-teal);
-
-    color: #FFFFFF;
-    font-size: 23px;
-    font-weight: 800;
-}
-
-.brand-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.brand-text strong {
-    font-size: 20px;
-    letter-spacing: 1.2px;
-}
-
-.brand-text small {
-    color: #CAD7E8;
-    font-size: 11px;
-}
-
 .sidebar-section-label {
     padding: 0 23px;
     margin: 15px 0 10px;
@@ -921,13 +890,6 @@ textarea.form-control {
     }
     .sidebar-overlay.is-visible {
         display: block;
-    }
-    .btn-hamburger {
-        background: none;
-        border: none;
-        color: var(--inaher-navy);
-        padding: 0;
-        cursor: pointer;
     }
 
     .brand {
@@ -3648,12 +3610,12 @@ textarea.form-control {
 .tabla-designacion-v2 .form-select-sm,
 .tabla-designacion-v2 .form-control-sm {
     min-width: 0;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .tabla-designacion-v2 select[data-campo="quien"] { min-width: 110px; }
-.tabla-designacion-v2 select[data-campo="maquina"] { min-width: 150px; }
-.tabla-designacion-v2 input[data-campo="detalle"] { min-width: 140px; }
+.tabla-designacion-v2 select[data-campo="maquina"] { min-width: 130px; }
+.tabla-designacion-v2 input[data-campo="detalle"] { min-width: 110px; }
 .tabla-designacion-v2 .input-num { width: 64px; margin: 0 auto; text-align: center; }
 
 .tabla-designacion-v2 select.sin-asignar {
@@ -3846,3 +3808,178 @@ textarea.form-control {
 
 .pedido-adjuntar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .pedido-adjuntar input { flex: 1 1 200px; min-width: 0; }
+/* ==========================================================
+   Logo y barra lateral
+   ========================================================== */
+.brand-logo {
+    display: block;
+    width: 100%;
+    max-width: 190px;
+    height: auto;
+}
+
+.btn-hamburger {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--inaher-navy);
+    line-height: 1;
+    cursor: pointer;
+}
+
+@media (min-width: 761px) {
+    html.sidebar-escondida .sidebar {
+        display: none;
+    }
+}
+/* ==========================================================
+   Tablas: ordenar, columnas, scroll arriba
+   ========================================================== */
+th[data-ordenable] {
+    cursor: pointer;
+    user-select: none;
+}
+
+th[data-ordenable]:hover {
+    background-color: #EEF3F9;
+}
+
+th[data-ordenable]::after {
+    content: "↕";
+    margin-left: 4px;
+    font-size: 10px;
+    opacity: 0.35;
+}
+
+th[aria-sort="ascending"]::after { content: "▲"; opacity: 1; }
+th[aria-sort="descending"]::after { content: "▼"; opacity: 1; }
+
+.columnas-control {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.columnas-lista {
+    max-height: 60vh;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.scroll-arriba {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.scroll-arriba > div {
+    height: 1px;
+}
+/* Cuadro de Seguimiento es el botón */
+.pedido-seguimiento-item {
+    position: relative;
+}
+
+.pedido-seguimiento-item:has(.stretched-link:not(:disabled)) {
+    cursor: pointer;
+}
+
+.pedido-seguimiento-item:has(.stretched-link:not(:disabled)):hover {
+    border-color: var(--inaher-teal);
+}
+
+.pedido-seguimiento-item a:not(.stretched-link) {
+    position: relative;  
+    z-index: 2;
+}
+
+/* ==========================================================
+   Designación: letra, columnas y franjas
+   ========================================================== */
+.tabla-designacion-v2 td {
+    padding: 6px 8px;
+    color: #1E293B;
+    font-size: 14px;
+}
+
+.tabla-designacion-v2 td small,
+.tabla-designacion-v2 td .text-muted {
+    color: #334155 !important;
+}
+
+.tabla-designacion-v2 .form-select-sm { font-size: 14px; }
+.tabla-designacion-v2 .cell-producto { max-width: 220px; font-size: 14px; }
+.tabla-designacion-v2 .col-op-madre { min-width: 150px; font-weight: 600; }
+.tabla-designacion-v2 .col-op-detallada { min-width: 260px; }
+.tabla-designacion-v2 .lista-estado { white-space: normal; }
+.pedido-chip { text-decoration: none; }
+
+/* Encabezado fijo al bajar (computadora); en celular la tabla baja con la página */
+@media (min-width: 761px) {
+    .tabla-alta {
+        max-height: calc(100vh - 120px);
+        overflow: auto;
+    }
+
+    .tabla-alta thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+    }
+}
+
+/* Una franja por grupo, con el color de la alerta del pedido (sin colores nuevos) */
+.franja-grupo > td {
+    padding: 8px 12px !important;
+    border-top: 6px solid #FFFFFF;
+    background: #EEF3F9;
+    box-shadow: inset 4px 0 0 var(--inaher-navy);
+}
+
+.franja-grupo.status-detenido > td  { background: #FEE2E2; box-shadow: inset 4px 0 0 #991B1B; }
+.franja-grupo.status-proceso > td   { background: #FFEDD5; box-shadow: inset 4px 0 0 #9A3412; }
+.franja-grupo.status-urgente > td   { background: #FEF9C3; box-shadow: inset 4px 0 0 #854D0E; }
+.franja-grupo.status-terminado > td { background: #DCFCE7; box-shadow: inset 4px 0 0 #166534; }
+.franja-grupo.status-neutral > td   { background: #F1F5F9; box-shadow: inset 4px 0 0 #475569; }
+
+.franja-contenido {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+}
+
+.franja-titulo {
+    color: var(--inaher-navy);
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.franja-titulo a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.franja-sub {
+    min-width: 0;
+    color: #1E293B;
+    font-size: 13px;
+}
+
+.franja-datos {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    color: #1E293B;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+@media (max-width: 760px) {
+    .franja-datos {
+        flex-wrap: wrap;
+        width: 100%;
+        margin-left: 0;
+    }
+}
