@@ -335,7 +335,7 @@ def pagado(request, pk):
         pago.pedido = pedido
         pago.registrado_por = quien_hace(request)
         pago.save()
-        MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.PAGO, pago.registrado_por, pago)
+        MovimientoPedido.registrar(pedido, MovimientoPedido.Accion.PAGO, pago.registrado_por, pago.texto)
         return HttpResponse(status=204)
     estado = 400 if request.method == "POST" else 200
     return render(request, "archivo/ventana_pagado.html", {"pedido": pedido, "form": form}, status=estado)
@@ -344,7 +344,7 @@ def pagado(request, pk):
 @require_POST
 def quitar_pago(request, pk):
     pago = get_object_or_404(Pago.objects.select_related("pedido"), pk=pk)
-    MovimientoPedido.registrar(pago.pedido, MovimientoPedido.Accion.PAGO_QUITADO, quien_hace(request), pago)
+    MovimientoPedido.registrar(pago.pedido, MovimientoPedido.Accion.PAGO_QUITADO, quien_hace(request), pago.texto)
     pago.delete()
     return HttpResponse(status=204)
 
