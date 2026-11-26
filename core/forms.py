@@ -12,12 +12,20 @@ from .models import Configuracion
 class OperarioForm(forms.ModelForm):
     class Meta:
         model = Operario
-        fields = ["nombre", "orden", "activo"]
+        fields = ["nombre", "usuario", "orden", "activo"]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control", "placeholder": "Nombre del operario"}),
+            "usuario": forms.Select(attrs={"class": "form-select"}),
             "orden": forms.NumberInput(attrs={"class": "form-control", "min": 0}),
             "activo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["usuario"].required = False
+        self.fields["usuario"].empty_label = "— sin usuario —"
+        self.fields["usuario"].label_from_instance = lambda u: u.get_full_name() or u.get_username()
 
 
 class MaquinaForm(forms.ModelForm):

@@ -1,0 +1,117 @@
+{# «Mi lista de hoy»: se vuelve a pintar entero después de palomear o anotar piezas #}
+<header class="ml-encabezado">
+    <div class="ml-arriba">
+        <div class="ml-quien"><strong class="ml-nombre">{{ operario.nombre }}</strong> <span class="ml-fecha">· {{ hoy|date:"D j M"|lower }}</span></div>
+        <div class="ml-arriba-der">
+            <span class="ml-conteo">{{ hechas }} de {{ total }} terminada{{ total|pluralize }}</span>
+            <form method="post" action="{% url 'core:salir' %}" class="ml-salir"
+                  onsubmit="return confirm('¿Salir de tu lista?');">
+                {% csrf_token %}
+                <button type="submit" title="Salir" aria-label="Salir">
+                    <i class="bi bi-box-arrow-right"></i><span class="ml-salir-texto">Salir</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="ml-barra" role="progressbar" aria-valuenow="{{ avance }}" aria-valuemin="0" aria-valuemax="100" aria-label="Avance">
+        <span style="width: {{ avance }}%"></span>
+    </div>
+    {% if revisando %}<div class="ml-revision">Vista de revisión: solo {{ operario.nombre }} puede palomear su lista.</div>{% endif %}
+
+    <nav class="ml-vistas" aria-label="Agrupar la lista">
+        {% for clave, nombre in vistas.items %}
+        <a href="?ver={{ clave }}{% if revisando %}&operario={{ operario.pk }}{% endif %}" class="ml-vista{% if clave == vista %} is-activa{% endif %}"{% if clave == vista %} aria-current="true"{% endif %}>{{ nombre }}</a>
+        {% endfor %}
+    </nav>
+
+    {% if grupos %}
+    <nav class="ml-ir" aria-label="Ir a">
+        <span class="ml-ir-texto">Ir a</span>
+        {% for g in grupos %}
+        <a href="#{{ g.clave }}" class="ml-chip {{ g.clase }}">{{ g.titulo }} <b>{{ g.tareas|length }}</b></a>
+        {% endfor %}
+    </nav>
+    {% endif %}
+</header>
+
+<main class="ml-lista">
+    {% for g in grupos %}
+    <section class="ml-grupo" id="{{ g.clave }}">
+        <h2 class="ml-franja {{ g.clase }}">
+            <span><small>{{ g.tipo|upper }}</small> {{ g.titulo }}</span>
+            <span class="ml-franja-der">
+                {% if g.salida %}Sale {{ g.salida|date:"d/m" }}{% endif %}
+                {% if g.alerta %}<span class="ml-alerta {{ g.clase }}">{{ g.alerta }}</span>{% elif not g.salida %}{{ g.tareas|length }} tarea{{ g.tareas|length|pluralize }}{% endif %}
+            </span>
+        </h2>
+
+        <div class="ml-tareas">
+        {% for t in g.tareas %}
+        <article class="ml-tarea{% if not t.pedido_id %} es-general{% endif %}" data-id="{{ t.pk }}" data-cantidad="{{ t.cantidad }}" data-hechas="{{ t.hechas }}">
+            <button type="button" class="ml-tarea-cuerpo" aria-expanded="false" aria-controls="det-{{ t.pk }}"{% if not t.lleva_hechas and not t.pedido_id %} disabled{% endif %}>
+                {% if t.lleva_hechas or t.cantidad and t.pedido_id %}
+                <span class="ml-cant"><b>{{ t.cantidad }}</b><small>pzas</small></span>
+                {% else %}
+                <span class="ml-cant ml-icono"><i class="bi bi-clipboard-check"></i></span>
+                {% endif %}
+                <span class="ml-texto">
+                    <strong class="ml-titulo">{{ t.titulo }}</strong>
+                    {% if t.subtitulo %}<span class="ml-detalle">{{ t.subtitulo }}</span>{% endif %}
+                    {% if t.pedido_id %}<span class="ml-op">{{ t.operacion_detallada.nombre }}</span>{% endif %}
+                    <span class="ml-meta">
+                        {% if vista != "pedido" and t.pedido_id %}<span class="ml-pedido {{ t.alerta_clase }}">{{ t.pedido.numero }}</span>{% endif %}
+                        {% if vista == "urgencia" or vista == "pedido" %}{{ t.maquina_texto }}{% endif %}{% if vista == "maquina" and t.pedido.fecha_salida %}Sale {{ t.pedido.fecha_salida|date:"d/m" }}{% endif %}{% if t.estimado %} · Estimado {{ t.estimado }}{% endif %}
+                    </span>
+                    {% if t.lleva_hechas and t.hechas %}<span class="ml-llevas">Llevas {{ t.hechas }} de {{ t.cantidad }}</span>{% endif %}
+                    {% if t.espera %}<span class="ml-espera">Espera el paso anterior</span>{% endif %}
+                </span>
+                {% if t.lleva_hechas or t.pedido_id %}<i class="bi bi-chevron-down ml-flecha" aria-hidden="true"></i>{% endif %}
+            </button>
+            {% if not revisando %}
+            <button type="button" class="ml-check js-marcar" data-hecho="1" aria-label="Terminada: {{ t.titulo }}">
+                <i class="bi bi-check-lg"></i>
+            </button>
+            {% endif %}
+
+            <div class="ml-abierta" id="det-{{ t.pk }}" hidden>
+                {% if t.pedido_id %}
+                <p class="ml-ficha">Pedido {{ t.pedido.numero }}{% if t.paso %} · Paso {{ t.paso }}{% endif %} · {{ t.operacion_madre.nombre }}{% if t.maquina_texto %} · {{ t.maquina_texto }}{% endif %}{% if t.partida_texto %} · {{ t.partida_texto }}{% endif %}</p>
+                {% endif %}
+                {% if t.lleva_hechas and not revisando %}
+                <div class="ml-piezas">
+                    <span>Piezas hechas</span>
+                    <button type="button" class="ml-paso js-menos" aria-label="Una pieza menos">−</button>
+                    <input type="number" class="ml-numero js-piezas" value="{{ t.hechas }}" min="0" max="{{ t.cantidad }}" inputmode="numeric" pattern="[0-9]*" aria-label="Piezas hechas">
+                    <button type="button" class="ml-paso js-mas" aria-label="Una pieza más">+</button>
+                    <span>de {{ t.cantidad }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+        </div>
+    </section>
+    {% empty %}
+    <section class="ml-vacio">
+        <i class="bi bi-emoji-smile"></i>
+        {% if total %}<p>¡Terminaste todas tus tareas de hoy!</p>{% else %}<p>Todavía no tienes tareas asignadas hoy.</p>{% endif %}
+    </section>
+    {% endfor %}
+
+    {% if terminadas %}
+    <details class="ml-terminadas">
+        <summary>Ya terminadas ({{ terminadas|length }}) <i class="bi bi-chevron-down"></i></summary>
+        {% for t in terminadas %}
+        <div class="ml-terminada" data-id="{{ t.pk }}">
+            <i class="bi bi-check-lg"></i>
+            <div>
+                <strong>{{ t.titulo }}{% if t.cantidad and t.lleva_hechas %} · {{ t.cantidad }} pzas{% endif %}</strong>
+                <small>{% if t.pedido_id %}Pedido {{ t.pedido.numero }} · {% endif %}{{ t.operacion_detallada.nombre }}</small>
+            </div>
+            {% if not revisando %}<button type="button" class="ml-deshacer js-marcar" data-hecho="0">Deshacer</button>{% endif %}
+        </div>
+        {% endfor %}
+    </details>
+    {% endif %}
+
+</main>

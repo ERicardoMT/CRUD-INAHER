@@ -58,6 +58,13 @@
                     <span>Pedidos</span>
                 </a>
 
+                {% if user.operario %}
+                <a href="{% url 'mi_lista' %}" class="sidebar-link{% if request.resolver_match.url_name == 'mi_lista' %} is-active{% endif %}">
+                    <i class="bi bi-phone"></i>
+                    <span>Mi lista de hoy</span>
+                </a>
+                {% endif %}
+
                 <a
                     href="{% url 'designaciones:hoy' %}"
                     class="sidebar-link{% if request.resolver_match.namespace == 'designaciones' %} is-active{% endif %}"

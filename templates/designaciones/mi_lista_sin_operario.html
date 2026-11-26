@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Mi lista de hoy | INAHER{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'designaciones/css/mi_lista.css' %}">{% endblock %}
+{% block pagina %}
+<main class="ml-vacio ml-sin-operario">
+    <i class="bi bi-person-x"></i>
+    <h1>Tu usuario no tiene lista</h1>
+    <p>Pide que en Catálogos › Personas liguen tu usuario <strong>{{ user.get_username }}</strong> con tu nombre.</p>
+    <p><a href="{% url 'core:inicio' %}">Ir al inicio</a></p>
+</main>
+{% endblock %}

@@ -61,6 +61,11 @@ TARJETAS_INICIO = [
 ]
 
 def inicio(request):
+    # El trabajador que solo tiene su lista entra directo a «Mi lista de hoy»
+    from designaciones.mi_lista import entrada
+    directo = entrada(request)
+    if directo:
+        return directo
     tarjetas = [{**t, "valor": Pedido.objects.por_filtro(t["clave"]).count()} for t in TARJETAS_INICIO]
     return render(request, "core/inicio.html", {"tarjetas": tarjetas, "modulos": MODULOS})
 

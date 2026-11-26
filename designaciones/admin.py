@@ -4,7 +4,8 @@ from django.contrib import admin
 from .models import Escalon, FamiliaRuta, Maquina, Operario, PasoRuta, TiempoFijo
 @admin.register(Operario)
 class OperarioAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "activo", "tarifa_hora")
+    list_display = ("nombre", "usuario", "activo", "tarifa_hora")
+    autocomplete_fields = ("usuario",)
     list_editable = ("tarifa_hora",)
 
 

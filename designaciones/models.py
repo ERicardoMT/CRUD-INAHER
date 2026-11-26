@@ -3,6 +3,7 @@ import re
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.validators import MinValueValidator
+from django.conf import settings
 from django.db import models
 from django.db.models import F
 from django.utils import timezone
@@ -55,6 +56,16 @@ def campo_tarifa():
 
 class Operario(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre")
+    # Para «Mi lista de hoy»: con este usuario entra al celular y ve solo sus tareas
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="operario",
+        verbose_name="Usuario para entrar",
+        help_text="Con este usuario la persona ve «Mi lista de hoy» en su celular.",
+    )
     activo = models.BooleanField(default=True, verbose_name="Activo")
     orden = models.PositiveIntegerField(default=0, verbose_name="Orden de visualización")
     tarifa_hora = campo_tarifa()

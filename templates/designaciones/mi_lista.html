@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mi lista de hoy | INAHER{% endblock %}
+
+{% block extra_css %}
+<meta name="theme-color" content="#203D6B">
+<link rel="stylesheet" href="{% static 'designaciones/css/mi_lista.css' %}">
+{% endblock %}
+
+{% block pagina %}
+<div class="ml-app" id="miLista"
+     data-csrf="{{ csrf_token }}"
+     data-vista="{{ vista }}"
+     data-url-marcar="{% url 'mi_lista_marcar' 0 %}"
+     data-url-piezas="{% url 'mi_lista_piezas' 0 %}">
+    {% include "designaciones/_mi_lista_cuerpo.html" %}
+</div>
+<div class="ml-aviso" id="mlAviso" role="status" aria-live="polite" hidden></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'designaciones/js/mi_lista.js' %}"></script>
+{% endblock %}
