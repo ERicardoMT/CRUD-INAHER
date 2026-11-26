@@ -53,6 +53,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Todo el sistema pide iniciar sesión (la pantalla de entrada ya está marcada como pública)
+    'django.contrib.auth.middleware.LoginRequiredMiddleware',
+    # El trabajador solo ve «Mi lista de hoy»
+    'core.acceso.SoloSuLista',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Cabeceras extra de seguridad (CSP y Permissions-Policy)

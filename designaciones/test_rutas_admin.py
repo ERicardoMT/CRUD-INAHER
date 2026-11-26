@@ -27,6 +27,9 @@ class ImportarRutasAdminTests(TestCase):
             "--apply",
             stdout=StringIO(),
         )
+        # Todo el sistema pide iniciar sesión: se entra con un usuario sin permisos especiales
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_user("lector", password="Clave-segura-123"))
 
     def test_simulacion_no_escribe(self):
         call_command(
@@ -262,19 +265,22 @@ class ImportarRutasAdminTests(TestCase):
 
         self.assertContains(
             respuesta,
-            reverse("admin:designaciones_familiaruta_changelist"),
+            reverse("core:rutas"),
         )
 
-        respuesta_admin = self.client.get(
-            reverse("admin:designaciones_familiaruta_changelist")
+        respuesta_editor = self.client.get(
+            reverse("core:rutas")
         )
 
         self.assertEqual(
-            respuesta_admin.status_code,
+            respuesta_editor.status_code,
             200,
         )
 
-    def test_catalogos_oculta_editor_a_anonimo(self):
+        # El panel de Django ya no existe
+        self.assertEqual(self.client.get("/admin/").status_code, 404)
+
+    def test_catalogos_oculta_editor_a_usuario_sin_permisos(self):
         respuesta = self.client.get(
             reverse("core:catalogos")
         )
@@ -286,13 +292,13 @@ class ImportarRutasAdminTests(TestCase):
             "Rutas de producción",
         )
 
-        respuesta_admin = self.client.get(
-            reverse("admin:designaciones_familiaruta_changelist")
+        respuesta_editor = self.client.get(
+            reverse("core:rutas")
         )
 
         self.assertEqual(
-            respuesta_admin.status_code,
-            302,
+            respuesta_editor.status_code,
+            403,
         )
 
     def test_catalogos_oculta_editor_a_staff_sin_permiso(self):

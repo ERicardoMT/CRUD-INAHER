@@ -118,6 +118,20 @@
                 </a>
 
             </nav>
+
+            {% if perms.auth.change_user %}
+            <div class="sidebar-section-label">CONFIGURACIÓN</div>
+
+            <nav class="sidebar-nav">
+                <a
+                    href="{% url 'core:usuarios' %}"
+                    class="sidebar-link{% if '/configuracion/' in request.path %} is-active{% endif %}"
+                >
+                    <i class="bi bi-gear"></i>
+                    <span>Usuarios</span>
+                </a>
+            </nav>
+            {% endif %}
         </aside>
 
         <div class="main-area">

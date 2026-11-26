@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{% if paso %}Paso {{ paso.orden }}{% else %}Nuevo paso{% endif %} · {{ familia.nombre }} | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">RUTAS · {{ familia.nombre|upper }}</div>
+        <h1>{% if paso %}Paso {{ paso.orden }}{% else %}Nuevo paso{% endif %}</h1>
+        <p class="text-muted mb-0">Un paso = una tarea en Designación cuando se cumple su condición.</p>
+    </div>
+    <a href="{% url 'core:ruta_familia' familia.pk %}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> {{ familia.nombre|truncatechars:40 }}</a>
+</div>
+
+<section class="form-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|striptags }}</div>{% endif %}
+        <div class="form-grid">
+            {% include "pedidos/_campo.html" with field=form.orden %}
+            {% include "pedidos/_campo.html" with field=form.madre %}
+            <div class="field-wide">{% include "pedidos/_campo.html" with field=form.detallada ayuda="Variables: {rango} = rango del diámetro · {mat} = fierro-galv o inox-304 · {empaque} = chico, mediano o grande." %}</div>
+            <div class="field-wide">{% include "pedidos/_campo.html" with field=form.condicion nota="opcional" ayuda="Vacía = siempre. Varias, separadas con «;» (todas deben cumplirse): tornillo=si / tornillo=no · pad · anclaje=si · d>=5/8 · d<1/2 · mat=inox / mat=fierro · modelo=MT-2,MTA- · modelo!=X" %}</div>
+            <div class="field-wide">{% include "pedidos/_campo.html" with field=form.nota nota="opcional" %}</div>
+            <label class="form-check d-flex align-items-center gap-2">
+                {{ form.activo }} <span>Activo (el motor lo usa)</span>
+            </label>
+        </div>
+        <div class="form-footer">
+            <a href="{% url 'core:ruta_familia' familia.pk %}" class="btn-outline-inaher">Cancelar</a>
+            <button type="submit" class="btn-inaher"><i class="bi bi-check2"></i> Guardar paso</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

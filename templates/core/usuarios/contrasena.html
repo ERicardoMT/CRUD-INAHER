@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Contraseña · {{ usuario.username }} | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">CONFIGURACIÓN · USUARIOS</div>
+        <h1>Contraseña de {{ usuario.username }}</h1>
+        <p class="text-muted mb-0">Pon una contraseña nueva y dásela a la persona. La anterior deja de servir.</p>
+    </div>
+    <a href="{% url 'core:usuarios' %}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> Usuarios</a>
+</div>
+
+<section class="form-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+            {% include "pedidos/_campo.html" with field=form.password1 ayuda="Mínimo 8 caracteres; que no sea solo números ni muy común." %}
+            {% include "pedidos/_campo.html" with field=form.password2 %}
+        </div>
+        <div class="form-footer">
+            <a href="{% url 'core:usuarios' %}" class="btn-outline-inaher">Cancelar</a>
+            <button type="submit" class="btn-inaher"><i class="bi bi-key"></i> Cambiar contraseña</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -62,10 +62,10 @@
                 <i class="bi bi-gear me-1"></i> Turno y eficiencia
             </button>
         </li>
-        {% if request.user.is_staff and perms.designaciones.change_familiaruta and perms.designaciones.change_pasoruta %}
+        {% if perms.designaciones.change_pasoruta %}
         <li class="nav-item">
-            <a class="nav-link px-3" href="{% url 'admin:designaciones_familiaruta_changelist' %}" target="_blank" rel="noopener">
-                <i class="bi bi-diagram-3 me-1"></i> Rutas de producción
+            <a class="nav-link px-3" href="{% url 'core:rutas' %}">
+                <i class="bi bi-signpost-split me-1"></i> Rutas de producción
             </a>
         </li>
         {% endif %}
@@ -136,10 +136,13 @@
             <div class="card border-0 shadow-sm p-3 mb-4 rounded-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">1 · Personas (Operarios)</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalOperario">
-                        <i class="bi bi-plus-lg me-1"></i> Nueva Persona
-                    </button>
+                    {% if perms.auth.change_user %}
+                    <a href="{% url 'core:usuarios' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-gear me-1"></i> Altas y bajas en Usuarios
+                    </a>
+                    {% endif %}
                 </div>
+                <p class="small text-muted">Solo consulta. Las personas se dan de alta y de baja en <strong>Configuración › Usuarios</strong>: al crear un trabajador, su persona se crea sola.</p>
                 <div class="row g-2">
                     {% for op in operarios %}
                     <div class="col-12 col-md-4">
@@ -147,11 +150,12 @@
                             <div>
                                 <span class="badge bg-light text-dark me-2">#{{ op.orden }}</span>
                                 <strong class="fs-6">{{ op.nombre }}</strong>
+                                <div class="small text-muted mt-1">
+                                    {% if op.usuario %}<i class="bi bi-person-check"></i> usuario {{ op.usuario.username }}{% else %}sin cuenta{% endif %}
+                                </div>
                             </div>
-                            <form method="post" action="{% url 'core:eliminar_catalogo' 'operario' op.id %}" onsubmit="return confirm('¿Eliminar operario?');">
-                                {% csrf_token %}
-                                <button class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
-                            </form>
+                            {% if op.activo %}<span class="status-badge status-terminado">ACTIVA</span>
+                            {% else %}<span class="status-badge status-neutral">DE BAJA</span>{% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -227,6 +231,65 @@
                     <div class="form-footer"><button type="submit" class="btn-inaher">Guardar</button></div>
                 </form>
             </div>
+
+            {% if perms.eficiencia.ver_direccion %}
+            <div class="card border-0 shadow-sm p-3 mb-4 rounded-3">
+                <h5 class="fw-bold mb-1">Tarifas por hora</h5>
+                <p class="small text-muted">Para los costos de Pedidos, Archivo y Eficiencia: minutos estándar × tarifa ÷ 60. Vacío = sin tarifa (suma cero).</p>
+                <form method="post" action="{% url 'core:guardar_tarifas' %}">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        <div class="col-12 col-lg-6">
+                            <h6 class="fw-bold">Personas (mano de obra)</h6>
+                            {% for op in tarifas_operarios %}
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text tarifa-nombre">{{ op.nombre }}</span>
+                                <span class="input-group-text">$</span>
+                                <input type="text" inputmode="decimal" name="op_{{ op.pk }}" value="{{ op.tarifa_hora|default_if_none:'' }}" class="form-control" placeholder="por hora" aria-label="Tarifa de {{ op.nombre }}">
+                            </div>
+                            {% empty %}<p class="small text-muted">No hay personas activas.</p>{% endfor %}
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <h6 class="fw-bold">Máquinas</h6>
+                            {% for m in tarifas_maquinas %}
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text tarifa-nombre">{{ m.nombre }}</span>
+                                <span class="input-group-text">$</span>
+                                <input type="text" inputmode="decimal" name="maq_{{ m.pk }}" value="{{ m.tarifa_hora|default_if_none:'' }}" class="form-control" placeholder="por hora" aria-label="Tarifa de {{ m.nombre }}">
+                            </div>
+                            {% empty %}<p class="small text-muted">No hay máquinas activas.</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-footer"><button type="submit" class="btn-inaher">Guardar tarifas</button></div>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm p-3 mb-4 rounded-3">
+                <h5 class="fw-bold mb-1">Días que no se trabaja</h5>
+                <p class="small text-muted">Además de los festivos oficiales (esos se calculan solos). Los usan Nuevo día y la carga de la semana en Eficiencia.</p>
+                {% if perms.designaciones.editar_designacion %}
+                <form method="post" action="{% url 'core:agregar_dia' %}" class="row g-2 align-items-end mb-3">
+                    {% csrf_token %}
+                    <div class="col-12 col-md-3"><label class="form-label small">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+                    <div class="col-12 col-md-6"><label class="form-label small">Motivo <small class="text-muted">· opcional</small></label><input type="text" name="motivo" maxlength="120" class="form-control" placeholder="Ej. Inventario anual"></div>
+                    <div class="col-12 col-md-3"><button type="submit" class="btn-inaher w-100"><i class="bi bi-plus-lg"></i> Agregar</button></div>
+                </form>
+                {% endif %}
+                {% for d in dias_inhabiles %}
+                <div class="d-flex justify-content-between align-items-center border-top py-2">
+                    <span><strong>{{ d.fecha|date:"l d/m/Y"|capfirst }}</strong>{% if d.motivo %} · <span class="text-muted">{{ d.motivo }}</span>{% endif %}</span>
+                    {% if perms.designaciones.editar_designacion %}
+                    <form method="post" action="{% url 'core:quitar_dia' d.pk %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Quitar"><i class="bi bi-x-lg"></i></button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p class="small text-muted mb-0">No hay días extra registrados.</p>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
@@ -289,4 +352,15 @@
         </form>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Abre la pestaña que viene en la dirección (ej. /catalogos/#tab-config después de guardar tarifas)
+(function () {
+    const destino = window.location.hash;
+    if (!destino) return;
+    const boton = document.querySelector(`[data-bs-target="${CSS.escape(destino)}"]`);
+    if (boton) bootstrap.Tab.getOrCreateInstance(boton).show();
+})();
+</script>
 {% endblock %}

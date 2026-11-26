@@ -3981,3 +3981,86 @@ th[aria-sort="descending"]::after { content: "▼"; opacity: 1; }
         margin-left: 0;
     }
 }
+/* ===== Configuración › Usuarios ===== */
+.fila-baja > td { opacity: 0.6; }
+
+.rol-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 30px;
+    background: #EEF1F5;
+    color: #4B5563;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.rol-administrador { background: #E4EFFC; color: #1D4F91; }
+.rol-captura { background: #FFF0DB; color: #9A5B10; }
+.rol-trabajador { background: #E2F5E9; color: #187648; }
+
+.roles-grupo {
+    margin: 4px 0 20px;
+    padding: 0;
+    border: 0;
+}
+
+.roles-opciones {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rol-opcion {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--control-radius);
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.rol-opcion:has(input:checked) {
+    border-color: var(--inaher-teal);
+    box-shadow: 0 0 0 3px rgba(22, 143, 145, 0.15);
+}
+
+.rol-opcion input { margin-top: 3px; accent-color: var(--inaher-teal); }
+.rol-opcion strong { display: block; color: var(--inaher-navy); }
+.rol-opcion small { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+
+#cajaPersona.persona-importante .field-persona {
+    padding: 10px;
+    border-radius: var(--control-radius);
+    background: #EAF6F6;
+}
+
+@media (max-width: 760px) {
+    .roles-opciones { grid-template-columns: 1fr; }
+}
+
+.personas-sin-cuenta {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    padding: 16px;
+}
+
+.persona-sin-cuenta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px dashed var(--border);
+    border-radius: var(--control-radius);
+    background: #FAFBFD;
+}
+
+.tarifa-nombre {
+    width: 46%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -8,7 +11,7 @@ from designaciones.models import Operario, Maquina, OperacionMadre, OperacionDet
 from pedidos.views import quien_hace
 from tiempos.calculos import guardar_tiempo_fijo, resumen_operaciones
 from .forms import ConfiguracionForm, OperarioForm, MaquinaForm, OperacionMadreForm, OperacionDetalladaForm
-from .models import Configuracion
+from .models import Configuracion, DiaInhabil
 from django.db.models import ProtectedError
 
 
@@ -85,7 +88,7 @@ def modulo_pendiente(request, slug):
     return render(request, "core/modulo_pendiente.html", {"modulo": modulo})
 
 def catalogos_config(request):
-    operarios = Operario.objects.all().order_by("orden", "nombre")
+    operarios = Operario.objects.select_related("usuario").order_by("-activo", "orden", "nombre")
     maquinas = Maquina.objects.all().order_by("tipo", "nombre")
     madres = OperacionMadre.objects.all().order_by("nombre")
     detalladas = (
@@ -112,14 +115,19 @@ def catalogos_config(request):
         "form_madre": OperacionMadreForm(),
         "form_detallada": OperacionDetalladaForm(),
         "form_config": ConfiguracionForm(instance=Configuracion.actual()),
+        "tarifas_operarios": operarios.filter(activo=True),
+        "tarifas_maquinas": maquinas.filter(activa=True),
+        "dias_inhabiles": DiaInhabil.objects.filter(fecha__gte=timezone.localdate() - timedelta(days=60)),
     }
     return render(request, "core/catalogos.html", contexto)
 
 @require_POST
 def guardar_catalogo(request, tipo):
     if tipo == "operario":
-        form = OperarioForm(request.POST)
-    elif tipo == "maquina":
+        # Las personas se dan de alta en Configuración › Usuarios (la persona se crea con su usuario)
+        messages.info(request, "Las personas se dan de alta en Configuración › Usuarios.")
+        return redirect("core:usuarios")
+    if tipo == "maquina":
         form = MaquinaForm(request.POST)
     elif tipo == "madre":
         form = OperacionMadreForm(request.POST)
@@ -140,8 +148,10 @@ def guardar_catalogo(request, tipo):
 
 @require_POST
 def eliminar_catalogo(request, tipo, pk):
+    if tipo == "operario":
+        messages.info(request, "Las personas se dan de baja en Configuración › Usuarios.")
+        return redirect("core:usuarios")
     modelos = {
-        "operario": Operario,
         "maquina": Maquina,
         "madre": OperacionMadre,
         "detallada": OperacionDetallada,

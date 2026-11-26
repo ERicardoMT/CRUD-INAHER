@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Rutas de producción | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">CATÁLOGOS</div>
+        <h1>Rutas de producción</h1>
+        <p class="text-muted mb-0">Qué modelos reconoce el motor y qué pasos genera para cada familia. Los cambios aplican a las rutas que se carguen desde hoy; lo ya cargado en Designación no cambia.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'core:catalogos' %}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> Catálogos</a>
+        <a href="{% url 'core:ruta_familia_nueva' %}" class="btn-inaher"><i class="bi bi-plus-lg"></i> Nueva familia</a>
+    </div>
+</div>
+
+<section class="stats-grid stats-grid-4 mb-4">
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Familias activas</span><span class="stat-icon icon-blue"><i class="bi bi-diagram-3"></i></span></div>
+        <strong>{{ activas }}</strong>
+        <small>de {{ familias|length }}{% if q %} encontradas{% endif %}</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Pasos activos</span><span class="stat-icon icon-teal"><i class="bi bi-list-ol"></i></span></div>
+        <strong>{{ total_pasos }}</strong>
+        <small>los que usa el motor</small>
+    </article>
+</section>
+
+<section class="content-card">
+    <div class="content-card-header">
+        <div>
+            <h2>Familias</h2>
+            <p>Clic en una familia para ver y editar sus pasos.</p>
+        </div>
+        <form method="get" class="d-flex gap-2">
+            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Buscar familia o modelo…" aria-label="Buscar familia o modelo" style="min-width: 220px;">
+            <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table-designacion tabla-tarjetas align-middle">
+            <thead>
+                <tr>
+                    <th class="text-center">Orden</th>
+                    <th>Familia</th>
+                    <th>Modelos que reconoce</th>
+                    <th class="text-center">Pasos</th>
+                    <th>Estado</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in familias %}
+                <tr class="fila-tarjeta{% if not f.activa %} fila-baja{% endif %}">
+                    <td class="text-center" data-label="Orden">{{ f.orden }}</td>
+                    <td data-label="Familia">
+                        <a href="{% url 'core:ruta_familia' f.pk %}" class="fw-bold text-primary">{{ f.nombre }}</a>
+                        {% if f.descripcion %}<small class="d-block text-muted">{{ f.descripcion|truncatechars:90 }}</small>{% endif %}
+                    </td>
+                    <td data-label="Modelos"><small>{{ f.modelos|truncatechars:120 }}</small></td>
+                    <td class="text-center" data-label="Pasos">{{ f.pasos_activos }}{% if f.pasos_total != f.pasos_activos %} <small class="text-muted">/ {{ f.pasos_total }}</small>{% endif %}</td>
+                    <td data-label="Estado">
+                        {% if f.activa %}<span class="status-badge status-terminado">ACTIVA</span>{% else %}<span class="status-badge status-neutral">INACTIVA</span>{% endif %}
+                    </td>
+                    <td class="text-end"><a href="{% url 'core:ruta_familia' f.pk %}" class="btn-outline-inaher btn-sm"><i class="bi bi-pencil"></i> Editar</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">{% if q %}No hay familias con «{{ q }}».{% else %}Todavía no hay familias: el motor usa las rutas originales del archivo.{% endif %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

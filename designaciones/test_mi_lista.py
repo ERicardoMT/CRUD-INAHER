@@ -140,3 +140,38 @@ class MiListaTests(TestCase):
         self.assertNotContains(r, "js-marcar")
         r = self.client.post(reverse("mi_lista_marcar", args=[self.paso2.pk]), {"hecho": "1"})
         self.assertEqual(r.status_code, 404)  # no palomea por otra persona
+
+
+class AccesoTests(TestCase):
+    """Al entrar: el administrador al panel principal; el trabajador solo a «Mi lista de hoy»."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser("marcos", "m@inaher.mx", "Clave-segura-123")
+        self.trabajador = User.objects.create_user("ernesto", password="Clave-segura-123")
+        Operario.objects.create(nombre="Ernesto", usuario=self.trabajador)
+
+    def entrar(self, usuario):
+        return self.client.post(reverse("core:entrar"), {"username": usuario, "password": "Clave-segura-123"}, follow=True)
+
+    def test_sin_sesion_pide_entrar(self):
+        for url in ("/", "/pedidos/", "/designacion/", "/mi-lista/"):
+            r = self.client.get(url, follow=True)
+            self.assertEqual(r.request["PATH_INFO"], reverse("core:entrar"), url)
+
+    def test_administrador_llega_al_panel(self):
+        r = self.entrar("marcos")
+        self.assertEqual(r.request["PATH_INFO"], reverse("core:inicio"))
+        self.assertEqual(self.client.get("/pedidos/").status_code, 200)
+        self.assertEqual(self.client.get("/admin/").status_code, 404)  # el panel de Django está cerrado
+
+    def test_trabajador_llega_a_su_lista_y_no_sale_de_ahi(self):
+        r = self.entrar("ernesto")
+        self.assertEqual(r.request["PATH_INFO"], reverse("mi_lista"))
+        for url in ("/", "/pedidos/", "/designacion/", "/catalogos/", "/admin/"):
+            r = self.client.get(url)
+            self.assertRedirects(r, reverse("mi_lista"), fetch_redirect_response=False, msg_prefix=url)
+
+    def test_trabajador_con_next_tambien_va_a_su_lista(self):
+        r = self.client.post(f"{reverse('core:entrar')}?next=/pedidos/",
+                             {"username": "ernesto", "password": "Clave-segura-123"}, follow=True)
+        self.assertEqual(r.request["PATH_INFO"], reverse("mi_lista"))

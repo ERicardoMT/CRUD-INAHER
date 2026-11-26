@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">CONFIGURACIÓN · USUARIOS</div>
+        <h1>{{ titulo }}</h1>
+        <p class="text-muted mb-0">{% if usuario %}La contraseña se cambia con el botón «Contraseña» de la lista.{% else %}Dale el usuario y la contraseña a la persona para que entre.{% endif %}</p>
+    </div>
+    <a href="{% url 'core:usuarios' %}" class="btn-outline-inaher"><i class="bi bi-arrow-left"></i> Usuarios</a>
+</div>
+
+<section class="form-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|striptags }}</div>{% endif %}
+
+        <div class="form-grid">
+            {% include "pedidos/_campo.html" with field=form.username ayuda=form.username.help_text %}
+            {% include "pedidos/_campo.html" with field=form.first_name %}
+            {% include "pedidos/_campo.html" with field=form.last_name nota="opcional" %}
+            {% if form.password1 %}
+                {% include "pedidos/_campo.html" with field=form.password1 ayuda="Mínimo 8 caracteres; que no sea solo números ni muy común." %}
+                {% include "pedidos/_campo.html" with field=form.password2 %}
+            {% endif %}
+        </div>
+
+        <fieldset class="roles-grupo{% if form.rol.errors %} has-errors{% endif %}">
+            <legend class="form-label">Rol <span class="text-danger">*</span></legend>
+            <div class="roles-opciones">
+                {% for opcion in form.rol %}
+                <label class="rol-opcion">
+                    {{ opcion.tag }}
+                    <span>
+                        <strong>{{ opcion.choice_label }}</strong>
+                        <small>{% for clave, texto in roles.items %}{% if clave == opcion.data.value %}{{ texto }}{% endif %}{% endfor %}</small>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.rol.errors %}<div class="field-error">{{ form.rol.errors|striptags }}</div>{% endif %}
+        </fieldset>
+
+        <div class="form-grid" id="cajaPersona">
+            {% include "pedidos/_campo.html" with field=form.persona ayuda=form.persona.help_text %}
+        </div>
+
+        <div class="form-footer">
+            <a href="{% url 'core:usuarios' %}" class="btn-outline-inaher">Cancelar</a>
+            <button type="submit" class="btn-inaher"><i class="bi bi-check2"></i> {% if usuario %}Guardar cambios{% else %}Dar de alta{% endif %}</button>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// La persona de Catálogos importa sobre todo para el Trabajador: se resalta cuando se elige ese rol
+(function () {
+    const caja = document.getElementById("cajaPersona");
+    function revisar() {
+        const rol = document.querySelector('input[name="rol"]:checked');
+        caja.classList.toggle("persona-importante", rol && rol.value === "trabajador");
+    }
+    document.querySelectorAll('input[name="rol"]').forEach(function (r) { r.addEventListener("change", revisar); });
+    revisar();
+})();
+</script>
+{% endblock %}

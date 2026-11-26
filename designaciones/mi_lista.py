@@ -200,8 +200,9 @@ def anotar_piezas(request, pk):
 
 
 def entrada(request):
-    """Después de entrar: quien solo tiene su lista va directo a ella."""
-    if request.user.is_authenticated and not puede(request.user, EDITAR) \
-            and Operario.objects.filter(usuario=request.user, activo=True).exists():
+    """Después de entrar: quien solo tiene su lista va directo a ella; el administrador, al panel."""
+    from core.acceso import es_solo_trabajador
+
+    if es_solo_trabajador(request.user):
         return redirect("mi_lista")
     return None

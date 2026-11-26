@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios | INAHER{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">CONFIGURACIÓN</div>
+        <h1>Usuarios</h1>
+        <p class="text-muted mb-0">Quién entra al sistema y qué puede hacer. Dar de baja no borra a la persona: solo le quita el acceso.</p>
+    </div>
+    <a href="{% url 'core:usuario_nuevo' %}" class="btn-inaher">
+        <i class="bi bi-person-plus"></i> Alta de usuario
+    </a>
+</div>
+
+<section class="stats-grid stats-grid-4 mb-4">
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Activos</span><span class="stat-icon icon-blue"><i class="bi bi-people"></i></span></div>
+        <strong>{{ conteo.activos }}</strong>
+        <small>{% if conteo.bajas %}{{ conteo.bajas }} dado{{ conteo.bajas|pluralize }} de baja{% else %}pueden entrar{% endif %}</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Administradores</span><span class="stat-icon icon-teal"><i class="bi bi-shield-check"></i></span></div>
+        <strong>{{ conteo.administradores }}</strong>
+        <small>todo el sistema</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Captura</span><span class="stat-icon icon-blue"><i class="bi bi-printer"></i></span></div>
+        <strong>{{ conteo.captura }}</strong>
+        <small>ven, imprimen y exportan</small>
+    </article>
+    <article class="stat-card">
+        <div class="stat-card-top"><span>Trabajadores</span><span class="stat-icon icon-green"><i class="bi bi-phone"></i></span></div>
+        <strong>{{ conteo.trabajadores }}</strong>
+        <small>«Mi lista de hoy»</small>
+    </article>
+</section>
+
+<section class="content-card">
+    <div class="content-card-header">
+        <div>
+            <h2>Usuarios del sistema</h2>
+            <p>{{ usuarios|length }} en total</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table-designacion tabla-tarjetas align-middle tabla-usuarios">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Persona (Mi lista)</th>
+                    <th>Último ingreso</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr class="fila-tarjeta{% if not u.is_active %} fila-baja{% endif %}">
+                    <td data-label="Usuario">
+                        <strong>{{ u.username }}</strong>
+                        {% if u == request.user %}<span class="badge bg-light text-dark border ms-1">tú</span>{% endif %}
+                        {% if u.is_superuser %}<span class="badge bg-light text-dark border ms-1" title="Superusuario: tiene todos los permisos">súper</span>{% endif %}
+                    </td>
+                    <td data-label="Nombre">{{ u.get_full_name|default:"—" }}</td>
+                    <td data-label="Rol"><span class="rol-chip rol-{{ u.rol_clave|default:'ninguno' }}">{{ u.rol_nombre }}</span></td>
+                    <td data-label="Persona">{{ u.persona.nombre|default:"—" }}</td>
+                    <td data-label="Último ingreso" class="text-nowrap">{{ u.last_login|date:"d/m/Y H:i"|default:"nunca" }}</td>
+                    <td data-label="Estado">
+                        {% if u.is_active %}<span class="status-badge status-terminado">ACTIVO</span>
+                        {% else %}<span class="status-badge status-neutral">DE BAJA</span>{% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex flex-wrap justify-content-end gap-1">
+                            <a href="{% url 'core:usuario_editar' u.pk %}" class="btn-outline-inaher btn-sm" title="Editar datos, rol y persona"><i class="bi bi-pencil"></i> Editar</a>
+                            <a href="{% url 'core:usuario_contrasena' u.pk %}" class="btn-outline-inaher btn-sm" title="Poner una contraseña nueva"><i class="bi bi-key"></i> Contraseña</a>
+                            {% if u.is_active %}
+                                {% if u != request.user %}
+                                <form method="post" action="{% url 'core:usuario_baja' u.pk %}" class="m-0"
+                                      onsubmit="return confirm('¿Dar de baja a {{ u.username|escapejs }}? Ya no podrá entrar; su historial se conserva y se puede reactivar.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-outline-danger-custom btn-sm"><i class="bi bi-person-dash"></i> Dar de baja</button>
+                                </form>
+                                {% endif %}
+                            {% else %}
+                            <form method="post" action="{% url 'core:usuario_reactivar' u.pk %}" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-outline-inaher btn-sm"><i class="bi bi-person-check"></i> Reactivar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No hay usuarios.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if sin_cuenta %}
+<section class="content-card mt-4">
+    <div class="content-card-header">
+        <div>
+            <h2>Personas sin cuenta</h2>
+            <p>Están en Catálogos y reciben tareas, pero todavía no pueden entrar a ver «Mi lista de hoy».</p>
+        </div>
+    </div>
+    <div class="personas-sin-cuenta">
+        {% for p in sin_cuenta %}
+        <div class="persona-sin-cuenta">
+            <span><i class="bi bi-person"></i> <strong>{{ p.nombre }}</strong></span>
+            <a href="{% url 'core:usuario_nuevo' %}?persona={{ p.pk }}" class="btn-inaher btn-sm"><i class="bi bi-person-plus"></i> Crear usuario</a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
