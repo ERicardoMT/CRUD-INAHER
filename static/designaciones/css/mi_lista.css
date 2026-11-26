@@ -257,7 +257,9 @@ body {
     border-top: 1px solid var(--ml-borde);
 }
 
-.ml-ficha { margin: 0 0 10px; color: var(--ml-suave); font-size: 13px; }
+.ml-nota-pedido { margin: 0 0 12px; background: #FFF8E6; border-radius: 8px; padding: 8px 10px; }
+.ml-nota-pedido span { display: block; color: var(--ml-suave); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.ml-nota-pedido p { margin: 2px 0 0; font-size: 14px; overflow-wrap: anywhere; }
 
 .ml-piezas {
     display: flex;

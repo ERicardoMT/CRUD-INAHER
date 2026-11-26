@@ -48,7 +48,7 @@
         <div class="ml-tareas">
         {% for t in g.tareas %}
         <article class="ml-tarea{% if not t.pedido_id %} es-general{% endif %}" data-id="{{ t.pk }}" data-cantidad="{{ t.cantidad }}" data-hechas="{{ t.hechas }}">
-            <button type="button" class="ml-tarea-cuerpo" aria-expanded="false" aria-controls="det-{{ t.pk }}"{% if not t.lleva_hechas and not t.pedido_id %} disabled{% endif %}>
+            <button type="button" class="ml-tarea-cuerpo" aria-expanded="false" aria-controls="det-{{ t.pk }}"{% if not t.notas_pedido and not t.lleva_hechas or not t.notas_pedido and revisando %} disabled{% endif %}>
                 {% if t.lleva_hechas or t.cantidad and t.pedido_id %}
                 <span class="ml-cant"><b>{{ t.cantidad }}</b><small>pzas</small></span>
                 {% else %}
@@ -65,7 +65,7 @@
                     {% if t.lleva_hechas and t.hechas %}<span class="ml-llevas">Llevas {{ t.hechas }} de {{ t.cantidad }}</span>{% endif %}
                     {% if t.espera %}<span class="ml-espera">Espera el paso anterior</span>{% endif %}
                 </span>
-                {% if t.lleva_hechas or t.pedido_id %}<i class="bi bi-chevron-down ml-flecha" aria-hidden="true"></i>{% endif %}
+                {% if t.notas_pedido or t.lleva_hechas and not revisando %}<i class="bi bi-chevron-down ml-flecha" aria-hidden="true"></i>{% endif %}
             </button>
             {% if not revisando %}
             <button type="button" class="ml-check js-marcar" data-hecho="1" aria-label="Terminada: {{ t.titulo }}">
@@ -74,8 +74,8 @@
             {% endif %}
 
             <div class="ml-abierta" id="det-{{ t.pk }}" hidden>
-                {% if t.pedido_id %}
-                <p class="ml-ficha">Pedido {{ t.pedido.numero }}{% if t.paso %} · Paso {{ t.paso }}{% endif %} · {{ t.operacion_madre.nombre }}{% if t.maquina_texto %} · {{ t.maquina_texto }}{% endif %}{% if t.partida_texto %} · {{ t.partida_texto }}{% endif %}</p>
+                {% if t.notas_pedido %}
+                <div class="ml-nota-pedido"><span>Notas del pedido</span><p>{{ t.notas_pedido|linebreaksbr }}</p></div>
                 {% endif %}
                 {% if t.lleva_hechas and not revisando %}
                 <div class="ml-piezas">
